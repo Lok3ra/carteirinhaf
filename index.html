@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Carteirinhas Escolares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#1E2A22;
+    --paper:#FAF8F3;
+    --forest:#1F3D2B;
+    --forest-dark:#152A1E;
+    --gold:#B8902E;
+    --gold-light:#E7D9AF;
+    --sage:#E4E9DE;
+    --line:#D9D4C7;
+    --danger:#A3423A;
+    --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Work Sans',sans-serif;background:var(--paper);color:var(--ink);}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- Shell ---------- */
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{width:230px;flex-shrink:0;background:var(--forest);color:var(--gold-light);padding:28px 0;}
+  .brand{padding:0 22px 26px 22px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:18px;}
+  .brand .seal{width:38px;height:38px;margin-bottom:10px;}
+  .brand h1{font-size:17px;line-height:1.25;margin:0;color:var(--white);font-weight:600;}
+  .brand p{margin:4px 0 0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-light);opacity:.8;}
+
+  .navitem{display:flex;align-items:center;gap:10px;padding:12px 22px;cursor:pointer;font-size:14px;font-weight:500;color:var(--gold-light);opacity:.75;border-left:3px solid transparent;transition:all .15s;}
+  .navitem:hover{opacity:1;background:rgba(255,255,255,.04);}
+  .navitem.active{opacity:1;border-left-color:var(--gold);background:rgba(255,255,255,.07);color:var(--white);}
+  .navitem .idx{font-family:'JetBrains Mono',monospace;font-size:11px;opacity:.6;width:16px;}
+
+  .yearbox{margin:22px 22px 0;padding:14px;background:rgba(255,255,255,.06);border-radius:6px;}
+  .yearbox label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.7;margin-bottom:6px;}
+  .yearbox select, .yearbox input{width:100%;background:var(--forest-dark);border:1px solid rgba(255,255,255,.15);color:var(--white);padding:7px 8px;border-radius:4px;font-family:inherit;font-size:13px;}
+
+  .main{flex:1;padding:34px 40px;max-width:1180px;}
+  .panel{display:none;}
+  .panel.active{display:block;animation:fadeIn .18s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+  .pagehead{margin-bottom:26px;}
+  .pagehead h2{font-size:26px;margin:0 0 6px;color:var(--forest-dark);}
+  .pagehead p{margin:0;color:#6b6355;font-size:14px;}
+
+  .card-block{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:20px;}
+  .card-block h3{margin:0 0 14px;font-size:16px;color:var(--forest-dark);}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;background:var(--forest);color:var(--white);border:none;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Work Sans',sans-serif;transition:background .15s;}
+  .btn:hover{background:var(--forest-dark);}
+  .btn.gold{background:var(--gold);color:var(--forest-dark);}
+  .btn.gold:hover{background:#9c7a26;}
+  .btn.outline{background:transparent;color:var(--forest);border:1.5px solid var(--forest);}
+  .btn.outline:hover{background:var(--sage);}
+  .btn.danger{background:var(--danger);}
+  .btn.danger:hover{background:#82322c;}
+  .btn.small{padding:6px 12px;font-size:12.5px;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  .row{display:flex;gap:16px;flex-wrap:wrap;}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;flex:1;min-width:180px;}
+  .field label{font-size:12px;font-weight:600;color:#4d4a3f;text-transform:uppercase;letter-spacing:.03em;}
+  .field input[type=text],.field input[type=date],.field input[type=tel],.field input[type=number],.field select,.field textarea{
+    padding:9px 11px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--forest);}
+  .field input[type=color]{width:56px;height:36px;padding:2px;border:1.5px solid var(--line);border-radius:5px;cursor:pointer;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;padding:9px 10px;border-bottom:2px solid var(--forest);color:var(--forest-dark);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tr:hover td{background:var(--sage);}
+  .thumb{width:36px;height:44px;object-fit:cover;border-radius:3px;border:1px solid var(--line);background:var(--sage);}
+  .noimg{width:36px;height:44px;border-radius:3px;border:1px dashed #b7b09c;display:flex;align-items:center;justify-content:center;color:#a29c8a;font-size:10px;background:var(--sage);}
+  .idnum{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--forest-dark);letter-spacing:.03em;}
+
+  .empty{padding:40px 20px;text-align:center;color:#8b8471;border:1.5px dashed var(--line);border-radius:8px;}
+
+  /* ---------- Modal ---------- */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(20,20,15,.55);align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .overlay.active{display:flex;}
+  .modal{background:#fff;border-radius:10px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;padding:26px 28px;}
+  .modal h3{margin:0 0 18px;color:var(--forest-dark);}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
+  .closebtn{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:#8b8471;line-height:1;}
+
+  .subtabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);}
+  .subtab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;color:#8b8471;border-bottom:2px solid transparent;}
+  .subtab.active{color:var(--forest-dark);border-bottom-color:var(--gold);}
+  .subpanel{display:none;}
+  .subpanel.active{display:block;}
+
+  video#cam{width:100%;max-width:340px;border-radius:6px;background:#111;}
+  canvas#snap{width:100%;max-width:340px;border-radius:6px;display:none;}
+  .photopreview{width:150px;height:200px;object-fit:cover;border-radius:6px;border:1px solid var(--line);margin:10px 0;background:var(--sage);}
+
+  /* ---------- Cards ---------- */
+  .cardgrid{display:flex;flex-wrap:wrap;gap:22px;}
+  .cardwrap{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .cardcheck{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#5b5546;}
+
+  .idcard{
+    width:9cm;height:6cm;border-radius:10px;overflow:hidden;position:relative;
+    display:flex;flex-direction:column;
+    box-shadow:0 3px 10px rgba(0,0,0,.18);
+    background:var(--c-bg,#fff);
+    font-family:'Work Sans',sans-serif;color:var(--c-text,#1E2A22);
+    border:1px solid rgba(0,0,0,.08);
+  }
+  .idcard .watermark{position:absolute;inset:0;background-repeat:no-repeat;background-position:center 55%;background-size:58% auto;opacity:.09;pointer-events:none;}
+
+  /* header band: centered school name + "Carteirinha" */
+  .idcard .band{
+    position:relative;flex-shrink:0;min-height:1.05cm;
+    background:var(--c-primary,#1F3D2B);
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:.14cm .34cm;gap:.16cm;
+  }
+  .idcard .band .school{color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:12px;line-height:1.2;}
+  .idcard .band .school small{display:block;font-family:'Work Sans',sans-serif;font-weight:500;font-size:8px;opacity:.9;text-transform:uppercase;letter-spacing:.06em;margin-top:1px;}
+  .idcard .seal{width:.6cm;height:.6cm;flex-shrink:0;}
+  .idcard .bandlogo{width:.6cm;height:.6cm;flex-shrink:0;object-fit:contain;border-radius:3px;background:rgba(255,255,255,.9);padding:1px;}
+
+  /* body: photo + info, stretches to fill all remaining vertical space */
+  .idcard .body{flex:1;min-height:0;display:flex;align-items:stretch;gap:.3cm;padding:.15cm .3cm;overflow:hidden;}
+  .idcard .photoblock{flex-shrink:0;width:2.9cm;}
+  .idcard .photo,.idcard .nophoto{display:block;width:100%;height:100%;border-radius:7px;object-fit:cover;border:3px solid var(--c-secondary,#B8902E);background:#eee;}
+  .idcard .nophoto{border:1.5px dashed #bbb;background:#f2f2ee;display:flex;align-items:center;justify-content:center;font-size:8px;color:#999;text-align:center;}
+
+  .idcard .info{flex:1;min-width:0;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between;}
+  .idcard .info .name{font-family:'Fraunces',serif;font-weight:700;font-size:17px;line-height:1.18;}
+  .idcard .info .line{font-size:12px;color:#4a4638;margin-top:5px;}
+  .idcard .info .line b{color:var(--c-primary,#1F3D2B);}
+  .idcard .info .idpill{
+    align-self:flex-start;padding:3px 10px;border-radius:4px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;
+    color:#fff;background:var(--c-primary,#1F3D2B);letter-spacing:.03em;
+  }
+
+  /* footer: validade (left) — ano letivo (center) — assinatura (right) */
+  .idcard .footer{flex-shrink:0;display:flex;align-items:flex-end;gap:.15cm;padding:0 .3cm .22cm;}
+  .idcard .validade{flex:0 0 auto;font-size:7px;color:#63604f;}
+  .idcard .yearwrap{flex:1;display:flex;justify-content:center;min-width:0;}
+  .idcard .yearbadge{
+    background:var(--c-primary,#1F3D2B);color:#fff;
+    font-weight:700;font-size:9.5px;letter-spacing:.03em;white-space:nowrap;
+    padding:3px 10px;border-radius:4px;
+  }
+  .idcard .sig{width:2.5cm;text-align:center;}
+  .idcard .sig img{max-width:100%;max-height:.8cm;object-fit:contain;}
+  .idcard .sig .sigline{border-top:1px solid #7a7566;margin-top:2px;padding-top:2px;font-size:6.5px;color:#7a7566;}
+
+  .idcard.layout-moderno .band{clip-path:polygon(0 0,100% 0,100% 80%,0 100%);padding-bottom:.28cm;}
+  .idcard.layout-minimalista .band{background:transparent;min-height:.6cm;padding:.08cm .34cm;}
+  .idcard.layout-minimalista .band .school{color:var(--c-primary,#1F3D2B);}
+  .idcard.layout-minimalista{border-top:6px solid var(--c-primary,#1F3D2B);}
+
+  /* ---- layout: infantil (educação infantil) ---- */
+  .idcard.layout-infantil{
+    border-radius:20px;
+    background-image:
+      radial-gradient(circle at 93% 90%, rgba(255,255,255,.4) 0 6px, transparent 7px),
+      radial-gradient(circle at 86% 80%, rgba(255,255,255,.28) 0 4px, transparent 5px),
+      radial-gradient(circle at 90% 68%, rgba(255,255,255,.22) 0 3px, transparent 4px);
+  }
+  .idcard.layout-infantil .band{
+    min-height:1.15cm;
+    border-bottom-left-radius:60% 20px;
+    border-bottom-right-radius:60% 20px;
+  }
+  .idcard.layout-infantil .band .school{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12.5px;}
+  .idcard.layout-infantil .band .school small{font-family:'Work Sans',sans-serif;}
+  .idcard.layout-infantil .photoblock{width:2.9cm;}
+  .idcard.layout-infantil .photo,.idcard.layout-infantil .nophoto{border-radius:14px;border-width:4px;}
+  .idcard.layout-infantil .info .name{font-family:'Fredoka',sans-serif;font-weight:600;font-size:17.5px;}
+  .idcard.layout-infantil .info .idpill{
+    background:var(--c-primary,#1F3D2B);color:#fff;padding:3px 12px;border-radius:20px;font-size:13px;
+  }
+  .idcard.layout-infantil .yearwrap .yearbadge{
+    background:var(--c-secondary,#FFD166);color:#5a3d00;border-radius:20px;
+  }
+  .idcard.layout-infantil .sig .sigline{border-top-style:dashed;}
+  .idcard.layout-infantil .sig .sigline::before{content:"★ ";color:var(--c-secondary,#FFD166);}
+  .idcard.layout-infantil.back .backbody .name{font-family:'Fredoka',sans-serif;font-weight:600;}
+
+  /* ---- back side ---- */
+  .idcard.back .backband{
+    flex-shrink:0;min-height:.82cm;background:var(--c-primary,#1F3D2B);color:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    padding:.12cm .34cm;
+  }
+  .idcard.back .backband .bname{font-family:'Fraunces',serif;font-weight:600;font-size:9.5px;line-height:1.2;}
+  .idcard.back .backband .baddr{font-size:7px;opacity:.9;margin-top:1px;}
+  .idcard.back .backband .bphone{font-size:7px;opacity:.9;margin-top:1px;font-weight:600;}
+
+  .idcard.back .backbody{flex:1;min-height:0;display:flex;flex-direction:column;padding:.2cm .32cm;overflow:hidden;}
+  .idcard.back .backbody .name{font-family:'Fraunces',serif;font-weight:600;font-size:11.5px;color:var(--c-primary,#1F3D2B);margin-bottom:4px;}
+  .idcard.back .backbody .l{font-size:8.6px;line-height:1.4;color:#3d3a30;}
+  .idcard.back .backbody .l b{color:var(--c-primary,#1F3D2B);}
+
+  .idcard.back .phones{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:4px;margin-top:5px;}
+  .idcard.back .phones-label{font-size:7.5px;text-transform:uppercase;letter-spacing:.06em;color:#8b8471;font-weight:700;}
+  .idcard.back .phone-item{
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;
+    color:var(--c-primary,#1F3D2B);border-left:3px solid var(--c-secondary,#B8902E);
+    padding:1px 0 1px 8px;
+  }
+
+  .idcard.back .idbottom{flex-shrink:0;padding:0 .32cm .22cm;font-family:'JetBrains Mono',monospace;font-size:9px;color:#63604f;}
+
+  .idcard.layout-infantil.back .backband{border-bottom-left-radius:60% 14px;border-bottom-right-radius:60% 14px;}
+  .idcard.layout-infantil.back .backband .bname{font-family:'Fredoka',sans-serif;}
+
+  .sigpad-wrap{border:1.5px dashed var(--line);border-radius:6px;background:#fdfcf8;}
+  #sigpad{width:100%;height:130px;display:block;cursor:crosshair;touch-action:none;}
+
+  .helpbox{background:var(--sage);border-left:3px solid var(--gold);padding:10px 14px;border-radius:4px;font-size:12.5px;color:#4d4a3f;margin-bottom:16px;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #printarea, #printarea *{visibility:visible;}
+    #printarea{position:absolute;top:0;left:0;width:190mm;}
+    .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
+    .printrow .idcard{box-shadow:none;}
+    .printrow .printcell:last-child .idcard{transform:scaleX(-1);}
+    @page{size:A4;margin:10mm;}
+  }
+  @media screen{ #printarea{ display:none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="sidebar">
+    <div class="brand">
+      <svg class="seal" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#E7D9AF" stroke-width="1.5"/><circle cx="20" cy="20" r="12" stroke="#E7D9AF" stroke-width="1"/><path d="M20 10 L22.5 17 H30 L24 21.5 L26 29 L20 24.5 L14 29 L16 21.5 L10 17 H17.5 Z" fill="#E7D9AF"/></svg>
+      <h1>Carteirinhas Escolares</h1>
+      <p>Registro & emissão</p>
+    </div>
+    <div class="navitem active" data-tab="importar"><span class="idx">01</span> Importar dados</div>
+    <div class="navitem" data-tab="alunos"><span class="idx">02</span> Alunos</div>
+    <div class="navitem" data-tab="config"><span class="idx">03</span> Configurações</div>
+    <div class="navitem" data-tab="carteirinhas"><span class="idx">04</span> Carteirinhas</div>
+
+    <div class="yearbox">
+      <label>Ano ativo (numeração e layout)</label>
+      <select id="yearSelect"></select>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ===================== TAB: IMPORTAR ===================== -->
+    <div class="panel active" id="panel-importar">
+      <div class="pagehead">
+        <h2>Importar dados da planilha</h2>
+        <p>Envie o Excel (.xlsx/.csv) com os dados dos alunos. Os números de carteirinha serão gerados automaticamente para o ano ativo.</p>
+      </div>
+
+      <div class="card-block">
+        <div class="helpbox">Colunas esperadas (nomes flexíveis): <b>Nome</b>, <b>Data de nascimento</b>, <b>Nome do pai</b>, <b>Nome da mãe</b>, <b>Turma</b>, <b>Endereço</b>, e colunas de telefone (<b>Telefone 1..4</b>, <b>Contato</b> ou <b>Celular</b>).</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+      </div>
+
+      <div class="card-block" id="previewBlock" style="display:none;">
+        <h3>Pré-visualização (<span id="previewCount">0</span> registros encontrados)</h3>
+        <div class="helpbox" id="previewCapacityWarning" style="display:none;background:#f7e6c4;border-left-color:var(--danger);"></div>
+        <div style="overflow-x:auto;max-height:340px;overflow-y:auto;">
+          <table id="previewTable"></table>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn" id="confirmImportBtn">Confirmar importação para <span id="confirmYearLabel"></span></button>
+          <button class="btn outline" id="cancelImportBtn">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: ALUNOS ===================== -->
+    <div class="panel" id="panel-alunos">
+      <div class="pagehead">
+        <h2>Alunos — <span id="alunosYearLabel"></span></h2>
+        <p>Gerencie os dados, fotos e números de carteirinha dos alunos do ano ativo.</p>
+      </div>
+      <div class="row" style="align-items:center;gap:14px;margin-bottom:14px;">
+        <div style="flex:1;min-width:220px;">
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#5b5546;margin-bottom:4px;">
+            <span id="capacityLabel">0 / 400 vagas usadas</span>
+          </div>
+          <div style="height:7px;background:var(--sage);border-radius:4px;overflow:hidden;">
+            <div id="capacityBar" style="height:100%;width:0%;background:var(--forest);border-radius:4px;transition:width .2s;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-bottom:14px;align-items:center;">
+        <input type="text" id="searchAlunos" placeholder="Buscar por nome ou turma..." style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;">
+        <button class="btn outline" id="exportExcelBtn">Exportar planilha (com fotos e números)</button>
+        <button class="btn" id="addStudentBtn">+ Adicionar aluno</button>
+      </div>
+      <div class="helpbox">O site não pode reescrever sozinho o arquivo Excel original no seu computador. Mas os dados de foto e número já ficam salvos automaticamente aqui no sistema — e você pode clicar em "Exportar planilha" a qualquer momento para baixar uma cópia atualizada (com fotos e números incluídos) pronta para reimportar depois, inclusive em outro computador.</div>
+      <div class="card-block" style="padding:0;overflow:hidden;">
+        <table>
+          <thead><tr><th>Foto</th><th>Nome</th><th>Turma</th><th>Nº Carteirinha</th><th>Ações</th></tr></thead>
+          <tbody id="studentsTbody"></tbody>
+        </table>
+        <div class="empty" id="studentsEmpty" style="display:none;">Nenhum aluno cadastrado para este ano ainda. Importe uma planilha ou adicione manualmente.</div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: CONFIG ===================== -->
+    <div class="panel" id="panel-config">
+      <div class="pagehead">
+        <h2>Configurações da carteirinha — <span id="configYearLabel"></span></h2>
+        <p>Defina a identidade visual e os dados institucionais para este ano letivo.</p>
+      </div>
+
+      <div class="card-block">
+        <h3>Dados institucionais</h3>
+        <div class="row">
+          <div class="field"><label>Nome da escola</label><input type="text" id="cfgNomeEscola" placeholder="Ex: Escola Municipal Monteiro Lobato"></div>
+          <div class="field"><label>Ano de exercício</label><input type="text" id="cfgAnoExercicio" placeholder="Ex: 2026"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Validade da carteirinha</label><input type="text" id="cfgValidade" placeholder="Ex: 31/12/2026"></div>
+          <div class="field"><label>Nome do responsável (gestão)</label><input type="text" id="cfgGestor" placeholder="Ex: Direção Escolar"></div>
+        </div>
+        <div class="field"><label>Endereço da escola</label><input type="text" id="cfgEnderecoEscola" placeholder="Ex: Rua das Flores, 123 - Centro - Cidade/UF"></div>
+        <div class="field"><label>Telefone da escola</label><input type="text" id="cfgTelefoneEscola" placeholder="Ex: (61) 3333-4444"></div>
+        <div class="field" style="max-width:220px;"><label>Capacidade máxima de alunos (neste ano)</label><input type="number" id="cfgCapacidade" min="1" step="1" placeholder="Ex: 400"></div>
+      </div>
+
+      <div class="card-block">
+        <h3>Logotipo da escola</h3>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">Envie o logotipo da escola. Ele aparece como marca d'água discreta em todas as carteirinhas deste ano.</p>
+        <div class="row" style="align-items:center;">
+          <div id="logoPreviewWrap" style="display:none;">
+            <img id="logoPreview" style="width:90px;height:90px;object-fit:contain;border:1.5px solid var(--line);border-radius:6px;background:#fdfcf8;padding:6px;">
+          </div>
+          <div>
+            <label class="btn outline small" style="cursor:pointer;">Importar logotipo
+              <input type="file" id="logoFileInput" accept="image/*" style="display:none;">
+            </label>
+            <button class="btn outline small" id="removeLogoBtn" style="margin-left:6px;">Remover</button>
+            <div id="logoStatus" style="font-size:12.5px;color:#6b6355;margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <h3>Layout e cores</h3>
+        <div class="row">
+          <div class="field" style="max-width:220px;">
+            <label>Modelo de layout</label>
+            <select id="cfgLayout">
+              <option value="infantil">Infantil (colorido e lúdico)</option>
+              <option value="classico">Clássico (faixa no topo)</option>
+              <option value="moderno">Moderno (faixa diagonal)</option>
+              <option value="minimalista">Minimalista (linha superior)</option>
+            </select>
+          </div>
+          <div class="field" style="max-width:120px;"><label>Cor primária</label><input type="color" id="cfgCorPrimaria" value="#4FB6E8"></div>
+          <div class="field" style="max-width:120px;"><label>Cor secundária</label><input type="color" id="cfgCorSecundaria" value="#FFD166"></div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <h3>Assinatura da gestão escolar</h3>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">Desenhe a assinatura abaixo ou importe uma imagem já digitalizada. Ela será aplicada a todas as carteirinhas deste ano.</p>
+        <div class="sigpad-wrap"><canvas id="sigpad"></canvas></div>
+        <div class="row" style="margin-top:10px;align-items:center;">
+          <button class="btn outline small" id="clearSigBtn">Limpar assinatura</button>
+          <label class="btn outline small" style="cursor:pointer;">Importar imagem
+            <input type="file" id="sigFileInput" accept="image/*" style="display:none;">
+          </label>
+          <span id="sigStatus" style="font-size:12.5px;color:#6b6355;"></span>
+        </div>
+      </div>
+
+      <button class="btn gold" id="saveConfigBtn">Salvar configuração de <span id="saveYearLabel"></span></button>
+    </div>
+
+    <!-- ===================== TAB: CARTEIRINHAS ===================== -->
+    <div class="panel" id="panel-carteirinhas">
+      <div class="pagehead">
+        <h2>Gerar carteirinhas — <span id="cartYearLabel"></span></h2>
+        <p>A impressão sai em folha A4, com a frente à esquerda e o verso à direita de cada aluno — basta dobrar o papel ao meio para montar a carteirinha.</p>
+      </div>
+
+      <div class="row" style="margin-bottom:10px;align-items:center;">
+        <label style="font-size:13px;"><input type="radio" name="printMode" value="turma" id="modeTurmaRadio" checked> Imprimir uma turma inteira</label>
+        <label style="font-size:13px;"><input type="radio" name="printMode" value="manual" id="modeManualRadio"> Selecionar alunos manualmente (máx. 5 por impressão)</label>
+      </div>
+
+      <div class="row" id="turmaModeBox" style="align-items:center;margin-bottom:14px;">
+        <div class="field" style="max-width:220px;margin-bottom:0;"><label>Turma</label><select id="turmaSelect"></select></div>
+      </div>
+
+      <div class="row" id="manualModeBox" style="align-items:center;margin-bottom:14px;display:none;">
+        <input type="text" id="searchCartAlunos" placeholder="Buscar aluno por nome..." style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;">
+      </div>
+
+      <div class="row" style="align-items:center;margin-bottom:14px;">
+        <span id="selectionInfo" style="font-size:13px;color:#6b6355;"></span>
+        <button class="btn" id="printBtn">Imprimir (folha A4)</button>
+      </div>
+
+      <div class="helpbox">O verso de cada carteirinha sai espelhado de propósito no papel — é assim que, ao dobrar a folha ao meio, o texto do verso fica na posição correta por trás da frente.</div>
+
+      <h3 id="cardsGridTitle" style="font-size:14px;color:var(--forest-dark);margin:0 0 12px;">Alunos disponíveis</h3>
+      <div class="cardgrid" id="cardsGrid"></div>
+      <div class="empty" id="cardsEmpty" style="display:none;">Nenhum aluno cadastrado para este ano ainda.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== MODAL: STUDENT ===================== -->
+<div class="overlay" id="studentModalOverlay">
+  <div class="modal">
+    <button class="closebtn" data-close="studentModalOverlay">&times;</button>
+    <h3 id="studentModalTitle">Adicionar aluno</h3>
+    <input type="hidden" id="stuId">
+    <div class="row">
+      <div class="field" style="min-width:260px;"><label>Nome completo</label><input type="text" id="stuNome"></div>
+      <div class="field"><label>Data de nascimento</label><input type="text" id="stuNasc" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric"></div>
+      <div class="field"><label>Turma</label><input type="text" id="stuTurma" placeholder="Ex: 3F"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Nome do pai</label><input type="text" id="stuPai"></div>
+      <div class="field"><label>Nome da mãe</label><input type="text" id="stuMae"></div>
+    </div>
+    <div class="field"><label>Endereço</label><input type="text" id="stuEndereco"></div>
+    <div class="row">
+      <div class="field"><label>Telefone 1</label><input type="text" id="stuTel1"></div>
+      <div class="field"><label>Telefone 2</label><input type="text" id="stuTel2"></div>
+      <div class="field"><label>Telefone 3</label><input type="text" id="stuTel3"></div>
+      <div class="field"><label>Telefone 4</label><input type="text" id="stuTel4"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn outline" data-close="studentModalOverlay">Cancelar</button>
+      <button class="btn" id="saveStudentBtn">Salvar aluno</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: PHOTO ===================== -->
+<div class="overlay" id="photoModalOverlay">
+  <div class="modal">
+    <button class="closebtn" data-close="photoModalOverlay">&times;</button>
+    <h3>Foto do aluno</h3>
+    <input type="hidden" id="photoStuId">
+    <div class="subtabs">
+      <div class="subtab active" data-sub="webcam">Tirar foto (webcam)</div>
+      <div class="subtab" data-sub="upload">Importar do computador</div>
+    </div>
+    <div class="subpanel active" id="sub-webcam">
+      <video id="cam" autoplay playsinline></video>
+      <canvas id="snap"></canvas>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn outline small" id="startCamBtn">Iniciar câmera</button>
+        <button class="btn small" id="captureBtn" disabled>Capturar</button>
+        <button class="btn outline small" id="retakeBtn" style="display:none;">Tirar novamente</button>
+      </div>
+      <p id="camError" style="color:var(--danger);font-size:12.5px;"></p>
+    </div>
+    <div class="subpanel" id="sub-upload">
+      <input type="file" id="uploadPhotoInput" accept="image/*">
+      <div><img id="uploadPreview" class="photopreview" style="display:none;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn outline" data-close="photoModalOverlay">Cancelar</button>
+      <button class="btn" id="usePhotoBtn" disabled>Usar esta foto</button>
+    </div>
+  </div>
+</div>
+
+<div id="printarea"></div>
+
+<script>
+/* =========================================================================
+   STORAGE POLYFILL
+   window.storage (get/set/delete/list) is provided natively inside Claude.ai
+   artifacts. Outside that environment (e.g. this app hosted on GitHub Pages
+   or opened as a plain local file) it doesn't exist, so we fall back to a
+   localStorage-backed implementation with the same API shape. This makes the
+   app fully self-contained and usable as a normal static website.
+   NOTE: localStorage is limited to roughly 5-10MB per browser/origin
+   (varies by browser). That comfortably fits hundreds of student records,
+   but if you store many high-resolution photos you may eventually hit that
+   ceiling — if so, a QuotaExceededError will surface in the browser console.
+========================================================================= */
+if (typeof window.storage === 'undefined') {
+  (function(){
+    const LS_PREFIX = 'carteirinhas_escolares::';
+    window.storage = {
+      async get(key, shared){
+        const raw = localStorage.getItem(LS_PREFIX + (shared ? 'shared::' : '') + key);
+        if (raw === null) throw new Error('Key not found: ' + key);
+        return { key, value: raw, shared: !!shared };
+      },
+      async set(key, value, shared){
+        localStorage.setItem(LS_PREFIX + (shared ? 'shared::' : '') + key, value);
+        return { key, value, shared: !!shared };
+      },
+      async delete(key, shared){
+        localStorage.removeItem(LS_PREFIX + (shared ? 'shared::' : '') + key);
+        return { key, deleted: true, shared: !!shared };
+      },
+      async list(prefix, shared){
+        const fullPrefix = LS_PREFIX + (shared ? 'shared::' : '') + (prefix || '');
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf(fullPrefix) === 0) {
+            keys.push(k.slice(LS_PREFIX.length + (shared ? 7 : 0)));
+          }
+        }
+        return { keys, prefix, shared: !!shared };
+      }
+    };
+  })();
+}
+
+/* =========================================================================
+   STATE
+========================================================================= */
+const state = {
+  activeYear: null,
+  students: [],      // students for active year
+  config: null,       // config for active year
+  camStream: null,
+  pendingPhotoData: null,
+  pendingPhotoStuId: null,
+  importedRows: null,
+  manualSelectedIds: new Set()
+};
+
+const FIELD_PATTERNS = {
+  nome: ['nome do aluno','nome completo','nome'],
+  dataNascimento: ['data de nascimento','data nascimento','dt nascimento','nascimento'],
+  nomePai: ['nome do pai','pai'],
+  nomeMae: ['nome da mae','nome da mãe','mae','mãe'],
+  turma: ['turma','classe','sala'],
+  endereco: ['endereco','endereço','residencia','residência'],
+  numero: ['numero da carteirinha','nº carteirinha','n° carteirinha','numero carteirinha','numero'],
+  fotoBase64: ['foto (base64)','foto base64','foto']
+};
+
+function normalize(str){
+  return (str||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
+/* ---- date helpers: always output dd/mm/aaaa ---- */
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function excelSerialToDate(serial){
+  const utc_days = Math.floor(serial - 25569);
+  const utc_value = utc_days * 86400;
+  const d = new Date(utc_value * 1000);
+  const frac = serial - Math.floor(serial);
+  const secs = Math.round(86400 * frac);
+  d.setSeconds(d.getSeconds() + secs);
+  return d;
+}
+
+function formatDateBR(value){
+  if(value === null || value === undefined || value === '') return '';
+
+  if(value instanceof Date && !isNaN(value)){
+    return pad2(value.getDate()) + '/' + pad2(value.getMonth()+1) + '/' + value.getFullYear();
+  }
+  if(typeof value === 'number' && isFinite(value)){
+    const d = excelSerialToDate(value);
+    if(!isNaN(d)) return pad2(d.getDate()) + '/' + pad2(d.getMonth()+1) + '/' + d.getFullYear();
+  }
+
+  let str = value.toString().trim();
+  if(!str) return '';
+
+  // dd/mm/aaaa, dd-mm-aaaa or dd.mm.aaaa (also accepts 2-digit year)
+  let m = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){
+    let [, d, mo, y] = m;
+    if(y.length === 2) y = (parseInt(y,10) > 30 ? '19' : '20') + y;
+    return pad2(d) + '/' + pad2(mo) + '/' + y;
+  }
+  // ISO aaaa-mm-dd (common when Excel exports as text)
+  m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){
+    const [, y, mo, d] = m;
+    return pad2(d) + '/' + pad2(mo) + '/' + y;
+  }
+  return str; // unrecognized format: keep original text rather than guess wrong
+}
+
+/* input mask: forces dd/mm/aaaa while typing, digits only */
+function maskDateInput(e){
+  let v = e.target.value.replace(/\D/g,'').slice(0,8);
+  let out = v.slice(0,2);
+  if(v.length >= 3) out += '/' + v.slice(2,4);
+  if(v.length >= 5) out += '/' + v.slice(4,8);
+  e.target.value = out;
+}
+
+/* =========================================================================
+   INIT
+========================================================================= */
+window.addEventListener('DOMContentLoaded', init);
+
+async function init(){
+  const nowYear = new Date().getFullYear();
+  let yr = nowYear;
+  try{
+    const res = await window.storage.get('meta:activeYear');
+    if(res && res.value) yr = parseInt(res.value,10);
+  }catch(e){ /* not set yet */ }
+
+  await populateYearSelect(yr);
+  state.activeYear = yr;
+  document.getElementById('yearSelect').value = String(yr);
+
+  bindNav();
+  bindYearSelect();
+  bindImportTab();
+  bindStudentsTab();
+  bindConfigTab();
+  bindCardsTab();
+  bindModals();
+  setupSignaturePad();
+  document.getElementById('stuNasc').addEventListener('input', maskDateInput);
+
+  await loadEverythingForActiveYear();
+}
+
+async function populateYearSelect(currentYr){
+  const sel = document.getElementById('yearSelect');
+  const years = new Set();
+  const base = new Date().getFullYear();
+  for(let y=base-1;y<=base+3;y++) years.add(y);
+  years.add(currentYr);
+  try{
+    const list = await window.storage.list('config:');
+    if(list && list.keys){
+      list.keys.forEach(k=>{ const y=parseInt(k.split(':')[1],10); if(!isNaN(y)) years.add(y); });
+    }
+  }catch(e){}
+  const sorted = Array.from(years).sort((a,b)=>a-b);
+  sel.innerHTML = sorted.map(y=>`<option value="${y}">${y}</option>`).join('');
+}
+
+function bindYearSelect(){
+  document.getElementById('yearSelect').addEventListener('change', async (e)=>{
+    state.activeYear = parseInt(e.target.value,10);
+    try{ await window.storage.set('meta:activeYear', String(state.activeYear)); }catch(err){}
+    await loadEverythingForActiveYear();
+  });
+}
+
+async function loadEverythingForActiveYear(){
+  updateYearLabels();
+  state.manualSelectedIds = new Set();
+  await loadConfig();
+  await loadStudents();
+  renderConfigForm();
+  renderStudentsTable();
+  renderCardsTab();
+}
+
+function updateYearLabels(){
+  const y = state.activeYear;
+  ['alunosYearLabel','configYearLabel','cartYearLabel'].forEach(id=>{
+    document.getElementById(id).textContent = y;
+  });
+  document.getElementById('confirmYearLabel').textContent = y;
+  document.getElementById('saveYearLabel').textContent = y;
+}
+
+/* =========================================================================
+   NAV
+========================================================================= */
+function bindNav(){
+  document.querySelectorAll('.navitem').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      document.querySelectorAll('.navitem').forEach(i=>i.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      item.classList.add('active');
+      document.getElementById('panel-'+item.dataset.tab).classList.add('active');
+      if(item.dataset.tab==='carteirinhas') renderCardsTab();
+    });
+  });
+}
+
+/* =========================================================================
+   ID NUMBER GENERATION
+========================================================================= */
+async function nextNumero(ano, turma){
+  const key = 'counter:'+ano;
+  let seq = 1;
+  try{
+    const res = await window.storage.get(key);
+    seq = parseInt(res.value,10) + 1;
+  }catch(e){ seq = 1; }
+  try{ await window.storage.set(key, String(seq)); }catch(e){}
+
+  const anoDigits = String(ano).slice(-2);
+  let turmaCode = (turma||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  turmaCode = (turmaCode+'XX').slice(0,2);
+  const seqStr = String(seq).padStart(5,'0');
+  return anoDigits + turmaCode + seqStr;
+}
+
+/* =========================================================================
+   IMPORT TAB
+========================================================================= */
+function bindImportTab(){
+  document.getElementById('fileInput').addEventListener('change', handleExcelFile);
+  document.getElementById('cancelImportBtn').addEventListener('click', ()=>{
+    state.importedRows = null;
+    document.getElementById('previewBlock').style.display='none';
+    document.getElementById('fileInput').value='';
+  });
+  document.getElementById('confirmImportBtn').addEventListener('click', confirmImport);
+}
+
+function handleExcelFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      processImportedRows(rows);
+    }catch(err){
+      alert('Não foi possível ler o arquivo. Verifique se é um .xlsx, .xls ou .csv válido.');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function extractField(row, patterns){
+  for(const key in row){
+    const nkey = normalize(key);
+    for(const p of patterns){
+      if(nkey === p || nkey.includes(p)) return (row[key]||'').toString().trim();
+    }
+  }
+  return '';
+}
+
+// keeps the raw cell value (Date object / number / string) instead of stringifying early,
+// so formatDateBR can handle Excel dates and serial numbers correctly
+function extractRawField(row, patterns){
+  for(const key in row){
+    const nkey = normalize(key);
+    for(const p of patterns){
+      if(nkey === p || nkey.includes(p)) return row[key];
+    }
+  }
+  return '';
+}
+
+function extractPhones(row){
+  const phones = [];
+  for(const key in row){
+    const nkey = normalize(key);
+    if(/telefone|contato|celular|\bfone\b/.test(nkey)){
+      const v = (row[key]||'').toString().trim();
+      if(v) phones.push(v);
+    }
+  }
+  return phones.slice(0,4);
+}
+
+function processImportedRows(rows){
+  const parsed = rows.map(row=>{
+    const rawFoto = extractField(row, FIELD_PATTERNS.fotoBase64);
+    return {
+      nome: extractField(row, FIELD_PATTERNS.nome),
+      dataNascimento: formatDateBR(extractRawField(row, FIELD_PATTERNS.dataNascimento)),
+      nomePai: extractField(row, FIELD_PATTERNS.nomePai),
+      nomeMae: extractField(row, FIELD_PATTERNS.nomeMae),
+      turma: extractField(row, FIELD_PATTERNS.turma),
+      endereco: extractField(row, FIELD_PATTERNS.endereco),
+      telefones: extractPhones(row),
+      numero: extractField(row, FIELD_PATTERNS.numero),
+      foto: rawFoto && rawFoto.startsWith('data:image') ? rawFoto : null
+    };
+  }).filter(r=>r.nome);
+
+  state.importedRows = parsed;
+  document.getElementById('previewCount').textContent = parsed.length;
+  const table = document.getElementById('previewTable');
+  table.innerHTML = `<thead><tr><th>Nome</th><th>Nascimento</th><th>Turma</th><th>Pai</th><th>Mãe</th><th>Endereço</th><th>Telefones</th><th>Nº</th><th>Foto</th></tr></thead>
+  <tbody>${parsed.map(r=>`<tr><td>${r.nome}</td><td>${r.dataNascimento}</td><td>${r.turma}</td><td>${r.nomePai}</td><td>${r.nomeMae}</td><td>${r.endereco}</td><td>${r.telefones.join(', ')}</td><td>${r.numero||'—'}</td><td>${r.foto?'✓':'—'}</td></tr>`).join('')}</tbody>`;
+  document.getElementById('previewBlock').style.display = parsed.length ? 'block' : 'none';
+
+  const capBox = document.getElementById('previewCapacityWarning');
+  const capacity = getCapacity();
+  const projected = state.students.length + parsed.length;
+  if(capBox){
+    if(projected > capacity){
+      capBox.style.display = 'block';
+      capBox.textContent = 'Atenção: este ano já tem ' + state.students.length + ' aluno(s) cadastrado(s) e a capacidade máxima é ' + capacity + '. Só será possível importar ' + Math.max(0, capacity - state.students.length) + ' dos ' + parsed.length + ' registros desta planilha; o restante ficará de fora.';
+    }else{
+      capBox.style.display = 'none';
+    }
+  }
+  if(!parsed.length) alert('Nenhum registro com nome foi encontrado na planilha. Verifique os cabeçalhos das colunas.');
+}
+
+async function confirmImport(){
+  if(!state.importedRows || !state.importedRows.length) return;
+  const btn = document.getElementById('confirmImportBtn');
+  btn.disabled = true; btn.textContent = 'Importando...';
+
+  const existingKey = (n,t)=> (normalize(n)+'|'+normalize(t));
+  const existingSet = new Set(state.students.map(s=>existingKey(s.nome, s.turma)));
+  const capacity = getCapacity();
+  let currentCount = state.students.length;
+
+  let added = 0, skippedCapacity = 0;
+  for(const r of state.importedRows){
+    const k = existingKey(r.nome, r.turma);
+    if(existingSet.has(k)) continue; // skip duplicates already in this year
+    if(currentCount >= capacity){ skippedCapacity++; continue; } // capacity limit reached
+    // reuse a number already present in the spreadsheet (e.g. a previously exported file) instead of generating a new one
+    const numero = (r.numero && r.numero.trim()) ? r.numero.trim() : await nextNumero(state.activeYear, r.turma);
+    const id = 'stu_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    const student = {
+      id, ano: state.activeYear, numero,
+      nome:r.nome, dataNascimento:r.dataNascimento, nomePai:r.nomePai, nomeMae:r.nomeMae,
+      turma:r.turma, endereco:r.endereco, telefones:r.telefones, foto:r.foto||null
+    };
+    try{ await window.storage.set('aluno:'+id, JSON.stringify(student)); }catch(e){ console.error(e); }
+    existingSet.add(k);
+    currentCount++;
+    added++;
+  }
+
+  btn.disabled = false; btn.textContent = 'Confirmar importação para ' + state.activeYear;
+  document.getElementById('previewBlock').style.display='none';
+  document.getElementById('fileInput').value='';
+  state.importedRows = null;
+  await loadStudents();
+  renderStudentsTable();
+  renderCardsTab();
+  let msg = added + ' aluno(s) importado(s) com sucesso para o ano ' + state.activeYear + '.';
+  if(skippedCapacity > 0){
+    msg += '\n\n' + skippedCapacity + ' aluno(s) NÃO foram importados por falta de vaga (capacidade máxima de ' + capacity + ' atingida). Aumente o limite em Configurações, se necessário, e importe novamente.';
+  }
+  alert(msg);
+}
+
+/* =========================================================================
+   STUDENTS: load / render / CRUD
+========================================================================= */
+async function loadStudents(){
+  state.students = [];
+  try{
+    const list = await window.storage.list('aluno:');
+    if(!list || !list.keys) return;
+    for(const key of list.keys){
+      try{
+        const res = await window.storage.get(key);
+        const s = JSON.parse(res.value);
+        if(s.ano === state.activeYear) state.students.push(s);
+      }catch(e){}
+    }
+    state.students.sort((a,b)=> a.nome.localeCompare(b.nome));
+  }catch(e){ console.error(e); }
+}
+
+function bindStudentsTab(){
+  document.getElementById('addStudentBtn').addEventListener('click', ()=>openStudentModal(null));
+  document.getElementById('searchAlunos').addEventListener('input', renderStudentsTable);
+  document.getElementById('saveStudentBtn').addEventListener('click', saveStudentFromModal);
+  document.getElementById('exportExcelBtn').addEventListener('click', exportStudentsToExcel);
+}
+
+function renderStudentsTable(){
+  const q = normalize(document.getElementById('searchAlunos').value);
+  const tbody = document.getElementById('studentsTbody');
+  const filtered = state.students.filter(s=> !q || normalize(s.nome).includes(q) || normalize(s.turma).includes(q));
+  document.getElementById('studentsEmpty').style.display = state.students.length ? 'none':'block';
+
+  tbody.innerHTML = filtered.map(s=>`
+    <tr>
+      <td>${s.foto ? `<img class="thumb" src="${s.foto}">` : `<div class="noimg">sem foto</div>`}</td>
+      <td>${escapeHtml(s.nome)}</td>
+      <td>${escapeHtml(s.turma)}</td>
+      <td class="idnum">${s.numero}</td>
+      <td>
+        <button class="btn small outline" onclick="openPhotoModal('${s.id}')">Foto</button>
+        <button class="btn small outline" onclick="openStudentModal('${s.id}')">Editar</button>
+        <button class="btn small danger" onclick="deleteStudent('${s.id}')">Excluir</button>
+      </td>
+    </tr>
+  `).join('');
+
+  updateCapacityBar();
+}
+
+function getCapacity(){
+  return (state.config && state.config.capacidadeMaxima) || 400;
+}
+
+function updateCapacityBar(){
+  const cap = getCapacity();
+  const count = state.students.length;
+  const pct = Math.min(100, Math.round((count / cap) * 100));
+  const label = document.getElementById('capacityLabel');
+  const bar = document.getElementById('capacityBar');
+  if(!label || !bar) return;
+  label.textContent = count + ' / ' + cap + ' vagas usadas';
+  bar.style.width = pct + '%';
+  if(count >= cap){
+    bar.style.background = 'var(--danger)';
+    label.style.color = 'var(--danger)';
+    label.style.fontWeight = '600';
+  }else if(pct >= 90){
+    bar.style.background = 'var(--gold)';
+    label.style.color = '#5b5546';
+    label.style.fontWeight = '400';
+  }else{
+    bar.style.background = 'var(--forest)';
+    label.style.color = '#5b5546';
+    label.style.fontWeight = '400';
+  }
+}
+
+function escapeHtml(str){
+  return (str||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openStudentModal(id){
+  document.getElementById('studentModalTitle').textContent = id ? 'Editar aluno' : 'Adicionar aluno';
+  document.getElementById('stuId').value = id || '';
+  const s = id ? state.students.find(x=>x.id===id) : null;
+  document.getElementById('stuNome').value = s ? s.nome : '';
+  document.getElementById('stuNasc').value = s ? s.dataNascimento : '';
+  document.getElementById('stuTurma').value = s ? s.turma : '';
+  document.getElementById('stuPai').value = s ? s.nomePai : '';
+  document.getElementById('stuMae').value = s ? s.nomeMae : '';
+  document.getElementById('stuEndereco').value = s ? s.endereco : '';
+  const tels = s ? s.telefones||[] : [];
+  document.getElementById('stuTel1').value = tels[0]||'';
+  document.getElementById('stuTel2').value = tels[1]||'';
+  document.getElementById('stuTel3').value = tels[2]||'';
+  document.getElementById('stuTel4').value = tels[3]||'';
+  openOverlay('studentModalOverlay');
+}
+
+async function saveStudentFromModal(){
+  const id = document.getElementById('stuId').value;
+  const nome = document.getElementById('stuNome').value.trim();
+  if(!nome){ alert('Informe o nome do aluno.'); return; }
+  const turma = document.getElementById('stuTurma').value.trim();
+  const telefones = [1,2,3,4].map(i=>document.getElementById('stuTel'+i).value.trim()).filter(Boolean);
+
+  if(id){
+    const s = state.students.find(x=>x.id===id);
+    s.nome = nome; s.dataNascimento=document.getElementById('stuNasc').value.trim();
+    s.turma = turma; s.nomePai=document.getElementById('stuPai').value.trim();
+    s.nomeMae=document.getElementById('stuMae').value.trim();
+    s.endereco=document.getElementById('stuEndereco').value.trim();
+    s.telefones = telefones;
+    await window.storage.set('aluno:'+id, JSON.stringify(s));
+  }else{
+    if(state.students.length >= getCapacity()){
+      alert('A capacidade máxima de ' + getCapacity() + ' alunos para este ano já foi atingida. Aumente o limite em Configurações, se necessário.');
+      return;
+    }
+    const numero = await nextNumero(state.activeYear, turma);
+    const newId = 'stu_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    const s = {
+      id:newId, ano:state.activeYear, numero, nome,
+      dataNascimento:document.getElementById('stuNasc').value.trim(),
+      turma, nomePai:document.getElementById('stuPai').value.trim(),
+      nomeMae:document.getElementById('stuMae').value.trim(),
+      endereco:document.getElementById('stuEndereco').value.trim(),
+      telefones, foto:null
+    };
+    await window.storage.set('aluno:'+newId, JSON.stringify(s));
+  }
+  closeOverlay('studentModalOverlay');
+  await loadStudents();
+  renderStudentsTable();
+  renderCardsTab();
+}
+
+async function deleteStudent(id){
+  if(!confirm('Excluir este aluno permanentemente?')) return;
+  try{ await window.storage.delete('aluno:'+id); }catch(e){}
+  await loadStudents();
+  renderStudentsTable();
+  renderCardsTab();
+}
+
+/* ---- export students (with photo + numero) back to an .xlsx file ---- */
+function resizeImageForExcel(dataUrl, cb){
+  if(!dataUrl){ cb(''); return; }
+  const img = new Image();
+  img.onload = ()=>{
+    const attempt = (maxW, maxH, quality)=>{
+      let w=img.width, h=img.height;
+      const ratio = Math.min(maxW/w, maxH/h, 1);
+      w = Math.round(w*ratio); h = Math.round(h*ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      return canvas.toDataURL('image/jpeg', quality);
+    };
+    let out = attempt(220, 280, 0.6);
+    if(out.length > 30000) out = attempt(150, 190, 0.45); // stay safely under Excel's ~32,767 char cell limit
+    if(out.length > 30000) out = attempt(110, 140, 0.35);
+    cb(out);
+  };
+  img.onerror = ()=> cb('');
+  img.src = dataUrl;
+}
+function resizeImageForExcelAsync(dataUrl){
+  return new Promise(resolve=> resizeImageForExcel(dataUrl, resolve));
+}
+
+async function exportStudentsToExcel(){
+  if(!state.students.length){ alert('Não há alunos cadastrados neste ano para exportar.'); return; }
+  const btn = document.getElementById('exportExcelBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Gerando planilha...';
+
+  try{
+    const rows = [];
+    for(const s of state.students){
+      const fotoOut = s.foto ? await resizeImageForExcelAsync(s.foto) : '';
+      const tels = s.telefones || [];
+      rows.push({
+        'Nome': s.nome || '',
+        'Data de nascimento': s.dataNascimento || '',
+        'Nome do pai': s.nomePai || '',
+        'Nome da mãe': s.nomeMae || '',
+        'Turma': s.turma || '',
+        'Endereço': s.endereco || '',
+        'Telefone 1': tels[0] || '',
+        'Telefone 2': tels[1] || '',
+        'Telefone 3': tels[2] || '',
+        'Telefone 4': tels[3] || '',
+        'Nº Carteirinha': s.numero || '',
+        'Foto (base64)': fotoOut
+      });
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Alunos');
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([wbout], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'carteirinhas-' + state.activeYear + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    console.error(e);
+    alert('Não foi possível gerar a planilha.');
+  }finally{
+    btn.disabled = false; btn.textContent = originalText;
+  }
+}
+
+/* =========================================================================
+   PHOTO MODAL (webcam + upload)
+========================================================================= */
+function bindModals(){
+  document.querySelectorAll('[data-close]').forEach(btn=>{
+    btn.addEventListener('click', ()=>closeOverlay(btn.dataset.close));
+  });
+  document.querySelectorAll('.subtab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.subtab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('sub-'+tab.dataset.sub).classList.add('active');
+      if(tab.dataset.sub!=='webcam') stopCamera();
+    });
+  });
+
+  document.getElementById('startCamBtn').addEventListener('click', startCamera);
+  document.getElementById('captureBtn').addEventListener('click', capturePhoto);
+  document.getElementById('retakeBtn').addEventListener('click', retakePhoto);
+  document.getElementById('uploadPhotoInput').addEventListener('change', handleUploadPhoto);
+  document.getElementById('usePhotoBtn').addEventListener('click', usePhoto);
+}
+
+function openOverlay(id){ document.getElementById(id).classList.add('active'); }
+function closeOverlay(id){
+  document.getElementById(id).classList.remove('active');
+  if(id==='photoModalOverlay'){
+    stopCamera();
+    resetPhotoModal();
+  }
+}
+
+function openPhotoModal(stuId){
+  state.pendingPhotoStuId = stuId;
+  state.pendingPhotoData = null;
+  resetPhotoModal();
+  openOverlay('photoModalOverlay');
+}
+
+function resetPhotoModal(){
+  document.getElementById('usePhotoBtn').disabled = true;
+  document.getElementById('camError').textContent = '';
+  document.getElementById('uploadPreview').style.display='none';
+  document.getElementById('uploadPhotoInput').value='';
+  document.getElementById('snap').style.display='none';
+  document.getElementById('cam').style.display='block';
+  document.getElementById('captureBtn').disabled = true;
+  document.getElementById('retakeBtn').style.display='none';
+}
+
+async function startCamera(){
+  try{
+    state.camStream = await navigator.mediaDevices.getUserMedia({video:{width:480,height:640}});
+    const video = document.getElementById('cam');
+    video.srcObject = state.camStream;
+    document.getElementById('captureBtn').disabled = false;
+    document.getElementById('camError').textContent='';
+  }catch(err){
+    document.getElementById('camError').textContent = 'Não foi possível acessar a câmera neste ambiente. Use a opção "Importar do computador".';
+    console.error(err);
+  }
+}
+
+function stopCamera(){
+  if(state.camStream){
+    state.camStream.getTracks().forEach(t=>t.stop());
+    state.camStream = null;
+  }
+}
+
+function capturePhoto(){
+  const video = document.getElementById('cam');
+  const canvas = document.getElementById('snap');
+  canvas.width = 300; canvas.height = 400;
+  const ctx = canvas.getContext('2d');
+  const vw=video.videoWidth, vh=video.videoHeight;
+  const scale = Math.max(canvas.width/vw, canvas.height/vh);
+  const sw = canvas.width/scale, sh = canvas.height/scale;
+  const sx = (vw-sw)/2, sy=(vh-sh)/2;
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  state.pendingPhotoData = canvas.toDataURL('image/jpeg',0.85);
+
+  video.style.display='none';
+  canvas.style.display='block';
+  document.getElementById('captureBtn').disabled = true;
+  document.getElementById('retakeBtn').style.display='inline-flex';
+  document.getElementById('usePhotoBtn').disabled = false;
+  stopCamera();
+}
+
+function retakePhoto(){
+  document.getElementById('snap').style.display='none';
+  document.getElementById('cam').style.display='block';
+  document.getElementById('retakeBtn').style.display='none';
+  document.getElementById('usePhotoBtn').disabled = true;
+  state.pendingPhotoData = null;
+  startCamera();
+}
+
+function handleUploadPhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    resizeImage(ev.target.result, 300, 400, (resized)=>{
+      state.pendingPhotoData = resized;
+      const img = document.getElementById('uploadPreview');
+      img.src = resized; img.style.display='block';
+      document.getElementById('usePhotoBtn').disabled = false;
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function resizeImage(dataUrl, maxW, maxH, cb){
+  const img = new Image();
+  img.onload = ()=>{
+    let w=img.width, h=img.height;
+    const ratio = Math.min(maxW/w, maxH/h, 1);
+    w = Math.round(w*ratio); h = Math.round(h*ratio);
+    const canvas = document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    cb(canvas.toDataURL('image/jpeg',0.85));
+  };
+  img.src = dataUrl;
+}
+
+// keeps transparency (used for logos/signatures, unlike student photos which are flattened to JPEG)
+function resizeImagePNG(dataUrl, maxW, maxH, cb){
+  const img = new Image();
+  img.onload = ()=>{
+    let w=img.width, h=img.height;
+    const ratio = Math.min(maxW/w, maxH/h, 1);
+    w = Math.round(w*ratio); h = Math.round(h*ratio);
+    const canvas = document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    cb(canvas.toDataURL('image/png'));
+  };
+  img.src = dataUrl;
+}
+
+async function usePhoto(){
+  if(!state.pendingPhotoData || !state.pendingPhotoStuId) return;
+  const s = state.students.find(x=>x.id===state.pendingPhotoStuId);
+  if(s){
+    s.foto = state.pendingPhotoData;
+    await window.storage.set('aluno:'+s.id, JSON.stringify(s));
+  }
+  closeOverlay('photoModalOverlay');
+  renderStudentsTable();
+  renderCardsTab();
+}
+
+/* =========================================================================
+   CONFIG TAB
+========================================================================= */
+let pendingLogo; // undefined = no change, null = removed, dataURL = new logo
+
+async function loadConfig(){
+  try{
+    const res = await window.storage.get('config:'+state.activeYear);
+    state.config = JSON.parse(res.value);
+  }catch(e){
+    state.config = {
+      ano: state.activeYear, nomeEscola:'', anoExercicio:String(state.activeYear), validade:'',
+      gestor:'', enderecoEscola:'', telefoneEscola:'', logo:null, capacidadeMaxima:400,
+      layout:'infantil', corPrimaria:'#4FB6E8', corSecundaria:'#FFD166', assinatura:null
+    };
+  }
+}
+
+function renderConfigForm(){
+  const c = state.config;
+  document.getElementById('cfgNomeEscola').value = c.nomeEscola||'';
+  document.getElementById('cfgAnoExercicio').value = c.anoExercicio || String(state.activeYear);
+  document.getElementById('cfgValidade').value = c.validade||'';
+  document.getElementById('cfgGestor').value = c.gestor||'';
+  document.getElementById('cfgEnderecoEscola').value = c.enderecoEscola||'';
+  document.getElementById('cfgTelefoneEscola').value = c.telefoneEscola||'';
+  document.getElementById('cfgCapacidade').value = c.capacidadeMaxima || 400;
+  document.getElementById('cfgLayout').value = c.layout||'classico';
+  document.getElementById('cfgCorPrimaria').value = c.corPrimaria||'#1F3D2B';
+  document.getElementById('cfgCorSecundaria').value = c.corSecundaria||'#B8902E';
+  loadSignatureIntoPad(c.assinatura);
+  document.getElementById('sigStatus').textContent = c.assinatura ? 'Assinatura salva.' : 'Nenhuma assinatura definida ainda.';
+
+  pendingLogo = undefined;
+  const logoPreview = document.getElementById('logoPreview');
+  const logoWrap = document.getElementById('logoPreviewWrap');
+  if(c.logo){
+    logoPreview.src = c.logo;
+    logoWrap.style.display = 'block';
+    document.getElementById('logoStatus').textContent = 'Logotipo salvo.';
+  }else{
+    logoPreview.removeAttribute('src');
+    logoWrap.style.display = 'none';
+    document.getElementById('logoStatus').textContent = 'Nenhum logotipo definido ainda.';
+  }
+  document.getElementById('logoFileInput').value = '';
+}
+
+function bindConfigTab(){
+  document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+  document.getElementById('sigFileInput').addEventListener('change', handleSigFileImport);
+  document.getElementById('logoFileInput').addEventListener('change', handleLogoFileImport);
+  document.getElementById('removeLogoBtn').addEventListener('click', ()=>{
+    pendingLogo = null;
+    document.getElementById('logoPreview').removeAttribute('src');
+    document.getElementById('logoPreviewWrap').style.display = 'none';
+    document.getElementById('logoFileInput').value = '';
+    document.getElementById('logoStatus').textContent = 'Logotipo removido (salve para confirmar).';
+  });
+  document.getElementById('cfgLayout').addEventListener('change', (e)=>{
+    const p = document.getElementById('cfgCorPrimaria');
+    const s = document.getElementById('cfgCorSecundaria');
+    const academicDefaults = p.value.toLowerCase()==='#1f3d2b' && s.value.toLowerCase()==='#b8902e';
+    const brightDefaults = p.value.toLowerCase()==='#4fb6e8' && s.value.toLowerCase()==='#ffd166';
+    if(e.target.value === 'infantil' && academicDefaults){
+      p.value = '#4FB6E8'; s.value = '#FFD166';
+    } else if(e.target.value !== 'infantil' && brightDefaults){
+      p.value = '#1F3D2B'; s.value = '#B8902E';
+    }
+  });
+}
+
+function handleLogoFileImport(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    resizeImagePNG(ev.target.result, 500, 500, (resized)=>{
+      pendingLogo = resized;
+      const logoPreview = document.getElementById('logoPreview');
+      logoPreview.src = resized;
+      document.getElementById('logoPreviewWrap').style.display = 'block';
+      document.getElementById('logoStatus').textContent = 'Logotipo importado (salve para confirmar).';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveConfig(){
+  const c = state.config;
+  c.ano = state.activeYear;
+  c.nomeEscola = document.getElementById('cfgNomeEscola').value.trim();
+  c.anoExercicio = document.getElementById('cfgAnoExercicio').value.trim();
+  c.validade = document.getElementById('cfgValidade').value.trim();
+  c.gestor = document.getElementById('cfgGestor').value.trim();
+  c.enderecoEscola = document.getElementById('cfgEnderecoEscola').value.trim();
+  c.telefoneEscola = document.getElementById('cfgTelefoneEscola').value.trim();
+  c.capacidadeMaxima = Math.max(1, parseInt(document.getElementById('cfgCapacidade').value, 10) || 400);
+  c.layout = document.getElementById('cfgLayout').value;
+  c.corPrimaria = document.getElementById('cfgCorPrimaria').value;
+  c.corSecundaria = document.getElementById('cfgCorSecundaria').value;
+  c.assinatura = getSignatureDataUrl();
+  if(pendingLogo !== undefined) c.logo = pendingLogo;
+
+  try{
+    await window.storage.set('config:'+state.activeYear, JSON.stringify(c));
+    await populateYearSelect(state.activeYear);
+    document.getElementById('yearSelect').value = String(state.activeYear);
+    alert('Configuração salva para o ano ' + state.activeYear + '.');
+    renderCardsTab();
+    renderStudentsTable();
+  }catch(e){
+    alert('Erro ao salvar configuração.');
+    console.error(e);
+  }
+}
+
+/* ---- signature pad ---- */
+let sigCtx, sigDrawing=false, sigHasContent=false;
+function setupSignaturePad(){
+  const canvas = document.getElementById('sigpad');
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = canvas.offsetHeight * 2;
+  sigCtx = canvas.getContext('2d');
+  sigCtx.scale(2,2);
+  sigCtx.lineWidth = 2;
+  sigCtx.lineCap = 'round';
+  sigCtx.strokeStyle = '#1E2A22';
+
+  const pos = (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {x: clientX-rect.left, y: clientY-rect.top};
+  };
+  const start = (e)=>{ sigDrawing=true; const p=pos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); e.preventDefault(); };
+  const move = (e)=>{ if(!sigDrawing) return; const p=pos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigHasContent=true; e.preventDefault(); };
+  const end = ()=>{ sigDrawing=false; };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start);
+  canvas.addEventListener('touchmove', move);
+  canvas.addEventListener('touchend', end);
+
+  document.getElementById('clearSigBtn').addEventListener('click', ()=>{
+    sigCtx.clearRect(0,0,canvas.width,canvas.height);
+    sigHasContent = false;
+    document.getElementById('sigStatus').textContent = 'Assinatura removida (salve para confirmar).';
+  });
+}
+
+function loadSignatureIntoPad(dataUrl){
+  const canvas = document.getElementById('sigpad');
+  sigCtx.clearRect(0,0,canvas.width,canvas.height);
+  sigHasContent = false;
+  if(dataUrl){
+    const img = new Image();
+    img.onload = ()=>{ sigCtx.drawImage(img,0,0,canvas.offsetWidth,canvas.offsetHeight); sigHasContent = true; };
+    img.src = dataUrl;
+  }
+}
+
+function getSignatureDataUrl(){
+  const canvas = document.getElementById('sigpad');
+  if(!sigHasContent) return state.config.assinatura || null;
+  return canvas.toDataURL('image/png');
+}
+
+function handleSigFileImport(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    resizeImagePNG(ev.target.result, 400, 150, (resized)=>{
+      loadSignatureIntoPad(resized);
+      document.getElementById('sigStatus').textContent = 'Imagem importada (salve para confirmar).';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+/* =========================================================================
+   CARTEIRINHAS TAB
+========================================================================= */
+const MAX_MANUAL_SELECTION = 5;
+
+function bindCardsTab(){
+  document.getElementById('modeTurmaRadio').addEventListener('change', onPrintModeChange);
+  document.getElementById('modeManualRadio').addEventListener('change', onPrintModeChange);
+  document.getElementById('turmaSelect').addEventListener('change', renderCardsTab);
+  document.getElementById('searchCartAlunos').addEventListener('input', renderCardsTab);
+  document.getElementById('printBtn').addEventListener('click', printSelectedCards);
+  document.getElementById('cardsGrid').addEventListener('change', (e)=>{
+    if(!e.target.classList.contains('cardSelectChk') || !isManualMode()) return;
+    const id = e.target.dataset.id;
+    if(e.target.checked){
+      if(state.manualSelectedIds.size >= MAX_MANUAL_SELECTION){
+        e.target.checked = false;
+        alert('Você pode selecionar no máximo ' + MAX_MANUAL_SELECTION + ' alunos por impressão manual. Para imprimir mais alunos de uma vez, use "Imprimir uma turma inteira".');
+        return;
+      }
+      state.manualSelectedIds.add(id);
+    }else{
+      state.manualSelectedIds.delete(id);
+    }
+    updateSelectionInfo();
+  });
+}
+
+function isManualMode(){ return document.getElementById('modeManualRadio').checked; }
+
+function onPrintModeChange(){
+  renderCardsTab();
+}
+
+function updateSelectionInfo(){
+  const info = document.getElementById('selectionInfo');
+  if(isManualMode()){
+    info.textContent = state.manualSelectedIds.size + '/' + MAX_MANUAL_SELECTION + ' aluno(s) selecionado(s)';
+  }else{
+    const turma = document.getElementById('turmaSelect').value;
+    const count = turma ? state.students.filter(s=>normalize(s.turma)===normalize(turma)).length : 0;
+    info.textContent = turma ? (count + ' aluno(s) na turma ' + turma) : 'Selecione uma turma';
+  }
+}
+
+function renderCardsTab(){
+  const manual = isManualMode();
+  document.getElementById('turmaModeBox').style.display = manual ? 'none' : 'flex';
+  document.getElementById('manualModeBox').style.display = manual ? 'flex' : 'none';
+  document.getElementById('cardsGridTitle').textContent = manual ? 'Alunos disponíveis' : 'Pré-visualização dos alunos da turma';
+
+  document.getElementById('cardsEmpty').style.display = state.students.length ? 'none':'block';
+
+  const turmaSelect = document.getElementById('turmaSelect');
+  const turmas = Array.from(new Set(state.students.map(s=>s.turma).filter(Boolean))).sort();
+  const prevTurma = turmaSelect.value;
+  turmaSelect.innerHTML = '<option value="">— selecione —</option>' + turmas.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  if(turmas.includes(prevTurma)) turmaSelect.value = prevTurma;
+
+  const q = manual ? normalize(document.getElementById('searchCartAlunos').value) : '';
+  const turma = !manual ? turmaSelect.value : '';
+  let visible = state.students;
+  if(manual && q) visible = visible.filter(s=>normalize(s.nome).includes(q));
+  if(!manual) visible = turma ? visible.filter(s=>normalize(s.turma)===normalize(turma)) : [];
+
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = visible.map(s=>`
+    <div class="cardwrap">
+      <label class="cardcheck"><input type="checkbox" class="cardSelectChk" data-id="${s.id}" ${manual ? (state.manualSelectedIds.has(s.id)?'checked':'') : 'checked disabled'}> ${escapeHtml(s.nome)}</label>
+      ${cardMarkup(s, state.config, 'front')}
+    </div>
+  `).join('');
+
+  if(!manual && !turma){
+    grid.innerHTML = '<p style="color:#8b8471;font-size:13.5px;">Escolha uma turma acima para ver os alunos que entrarão na impressão.</p>';
+  }
+
+  updateSelectionInfo();
+}
+
+function bandIcon(layout){
+  if(layout === 'infantil'){
+    return `<svg class="seal" viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="20" r="17" fill="#fff" opacity=".18"/>
+      <path d="M20 6 L23.5 16 H34 L25.5 22.5 L28.5 33 L20 26.5 L11.5 33 L14.5 22.5 L6 16 H16.5 Z" fill="#FFD166"/>
+      <circle cx="16.7" cy="17.6" r="1.5" fill="#4a3400"/>
+      <circle cx="23.3" cy="17.6" r="1.5" fill="#4a3400"/>
+      <path d="M16.3 21c1.5 1.7 6 1.7 7.4 0" stroke="#4a3400" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+    </svg>`;
+  }
+  return `<svg class="seal" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#fff" stroke-width="1.5" opacity=".9"/><path d="M20 10 L22.5 17 H30 L24 21.5 L26 29 L20 24.5 L14 29 L16 21.5 L10 17 H17.5 Z" fill="#fff" opacity=".9"/></svg>`;
+}
+
+function cardMarkup(s, c, side){
+  const style = `--c-primary:${c.corPrimaria||'#1F3D2B'};--c-secondary:${c.corSecundaria||'#B8902E'};`;
+  const layoutClass = 'layout-'+(c.layout||'classico');
+  const watermark = c.logo ? `<div class="watermark" style="background-image:url('${c.logo}')"></div>` : '';
+  const phones = s.telefones||[];
+
+  if(side==='back'){
+    return `<div class="idcard back ${layoutClass}" style="${style}">
+      ${watermark}
+      <div class="backband">
+        <div class="bname">${escapeHtml(c.nomeEscola||'Nome da escola')}</div>
+        <div class="baddr">${escapeHtml(c.enderecoEscola||'')}</div>
+        ${c.telefoneEscola ? `<div class="bphone">${escapeHtml(c.telefoneEscola)}</div>` : ''}
+      </div>
+      <div class="backbody">
+        <div class="name">${escapeHtml(s.nome)}</div>
+        <div class="l"><b>Nasc.:</b> ${escapeHtml(s.dataNascimento||'-')}</div>
+        <div class="l"><b>Pai:</b> ${escapeHtml(s.nomePai||'-')}</div>
+        <div class="l"><b>Mãe:</b> ${escapeHtml(s.nomeMae||'-')}</div>
+        <div class="l"><b>Endereço:</b> ${escapeHtml(s.endereco||'-')}</div>
+        <div class="phones">
+          <div class="phones-label">Contatos</div>
+          ${phones.length ? phones.map(p=>`<div class="phone-item">${escapeHtml(p)}</div>`).join('') : `<div class="phone-item" style="border-left-color:#ccc;color:#999;">-</div>`}
+        </div>
+      </div>
+      <div class="idbottom">${s.numero}</div>
+    </div>`;
+  }
+
+  return `<div class="idcard ${layoutClass}" style="${style}">
+    ${watermark}
+    <div class="band">
+      ${c.logo ? `<img class="bandlogo" src="${c.logo}">` : bandIcon(c.layout)}
+      <div class="school">${escapeHtml(c.nomeEscola||'Nome da escola')}<small>Carteirinha</small></div>
+    </div>
+    <div class="body">
+      <div class="photoblock">
+        ${s.foto ? `<img class="photo" src="${s.foto}">` : `<div class="nophoto">sem foto</div>`}
+      </div>
+      <div class="info">
+        <div class="name">${escapeHtml(s.nome)}</div>
+        <div class="line">Turma: <b>${escapeHtml(s.turma)}</b></div>
+        <div class="line">Nasc.: ${escapeHtml(s.dataNascimento||'-')}</div>
+        <div class="idpill">${s.numero}</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="validade">Válida até: ${escapeHtml(c.validade||'-')}</div>
+      <div class="yearwrap"><div class="yearbadge">Ano letivo ${escapeHtml(c.anoExercicio||state.activeYear)}</div></div>
+      <div class="sig">
+        ${c.assinatura ? `<img src="${c.assinatura}">` : ''}
+        <div class="sigline">${escapeHtml(c.gestor||'Direção Escolar')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function printSelectedCards(){
+  const manual = isManualMode();
+  let ids;
+  if(manual){
+    ids = Array.from(state.manualSelectedIds).filter(id=> state.students.some(s=>s.id===id));
+  }else{
+    const turma = document.getElementById('turmaSelect').value;
+    if(!turma){ alert('Selecione uma turma para imprimir.'); return; }
+    ids = state.students.filter(s=>normalize(s.turma)===normalize(turma)).map(s=>s.id);
+  }
+  if(!ids.length){ alert('Selecione ao menos um aluno.'); return; }
+
+  const printarea = document.getElementById('printarea');
+  printarea.innerHTML = ids.map(id=>{
+    const s = state.students.find(x=>x.id===id);
+    if(!s) return '';
+    return `<div class="printrow">
+      <div class="printcell">${cardMarkup(s, state.config, 'front')}</div>
+      <div class="printcell">${cardMarkup(s, state.config, 'back')}</div>
+    </div>`;
+  }).join('');
+
+  setTimeout(()=>{ window.print(); }, 150);
+}
+</script>
+</body>
+</html>
