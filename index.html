@@ -222,6 +222,7 @@
   .helpbox{background:var(--sage);border-left:3px solid var(--gold);padding:10px 14px;border-radius:4px;font-size:12.5px;color:#4d4a3f;margin-bottom:16px;}
 
   @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
     body *{visibility:hidden;}
     #printarea, #printarea *{visibility:visible;}
     #printarea{position:absolute;top:0;left:0;width:190mm;}
