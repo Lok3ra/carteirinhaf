@@ -201,17 +201,17 @@
   .idcard.back .backband .baddr{font-size:7px;opacity:.9;margin-top:1px;}
   .idcard.back .backband .bphone{font-size:7px;opacity:.9;margin-top:1px;font-weight:600;}
 
-  .idcard.back .backbody{flex:1;min-height:0;display:flex;flex-direction:column;padding:.2cm .32cm;overflow:hidden;}
-  .idcard.back .backbody .name{font-family:'Fraunces',serif;font-weight:600;font-size:11.5px;color:var(--c-primary,#1F3D2B);margin-bottom:4px;}
-  .idcard.back .backbody .l{font-size:8.6px;line-height:1.4;color:#3d3a30;}
+  .idcard.back .backbody{flex:1;min-height:0;display:block;padding:.18cm .32cm;overflow:hidden;}
+  .idcard.back .backbody .name{font-family:'Fraunces',serif;font-weight:600;font-size:11px;color:var(--c-primary,#1F3D2B);margin-bottom:3px;}
+  .idcard.back .backbody .l{font-size:8.2px;line-height:1.3;color:#3d3a30;}
   .idcard.back .backbody .l b{color:var(--c-primary,#1F3D2B);}
 
-  .idcard.back .phones{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:4px;margin-top:5px;}
-  .idcard.back .phones-label{font-size:7.5px;text-transform:uppercase;letter-spacing:.06em;color:#8b8471;font-weight:700;}
+  .idcard.back .phones{display:block;margin-top:4px;}
+  .idcard.back .phones-label{font-size:7px;text-transform:uppercase;letter-spacing:.06em;color:#8b8471;font-weight:700;margin-bottom:2px;}
   .idcard.back .phone-item{
-    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:10px;line-height:1.3;
     color:var(--c-primary,#1F3D2B);border-left:3px solid var(--c-secondary,#B8902E);
-    padding:1px 0 1px 8px;
+    padding:0 0 0 7px;margin-bottom:2px;
   }
 
   .idcard.back .backfooter{flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between;gap:.15cm;padding:0 .32cm .22cm;}
@@ -1435,7 +1435,10 @@ function renderCardsTab(){
   grid.innerHTML = visible.map(s=>`
     <div class="cardwrap">
       <label class="cardcheck"><input type="checkbox" class="cardSelectChk" data-id="${s.id}" ${manual ? (state.manualSelectedIds.has(s.id)?'checked':'') : 'checked disabled'}> ${escapeHtml(s.nome)}</label>
-      ${cardMarkup(s, state.config, 'front')}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        ${cardMarkup(s, state.config, 'front')}
+        ${cardMarkup(s, state.config, 'back')}
+      </div>
     </div>
   `).join('');
 
