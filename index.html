@@ -115,7 +115,7 @@
     font-family:'Work Sans',sans-serif;color:var(--c-text,#1E2A22);
     border:1px solid rgba(0,0,0,.08);
   }
-  .idcard .watermark{position:absolute;inset:0;background-repeat:no-repeat;background-position:center 55%;background-size:58% auto;opacity:.09;pointer-events:none;}
+  .idcard .watermark{position:absolute;inset:0;background-repeat:no-repeat;background-position:center 55%;background-size:58% auto;pointer-events:none;}
 
   /* header band: centered school name + "Carteirinha" */
   .idcard .band{
@@ -124,14 +124,14 @@
     display:flex;align-items:center;justify-content:center;text-align:center;
     padding:.14cm .34cm;gap:.16cm;
   }
-  .idcard .band .school{color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:12px;line-height:1.2;}
+  .idcard .band .school{color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:14.5px;line-height:1.2;}
   .idcard .band .school small{display:block;font-family:'Work Sans',sans-serif;font-weight:500;font-size:8px;opacity:.9;text-transform:uppercase;letter-spacing:.06em;margin-top:1px;}
   .idcard .seal{width:.6cm;height:.6cm;flex-shrink:0;}
   .idcard .bandlogo{width:.6cm;height:.6cm;flex-shrink:0;object-fit:contain;border-radius:3px;background:rgba(255,255,255,.9);padding:1px;}
 
   /* body: photo + info, stretches to fill all remaining vertical space */
   .idcard .body{flex:1;min-height:0;display:flex;align-items:stretch;gap:.3cm;padding:.15cm .3cm;overflow:hidden;}
-  .idcard .photoblock{flex-shrink:0;width:2.9cm;}
+  .idcard .photoblock{flex-shrink:0;width:3.3cm;}
   .idcard .photo,.idcard .nophoto{display:block;width:100%;height:100%;border-radius:7px;object-fit:cover;border:3px solid var(--c-secondary,#B8902E);background:#eee;}
   .idcard .nophoto{border:1.5px dashed #bbb;background:#f2f2ee;display:flex;align-items:center;justify-content:center;font-size:8px;color:#999;text-align:center;}
 
@@ -146,9 +146,9 @@
   }
 
   /* footer: validade (left) — ano letivo (center) — assinatura (right) */
-  .idcard .footer{flex-shrink:0;display:flex;align-items:flex-end;gap:.15cm;padding:0 .3cm .22cm;}
-  .idcard .validade{flex:0 0 auto;font-size:7px;color:#63604f;}
-  .idcard .yearwrap{flex:1;display:flex;justify-content:center;min-width:0;}
+  .idcard .footer{flex-shrink:0;position:relative;min-height:.5cm;padding:0 .3cm .22cm;}
+  .idcard .validade{font-size:7px;color:#63604f;}
+  .idcard .yearwrap{position:absolute;left:50%;bottom:.22cm;transform:translateX(-50%);}
   .idcard .yearbadge{
     background:var(--c-primary,#1F3D2B);color:#fff;
     font-weight:700;font-size:9.5px;letter-spacing:.03em;white-space:nowrap;
@@ -176,9 +176,9 @@
     border-bottom-left-radius:60% 20px;
     border-bottom-right-radius:60% 20px;
   }
-  .idcard.layout-infantil .band .school{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12.5px;}
+  .idcard.layout-infantil .band .school{font-family:'Fredoka',sans-serif;font-weight:600;font-size:15.5px;}
   .idcard.layout-infantil .band .school small{font-family:'Work Sans',sans-serif;}
-  .idcard.layout-infantil .photoblock{width:2.9cm;}
+  .idcard.layout-infantil .photoblock{width:3.3cm;}
   .idcard.layout-infantil .photo,.idcard.layout-infantil .nophoto{border-radius:14px;border-width:4px;}
   .idcard.layout-infantil .info .name{font-family:'Fredoka',sans-serif;font-weight:600;font-size:17.5px;}
   .idcard.layout-infantil .info .idpill{
@@ -214,7 +214,8 @@
     padding:1px 0 1px 8px;
   }
 
-  .idcard.back .idbottom{flex-shrink:0;padding:0 .32cm .22cm;font-family:'JetBrains Mono',monospace;font-size:9px;color:#63604f;}
+  .idcard.back .backfooter{flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between;gap:.15cm;padding:0 .32cm .22cm;}
+  .idcard.back .idbottom{font-family:'JetBrains Mono',monospace;font-size:9px;color:#63604f;}
 
   .idcard.layout-infantil.back .backband{border-bottom-left-radius:60% 14px;border-bottom-right-radius:60% 14px;}
   .idcard.layout-infantil.back .backband .bname{font-family:'Fredoka',sans-serif;}
@@ -347,6 +348,10 @@
             <button class="btn outline small" id="removeLogoBtn" style="margin-left:6px;">Remover</button>
             <div id="logoStatus" style="font-size:12.5px;color:#6b6355;margin-top:6px;"></div>
           </div>
+        </div>
+        <div class="field" style="max-width:340px;margin-top:14px;margin-bottom:0;">
+          <label>Transparência da marca d'água (<span id="logoOpacityValue">9%</span>)</label>
+          <input type="range" id="cfgLogoOpacity" min="2" max="40" step="1" style="width:100%;">
         </div>
       </div>
 
@@ -1238,7 +1243,7 @@ async function loadConfig(){
   }catch(e){
     state.config = {
       ano: state.activeYear, nomeEscola:'', anoExercicio:String(state.activeYear), validade:'',
-      gestor:'', enderecoEscola:'', telefoneEscola:'', logo:null, capacidadeMaxima:400,
+      gestor:'', enderecoEscola:'', telefoneEscola:'', logo:null, logoOpacity:9, capacidadeMaxima:400,
       layout:'infantil', corPrimaria:'#4FB6E8', corSecundaria:'#FFD166'
     };
   }
@@ -1253,6 +1258,9 @@ function renderConfigForm(){
   document.getElementById('cfgEnderecoEscola').value = c.enderecoEscola||'';
   document.getElementById('cfgTelefoneEscola').value = c.telefoneEscola||'';
   document.getElementById('cfgCapacidade').value = c.capacidadeMaxima || 400;
+  const opacityVal = (c.logoOpacity != null ? c.logoOpacity : 9);
+  document.getElementById('cfgLogoOpacity').value = opacityVal;
+  document.getElementById('logoOpacityValue').textContent = opacityVal + '%';
   document.getElementById('cfgLayout').value = c.layout||'classico';
   document.getElementById('cfgCorPrimaria').value = c.corPrimaria||'#1F3D2B';
   document.getElementById('cfgCorSecundaria').value = c.corSecundaria||'#B8902E';
@@ -1275,6 +1283,9 @@ function renderConfigForm(){
 function bindConfigTab(){
   document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
   document.getElementById('logoFileInput').addEventListener('change', handleLogoFileImport);
+  document.getElementById('cfgLogoOpacity').addEventListener('input', (e)=>{
+    document.getElementById('logoOpacityValue').textContent = e.target.value + '%';
+  });
   document.getElementById('removeLogoBtn').addEventListener('click', ()=>{
     pendingLogo = null;
     document.getElementById('logoPreview').removeAttribute('src');
@@ -1336,6 +1347,7 @@ async function saveConfig(){
   c.enderecoEscola = document.getElementById('cfgEnderecoEscola').value.trim();
   c.telefoneEscola = document.getElementById('cfgTelefoneEscola').value.trim();
   c.capacidadeMaxima = Math.max(1, parseInt(document.getElementById('cfgCapacidade').value, 10) || 400);
+  c.logoOpacity = parseInt(document.getElementById('cfgLogoOpacity').value, 10) || 9;
   c.layout = document.getElementById('cfgLayout').value;
   c.corPrimaria = document.getElementById('cfgCorPrimaria').value;
   c.corSecundaria = document.getElementById('cfgCorSecundaria').value;
@@ -1450,7 +1462,8 @@ function bandIcon(layout){
 function cardMarkup(s, c, side){
   const style = `--c-primary:${c.corPrimaria||'#1F3D2B'};--c-secondary:${c.corSecundaria||'#B8902E'};`;
   const layoutClass = 'layout-'+(c.layout||'classico');
-  const watermark = c.logo ? `<div class="watermark" style="background-image:url('${c.logo}')"></div>` : '';
+  const watermarkOpacity = ((c.logoOpacity != null ? c.logoOpacity : 9) / 100);
+  const watermark = c.logo ? `<div class="watermark" style="background-image:url('${c.logo}');opacity:${watermarkOpacity}"></div>` : '';
   const phones = s.telefones||[];
 
   if(side==='back'){
@@ -1472,7 +1485,13 @@ function cardMarkup(s, c, side){
           ${phones.length ? phones.map(p=>`<div class="phone-item">${escapeHtml(p)}</div>`).join('') : `<div class="phone-item" style="border-left-color:#ccc;color:#999;">-</div>`}
         </div>
       </div>
-      <div class="idbottom">${s.numero}</div>
+      <div class="backfooter">
+        <div class="idbottom">${s.numero}</div>
+        <div class="sig">
+          <div class="sigspace"></div>
+          <div class="sigline">${escapeHtml(c.gestor||'Direção Escolar')}</div>
+        </div>
+      </div>
     </div>`;
   }
 
@@ -1496,10 +1515,6 @@ function cardMarkup(s, c, side){
     <div class="footer">
       <div class="validade">Válida até: ${escapeHtml(c.validade||'-')}</div>
       <div class="yearwrap"><div class="yearbadge">Ano letivo ${escapeHtml(c.anoExercicio||state.activeYear)}</div></div>
-      <div class="sig">
-        <div class="sigspace"></div>
-        <div class="sigline">${escapeHtml(c.gestor||'Direção Escolar')}</div>
-      </div>
     </div>
   </div>`;
 }
