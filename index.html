@@ -108,7 +108,7 @@
   .cardcheck{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#5b5546;}
 
   .idcard{
-    width:9cm;height:6cm;border-radius:10px;overflow:hidden;position:relative;z-index:0;
+    width:9cm;height:6cm;border-radius:0;overflow:hidden;position:relative;z-index:0;
     display:flex;flex-direction:column;
     box-shadow:0 3px 10px rgba(0,0,0,.18);
     background:var(--c-bg,#fff);
@@ -165,7 +165,7 @@
 
   /* ---- layout: infantil (educação infantil) ---- */
   .idcard.layout-infantil{
-    border-radius:20px;
+    border-radius:0;
     background-image:
       radial-gradient(circle at 93% 90%, rgba(255,255,255,.4) 0 6px, transparent 7px),
       radial-gradient(circle at 86% 80%, rgba(255,255,255,.28) 0 4px, transparent 5px),
@@ -1479,9 +1479,9 @@ function cardMarkup(s, c, side){
       </div>
       <div class="backbody">
         <div class="name">${escapeHtml(s.nome)}</div>
-        <div class="l"><b>Nasc.:</b> ${escapeHtml(s.dataNascimento||'-')}</div>
-        <div class="l"><b>Pai:</b> ${escapeHtml(s.nomePai||'-')}</div>
-        <div class="l"><b>Mãe:</b> ${escapeHtml(s.nomeMae||'-')}</div>
+        <div class="l"><b>Responsável:</b></div>
+        <div class="l">${escapeHtml(s.nomePai||'-')}</div>
+        <div class="l">${escapeHtml(s.nomeMae||'-')}</div>
         <div class="l"><b>Endereço:</b> ${escapeHtml(s.endereco||'-')}</div>
         <div class="phones">
           <div class="phones-label">Contatos</div>
