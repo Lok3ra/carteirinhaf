@@ -155,7 +155,7 @@
     padding:3px 10px;border-radius:4px;
   }
   .idcard .sig{width:2.5cm;text-align:center;}
-  .idcard .sig img{max-width:100%;max-height:.8cm;object-fit:contain;}
+  .idcard .sig .sigspace{height:.75cm;}
   .idcard .sig .sigline{border-top:1px solid #7a7566;margin-top:2px;padding-top:2px;font-size:6.5px;color:#7a7566;}
 
   .idcard.layout-moderno .band{clip-path:polygon(0 0,100% 0,100% 80%,0 100%);padding-bottom:.28cm;}
@@ -219,9 +219,6 @@
   .idcard.layout-infantil.back .backband{border-bottom-left-radius:60% 14px;border-bottom-right-radius:60% 14px;}
   .idcard.layout-infantil.back .backband .bname{font-family:'Fredoka',sans-serif;}
 
-  .sigpad-wrap{border:1.5px dashed var(--line);border-radius:6px;background:#fdfcf8;}
-  #sigpad{width:100%;height:130px;display:block;cursor:crosshair;touch-action:none;}
-
   .helpbox{background:var(--sage);border-left:3px solid var(--gold);padding:10px 14px;border-radius:4px;font-size:12.5px;color:#4d4a3f;margin-bottom:16px;}
 
   @media print{
@@ -230,7 +227,6 @@
     #printarea{position:absolute;top:0;left:0;width:190mm;}
     .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
     .printrow .idcard{box-shadow:none;}
-    .printrow .printcell:last-child .idcard{transform:scaleX(-1);}
     @page{size:A4;margin:10mm;}
   }
   @media screen{ #printarea{ display:none; } }
@@ -328,7 +324,7 @@
           <div class="field"><label>Ano de exercício</label><input type="text" id="cfgAnoExercicio" placeholder="Ex: 2026"></div>
         </div>
         <div class="row">
-          <div class="field"><label>Validade da carteirinha</label><input type="text" id="cfgValidade" placeholder="Ex: 31/12/2026"></div>
+          <div class="field"><label>Validade da carteirinha</label><input type="text" id="cfgValidade" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric"></div>
           <div class="field"><label>Nome do responsável (gestão)</label><input type="text" id="cfgGestor" placeholder="Ex: Direção Escolar"></div>
         </div>
         <div class="field"><label>Endereço da escola</label><input type="text" id="cfgEnderecoEscola" placeholder="Ex: Rua das Flores, 123 - Centro - Cidade/UF"></div>
@@ -372,15 +368,7 @@
 
       <div class="card-block">
         <h3>Assinatura da gestão escolar</h3>
-        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">Desenhe a assinatura abaixo ou importe uma imagem já digitalizada. Ela será aplicada a todas as carteirinhas deste ano.</p>
-        <div class="sigpad-wrap"><canvas id="sigpad"></canvas></div>
-        <div class="row" style="margin-top:10px;align-items:center;">
-          <button class="btn outline small" id="clearSigBtn">Limpar assinatura</button>
-          <label class="btn outline small" style="cursor:pointer;">Importar imagem
-            <input type="file" id="sigFileInput" accept="image/*" style="display:none;">
-          </label>
-          <span id="sigStatus" style="font-size:12.5px;color:#6b6355;"></span>
-        </div>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">A carteirinha impressa sai com um espaço em branco reservado, junto ao nome informado em "Nome do responsável (gestão)" acima, para ser assinado à caneta depois de impressa.</p>
       </div>
 
       <button class="btn gold" id="saveConfigBtn">Salvar configuração de <span id="saveYearLabel"></span></button>
@@ -411,7 +399,7 @@
         <button class="btn" id="printBtn">Imprimir (folha A4)</button>
       </div>
 
-      <div class="helpbox">O verso de cada carteirinha sai espelhado de propósito no papel — é assim que, ao dobrar a folha ao meio, o texto do verso fica na posição correta por trás da frente.</div>
+      <div class="helpbox">Frente e verso saem lado a lado, sempre na leitura normal (da esquerda para a direita) — basta dobrar a folha ao meio, exatamente na linha entre as duas, para formar a carteirinha.</div>
 
       <h3 id="cardsGridTitle" style="font-size:14px;color:var(--forest-dark);margin:0 0 12px;">Alunos disponíveis</h3>
       <div class="cardgrid" id="cardsGrid"></div>
@@ -633,8 +621,8 @@ async function init(){
   bindConfigTab();
   bindCardsTab();
   bindModals();
-  setupSignaturePad();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
+  document.getElementById('cfgValidade').addEventListener('input', maskDateInput);
 
   await loadEverythingForActiveYear();
 }
@@ -1250,7 +1238,7 @@ async function loadConfig(){
     state.config = {
       ano: state.activeYear, nomeEscola:'', anoExercicio:String(state.activeYear), validade:'',
       gestor:'', enderecoEscola:'', telefoneEscola:'', logo:null, capacidadeMaxima:400,
-      layout:'infantil', corPrimaria:'#4FB6E8', corSecundaria:'#FFD166', assinatura:null
+      layout:'infantil', corPrimaria:'#4FB6E8', corSecundaria:'#FFD166'
     };
   }
 }
@@ -1267,8 +1255,6 @@ function renderConfigForm(){
   document.getElementById('cfgLayout').value = c.layout||'classico';
   document.getElementById('cfgCorPrimaria').value = c.corPrimaria||'#1F3D2B';
   document.getElementById('cfgCorSecundaria').value = c.corSecundaria||'#B8902E';
-  loadSignatureIntoPad(c.assinatura);
-  document.getElementById('sigStatus').textContent = c.assinatura ? 'Assinatura salva.' : 'Nenhuma assinatura definida ainda.';
 
   pendingLogo = undefined;
   const logoPreview = document.getElementById('logoPreview');
@@ -1287,7 +1273,6 @@ function renderConfigForm(){
 
 function bindConfigTab(){
   document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
-  document.getElementById('sigFileInput').addEventListener('change', handleSigFileImport);
   document.getElementById('logoFileInput').addEventListener('change', handleLogoFileImport);
   document.getElementById('removeLogoBtn').addEventListener('click', ()=>{
     pendingLogo = null;
@@ -1327,10 +1312,25 @@ function handleLogoFileImport(e){
 
 async function saveConfig(){
   const c = state.config;
+  const validadeInput = document.getElementById('cfgValidade').value.trim();
+
+  if(validadeInput){
+    const m = validadeInput.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(!m){
+      alert('A validade precisa estar no formato dd/mm/aaaa.');
+      return;
+    }
+    const validadeAno = parseInt(m[3], 10);
+    if(validadeAno !== state.activeYear){
+      alert('A validade da carteirinha não pode ter um ano diferente do ano letivo. Como o ano ativo é ' + state.activeYear + ', a validade também precisa ser em ' + state.activeYear + ' (ex: 31/12/' + state.activeYear + ').');
+      return;
+    }
+  }
+
   c.ano = state.activeYear;
   c.nomeEscola = document.getElementById('cfgNomeEscola').value.trim();
   c.anoExercicio = document.getElementById('cfgAnoExercicio').value.trim();
-  c.validade = document.getElementById('cfgValidade').value.trim();
+  c.validade = validadeInput;
   c.gestor = document.getElementById('cfgGestor').value.trim();
   c.enderecoEscola = document.getElementById('cfgEnderecoEscola').value.trim();
   c.telefoneEscola = document.getElementById('cfgTelefoneEscola').value.trim();
@@ -1338,7 +1338,6 @@ async function saveConfig(){
   c.layout = document.getElementById('cfgLayout').value;
   c.corPrimaria = document.getElementById('cfgCorPrimaria').value;
   c.corSecundaria = document.getElementById('cfgCorSecundaria').value;
-  c.assinatura = getSignatureDataUrl();
   if(pendingLogo !== undefined) c.logo = pendingLogo;
 
   try{
@@ -1352,72 +1351,6 @@ async function saveConfig(){
     alert('Erro ao salvar configuração.');
     console.error(e);
   }
-}
-
-/* ---- signature pad ---- */
-let sigCtx, sigDrawing=false, sigHasContent=false;
-function setupSignaturePad(){
-  const canvas = document.getElementById('sigpad');
-  canvas.width = canvas.offsetWidth * 2;
-  canvas.height = canvas.offsetHeight * 2;
-  sigCtx = canvas.getContext('2d');
-  sigCtx.scale(2,2);
-  sigCtx.lineWidth = 2;
-  sigCtx.lineCap = 'round';
-  sigCtx.strokeStyle = '#1E2A22';
-
-  const pos = (e)=>{
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {x: clientX-rect.left, y: clientY-rect.top};
-  };
-  const start = (e)=>{ sigDrawing=true; const p=pos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); e.preventDefault(); };
-  const move = (e)=>{ if(!sigDrawing) return; const p=pos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigHasContent=true; e.preventDefault(); };
-  const end = ()=>{ sigDrawing=false; };
-
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  window.addEventListener('mouseup', end);
-  canvas.addEventListener('touchstart', start);
-  canvas.addEventListener('touchmove', move);
-  canvas.addEventListener('touchend', end);
-
-  document.getElementById('clearSigBtn').addEventListener('click', ()=>{
-    sigCtx.clearRect(0,0,canvas.width,canvas.height);
-    sigHasContent = false;
-    document.getElementById('sigStatus').textContent = 'Assinatura removida (salve para confirmar).';
-  });
-}
-
-function loadSignatureIntoPad(dataUrl){
-  const canvas = document.getElementById('sigpad');
-  sigCtx.clearRect(0,0,canvas.width,canvas.height);
-  sigHasContent = false;
-  if(dataUrl){
-    const img = new Image();
-    img.onload = ()=>{ sigCtx.drawImage(img,0,0,canvas.offsetWidth,canvas.offsetHeight); sigHasContent = true; };
-    img.src = dataUrl;
-  }
-}
-
-function getSignatureDataUrl(){
-  const canvas = document.getElementById('sigpad');
-  if(!sigHasContent) return state.config.assinatura || null;
-  return canvas.toDataURL('image/png');
-}
-
-function handleSigFileImport(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev)=>{
-    resizeImagePNG(ev.target.result, 400, 150, (resized)=>{
-      loadSignatureIntoPad(resized);
-      document.getElementById('sigStatus').textContent = 'Imagem importada (salve para confirmar).';
-    });
-  };
-  reader.readAsDataURL(file);
 }
 
 /* =========================================================================
@@ -1563,7 +1496,7 @@ function cardMarkup(s, c, side){
       <div class="validade">Válida até: ${escapeHtml(c.validade||'-')}</div>
       <div class="yearwrap"><div class="yearbadge">Ano letivo ${escapeHtml(c.anoExercicio||state.activeYear)}</div></div>
       <div class="sig">
-        ${c.assinatura ? `<img src="${c.assinatura}">` : ''}
+        <div class="sigspace"></div>
         <div class="sigline">${escapeHtml(c.gestor||'Direção Escolar')}</div>
       </div>
     </div>
