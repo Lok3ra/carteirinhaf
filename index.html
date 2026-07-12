@@ -33,6 +33,7 @@
   .brand h1{font-size:17px;line-height:1.25;margin:0;color:var(--white);font-weight:600;}
   .brand p{margin:4px 0 0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-light);opacity:.8;}
 
+  .navgroup{padding:16px 22px 6px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);opacity:.85;}
   .navitem{display:flex;align-items:center;gap:10px;padding:12px 22px;cursor:pointer;font-size:14px;font-weight:500;color:var(--gold-light);opacity:.75;border-left:3px solid transparent;transition:all .15s;}
   .navitem:hover{opacity:1;background:rgba(255,255,255,.04);}
   .navitem.active{opacity:1;border-left-color:var(--gold);background:rgba(255,255,255,.07);color:var(--white);}
@@ -214,7 +215,7 @@
     padding:0 0 0 7px;margin-bottom:2px;
   }
 
-  .idcard.back .backfooter{flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between;gap:.15cm;padding:0 .32cm .22cm;}
+  .idcard.back .backfooter{flex-shrink:0;position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:.15cm;padding:0 .32cm .22cm;}
   .idcard.back .idbottom{font-family:'JetBrains Mono',monospace;font-size:9px;color:#63604f;}
 
   .idcard.layout-infantil.back .backband{border-bottom-left-radius:60% 14px;border-bottom-right-radius:60% 14px;}
@@ -230,8 +231,20 @@
     .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
     .printrow .idcard{box-shadow:none;}
     @page{size:A4;margin:10mm;}
+    @page ponto{size:A4 landscape;margin:10mm;}
+    .pontoprint{page:ponto;width:277mm;}
   }
   @media screen{ #printarea{ display:none; } }
+
+  /* ---- Folha de Ponto ---- */
+  .pontosheet-header{margin-bottom:12px;}
+  .pontosheet-escola{font-family:'Fraunces',serif;font-weight:600;font-size:15px;color:var(--forest-dark);}
+  .pontosheet-titulo{font-size:12.5px;color:#5b5546;margin-top:2px;}
+  .pontotable{width:100%;border-collapse:collapse;font-size:9px;}
+  .pontotable th, .pontotable td{border:1px solid #999;padding:3px 4px;text-align:center;min-width:16px;}
+  .pontotable th.ponto-nome, .pontotable td.ponto-nome{text-align:left;min-width:150px;white-space:nowrap;}
+  .pontotable thead th{background:var(--sage);color:var(--forest-dark);font-weight:700;}
+  .pontosheet-legenda{margin-top:10px;font-size:10.5px;color:#5b5546;}
 </style>
 </head>
 <body>
@@ -240,13 +253,18 @@
   <div class="sidebar">
     <div class="brand">
       <svg class="seal" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#E7D9AF" stroke-width="1.5"/><circle cx="20" cy="20" r="12" stroke="#E7D9AF" stroke-width="1"/><path d="M20 10 L22.5 17 H30 L24 21.5 L26 29 L20 24.5 L14 29 L16 21.5 L10 17 H17.5 Z" fill="#E7D9AF"/></svg>
-      <h1>Carteirinhas Escolares</h1>
+      <h1>Gestão Escolar</h1>
       <p>Registro & emissão</p>
     </div>
+
+    <div class="navgroup">Carteirinhas Escolares</div>
     <div class="navitem active" data-tab="importar"><span class="idx">01</span> Importar dados</div>
     <div class="navitem" data-tab="alunos"><span class="idx">02</span> Alunos</div>
     <div class="navitem" data-tab="config"><span class="idx">03</span> Configurações</div>
     <div class="navitem" data-tab="carteirinhas"><span class="idx">04</span> Carteirinhas</div>
+
+    <div class="navgroup">Folha de Ponto</div>
+    <div class="navitem" data-tab="ponto"><span class="idx">05</span> Registro de Presença</div>
 
     <div class="yearbox">
       <label>Ano ativo (numeração e layout)</label>
@@ -405,11 +423,48 @@
         <button class="btn" id="printBtn">Imprimir (folha A4)</button>
       </div>
 
+      <div class="row" style="align-items:center;margin-bottom:14px;">
+        <label style="font-size:13px;"><input type="checkbox" id="onlyWithPhotoChk"> Mostrar apenas alunos com foto</label>
+        <span style="font-size:12px;color:#8b8471;">(afeta só a lista abaixo; ao imprimir uma turma inteira, todos os alunos dela entram, com ou sem foto)</span>
+      </div>
+
       <div class="helpbox">Frente e verso saem lado a lado, sempre na leitura normal (da esquerda para a direita) — basta dobrar a folha ao meio, exatamente na linha entre as duas, para formar a carteirinha.</div>
 
       <h3 id="cardsGridTitle" style="font-size:14px;color:var(--forest-dark);margin:0 0 12px;">Alunos disponíveis</h3>
       <div class="cardgrid" id="cardsGrid"></div>
       <div class="empty" id="cardsEmpty" style="display:none;">Nenhum aluno cadastrado para este ano ainda.</div>
+    </div>
+
+    <!-- ===================== TAB: FOLHA DE PONTO ===================== -->
+    <div class="panel" id="panel-ponto">
+      <div class="pagehead">
+        <h2>Folha de ponto — <span id="pontoYearLabel"></span></h2>
+        <p>Gere uma grade mensal por turma para controle de presença, marcada à mão após a impressão.</p>
+      </div>
+
+      <div class="card-block">
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:220px;"><label>Turma</label><select id="pontoTurmaSelect"></select></div>
+          <div class="field" style="max-width:180px;"><label>Mês</label>
+            <select id="pontoMesSelect">
+              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
+              <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
+              <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
+              <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+            </select>
+          </div>
+          <div class="field" style="max-width:120px;"><label>Ano</label><input type="number" id="pontoAnoInput" step="1"></div>
+          <button class="btn" id="gerarPontoBtn">Gerar folha</button>
+          <button class="btn outline" id="printPontoBtn" disabled>Imprimir (folha A4)</button>
+        </div>
+      </div>
+
+      <div class="helpbox">A folha sai em orientação paisagem para caber os dias do mês, com uma coluna por dia para marcar "P" (presente) ou "F" (falta) à caneta.</div>
+
+      <div class="card-block" id="pontoPreviewBlock" style="display:none;overflow-x:auto;">
+        <div id="pontoPreviewArea"></div>
+      </div>
+      <div class="empty" id="pontoEmpty">Escolha uma turma, o mês e o ano, depois clique em "Gerar folha".</div>
     </div>
 
   </div>
@@ -427,10 +482,10 @@
       <div class="field"><label>Turma</label><input type="text" id="stuTurma" placeholder="Ex: 3F"></div>
     </div>
     <div class="row">
-      <div class="field"><label>Nome do pai</label><input type="text" id="stuPai"></div>
-      <div class="field"><label>Nome da mãe</label><input type="text" id="stuMae"></div>
+      <div class="field"><label>Nome do pai</label><input type="text" id="stuPai" style="text-transform:uppercase;"></div>
+      <div class="field"><label>Nome da mãe</label><input type="text" id="stuMae" style="text-transform:uppercase;"></div>
     </div>
-    <div class="field"><label>Endereço</label><input type="text" id="stuEndereco"></div>
+    <div class="field"><label>Endereço</label><input type="text" id="stuEndereco" style="text-transform:uppercase;"></div>
     <div class="row">
       <div class="field"><label>Telefone 1</label><input type="text" id="stuTel1"></div>
       <div class="field"><label>Telefone 2</label><input type="text" id="stuTel2"></div>
@@ -626,6 +681,7 @@ async function init(){
   bindStudentsTab();
   bindConfigTab();
   bindCardsTab();
+  bindPontoTab();
   bindModals();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
   document.getElementById('cfgValidade').addEventListener('input', maskDateInput);
@@ -665,11 +721,12 @@ async function loadEverythingForActiveYear(){
   renderConfigForm();
   renderStudentsTable();
   renderCardsTab();
+  renderPontoTab();
 }
 
 function updateYearLabels(){
   const y = state.activeYear;
-  ['alunosYearLabel','configYearLabel','cartYearLabel'].forEach(id=>{
+  ['alunosYearLabel','configYearLabel','cartYearLabel','pontoYearLabel'].forEach(id=>{
     document.getElementById(id).textContent = y;
   });
   document.getElementById('confirmYearLabel').textContent = y;
@@ -687,6 +744,7 @@ function bindNav(){
       item.classList.add('active');
       document.getElementById('panel-'+item.dataset.tab).classList.add('active');
       if(item.dataset.tab==='carteirinhas') renderCardsTab();
+      if(item.dataset.tab==='ponto') renderPontoTab();
     });
   });
 }
@@ -782,10 +840,10 @@ function processImportedRows(rows){
     return {
       nome: extractField(row, FIELD_PATTERNS.nome),
       dataNascimento: formatDateBR(extractRawField(row, FIELD_PATTERNS.dataNascimento)),
-      nomePai: extractField(row, FIELD_PATTERNS.nomePai),
-      nomeMae: extractField(row, FIELD_PATTERNS.nomeMae),
+      nomePai: extractField(row, FIELD_PATTERNS.nomePai).toUpperCase(),
+      nomeMae: extractField(row, FIELD_PATTERNS.nomeMae).toUpperCase(),
       turma: extractField(row, FIELD_PATTERNS.turma),
-      endereco: extractField(row, FIELD_PATTERNS.endereco),
+      endereco: extractField(row, FIELD_PATTERNS.endereco).toUpperCase(),
       telefones: extractPhones(row),
       numero: extractField(row, FIELD_PATTERNS.numero),
       foto: rawFoto && rawFoto.startsWith('data:image') ? rawFoto : null
@@ -965,9 +1023,9 @@ async function saveStudentFromModal(){
   if(id){
     const s = state.students.find(x=>x.id===id);
     s.nome = nome; s.dataNascimento=document.getElementById('stuNasc').value.trim();
-    s.turma = turma; s.nomePai=document.getElementById('stuPai').value.trim();
-    s.nomeMae=document.getElementById('stuMae').value.trim();
-    s.endereco=document.getElementById('stuEndereco').value.trim();
+    s.turma = turma; s.nomePai=document.getElementById('stuPai').value.trim().toUpperCase();
+    s.nomeMae=document.getElementById('stuMae').value.trim().toUpperCase();
+    s.endereco=document.getElementById('stuEndereco').value.trim().toUpperCase();
     s.telefones = telefones;
     await window.storage.set('aluno:'+id, JSON.stringify(s));
   }else{
@@ -980,9 +1038,9 @@ async function saveStudentFromModal(){
     const s = {
       id:newId, ano:state.activeYear, numero, nome,
       dataNascimento:document.getElementById('stuNasc').value.trim(),
-      turma, nomePai:document.getElementById('stuPai').value.trim(),
-      nomeMae:document.getElementById('stuMae').value.trim(),
-      endereco:document.getElementById('stuEndereco').value.trim(),
+      turma, nomePai:document.getElementById('stuPai').value.trim().toUpperCase(),
+      nomeMae:document.getElementById('stuMae').value.trim().toUpperCase(),
+      endereco:document.getElementById('stuEndereco').value.trim().toUpperCase(),
       telefones, foto:null
     };
     await window.storage.set('aluno:'+newId, JSON.stringify(s));
@@ -1376,6 +1434,7 @@ function bindCardsTab(){
   document.getElementById('modeManualRadio').addEventListener('change', onPrintModeChange);
   document.getElementById('turmaSelect').addEventListener('change', renderCardsTab);
   document.getElementById('searchCartAlunos').addEventListener('input', renderCardsTab);
+  document.getElementById('onlyWithPhotoChk').addEventListener('change', renderCardsTab);
   document.getElementById('printBtn').addEventListener('click', printSelectedCards);
   document.getElementById('cardsGrid').addEventListener('change', (e)=>{
     if(!e.target.classList.contains('cardSelectChk') || !isManualMode()) return;
@@ -1427,9 +1486,11 @@ function renderCardsTab(){
 
   const q = manual ? normalize(document.getElementById('searchCartAlunos').value) : '';
   const turma = !manual ? turmaSelect.value : '';
+  const onlyWithPhoto = document.getElementById('onlyWithPhotoChk').checked;
   let visible = state.students;
   if(manual && q) visible = visible.filter(s=>normalize(s.nome).includes(q));
   if(!manual) visible = turma ? visible.filter(s=>normalize(s.turma)===normalize(turma)) : [];
+  if(onlyWithPhoto) visible = visible.filter(s=>!!s.foto);
 
   const grid = document.getElementById('cardsGrid');
   grid.innerHTML = visible.map(s=>`
@@ -1480,9 +1541,9 @@ function cardMarkup(s, c, side){
       <div class="backbody">
         <div class="name">${escapeHtml(s.nome)}</div>
         <div class="l"><b>Responsável:</b></div>
-        <div class="l">${escapeHtml(s.nomePai||'-')}</div>
-        <div class="l">${escapeHtml(s.nomeMae||'-')}</div>
-        <div class="l"><b>Endereço:</b> ${escapeHtml(s.endereco||'-')}</div>
+        <div class="l">${escapeHtml((s.nomePai||'-').toUpperCase())}</div>
+        <div class="l">${escapeHtml((s.nomeMae||'-').toUpperCase())}</div>
+        <div class="l"><b>Endereço:</b> ${escapeHtml((s.endereco||'-').toUpperCase())}</div>
         <div class="phones">
           <div class="phones-label">Contatos</div>
           ${phones.length ? phones.map(p=>`<div class="phone-item">${escapeHtml(p)}</div>`).join('') : `<div class="phone-item" style="border-left-color:#ccc;color:#999;">-</div>`}
@@ -1490,6 +1551,7 @@ function cardMarkup(s, c, side){
       </div>
       <div class="backfooter">
         <div class="idbottom">${s.numero}</div>
+        <div class="yearwrap"><div class="yearbadge">Ano letivo ${escapeHtml(c.anoExercicio||state.activeYear)}</div></div>
         <div class="sig">
           <div class="sigspace"></div>
           <div class="sigline">${escapeHtml(c.gestor||'Direção Escolar')}</div>
@@ -1544,6 +1606,87 @@ function printSelectedCards(){
     </div>`;
   }).join('');
 
+  setTimeout(()=>{ window.print(); }, 150);
+}
+
+/* =========================================================================
+   FOLHA DE PONTO
+========================================================================= */
+const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function bindPontoTab(){
+  document.getElementById('gerarPontoBtn').addEventListener('click', gerarFolhaPonto);
+  document.getElementById('printPontoBtn').addEventListener('click', imprimirFolhaPonto);
+}
+
+function renderPontoTab(){
+  const turmaSelect = document.getElementById('pontoTurmaSelect');
+  const turmas = Array.from(new Set(state.students.map(s=>s.turma).filter(Boolean))).sort();
+  const prevTurma = turmaSelect.value;
+  turmaSelect.innerHTML = '<option value="">— selecione —</option>' + turmas.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  if(turmas.includes(prevTurma)) turmaSelect.value = prevTurma;
+
+  const anoInput = document.getElementById('pontoAnoInput');
+  if(!anoInput.value) anoInput.value = state.activeYear;
+  const mesSelect = document.getElementById('pontoMesSelect');
+  if(mesSelect.selectedIndex < 0 || mesSelect.value === '') mesSelect.value = String(new Date().getMonth());
+
+  document.getElementById('pontoPreviewBlock').style.display = 'none';
+  document.getElementById('pontoEmpty').style.display = 'block';
+  document.getElementById('printPontoBtn').disabled = true;
+  state.pontoSheetHTML = null;
+}
+
+function daysInMonth(month, year){
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function gerarFolhaPonto(){
+  const turma = document.getElementById('pontoTurmaSelect').value;
+  if(!turma){ alert('Selecione uma turma.'); return; }
+  const mes = parseInt(document.getElementById('pontoMesSelect').value, 10);
+  const ano = parseInt(document.getElementById('pontoAnoInput').value, 10) || state.activeYear;
+
+  const alunos = state.students
+    .filter(s=>normalize(s.turma)===normalize(turma))
+    .sort((a,b)=>a.nome.localeCompare(b.nome));
+
+  if(!alunos.length){ alert('Não há alunos cadastrados nesta turma.'); return; }
+
+  const totalDias = daysInMonth(mes, ano);
+  const nomeEscola = (state.config && state.config.nomeEscola) || 'Escola';
+
+  const diasHeader = Array.from({length: totalDias}, (_,i)=>`<th>${i+1}</th>`).join('');
+  const linhas = alunos.map(a=>{
+    const celulas = Array.from({length: totalDias}, ()=>'<td></td>').join('');
+    return `<tr><td class="ponto-nome">${escapeHtml(a.nome)}</td>${celulas}</tr>`;
+  }).join('');
+
+  const html = `
+    <div class="pontosheet">
+      <div class="pontosheet-header">
+        <div class="pontosheet-escola">${escapeHtml(nomeEscola)}</div>
+        <div class="pontosheet-titulo">Folha de Ponto — Turma ${escapeHtml(turma)} — ${MESES_PT[mes]}/${ano}</div>
+      </div>
+      <table class="pontotable">
+        <thead><tr><th class="ponto-nome">Nome do Aluno</th>${diasHeader}</tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+      <div class="pontosheet-legenda">P = Presente &nbsp;&nbsp;&nbsp; F = Falta</div>
+    </div>
+  `;
+
+  state.pontoSheetHTML = html;
+  document.getElementById('pontoPreviewArea').innerHTML = html;
+  document.getElementById('pontoPreviewBlock').style.display = 'block';
+  document.getElementById('pontoEmpty').style.display = 'none';
+  document.getElementById('printPontoBtn').disabled = false;
+}
+
+function imprimirFolhaPonto(){
+  if(!state.pontoSheetHTML) return;
+  const printarea = document.getElementById('printarea');
+  printarea.innerHTML = `<div class="pontoprint">${state.pontoSheetHTML}</div>`;
   setTimeout(()=>{ window.print(); }, 150);
 }
 </script>
