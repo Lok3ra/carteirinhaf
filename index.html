@@ -223,6 +223,11 @@
 
   .helpbox{background:var(--sage);border-left:3px solid var(--gold);padding:10px 14px;border-radius:4px;font-size:12.5px;color:#4d4a3f;margin-bottom:16px;}
 
+  .taglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .tag{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:4px 10px 4px 12px;font-size:12.5px;}
+  .tag button{border:none;background:none;cursor:pointer;color:var(--danger);font-weight:700;font-size:13px;line-height:1;padding:0;}
+  .tag.manual{background:var(--sage);}
+
   @media print{
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
     body *{visibility:hidden;}
@@ -230,21 +235,35 @@
     #printarea{position:absolute;top:0;left:0;width:190mm;}
     .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
     .printrow .idcard{box-shadow:none;}
+    .print-page{page-break-after:always;width:190mm;}
     @page{size:A4;margin:10mm;}
-    @page ponto{size:A4 landscape;margin:10mm;}
-    .pontoprint{page:ponto;width:277mm;}
   }
   @media screen{ #printarea{ display:none; } }
 
-  /* ---- Folha de Ponto ---- */
-  .pontosheet-header{margin-bottom:12px;}
-  .pontosheet-escola{font-family:'Fraunces',serif;font-weight:600;font-size:15px;color:var(--forest-dark);}
-  .pontosheet-titulo{font-size:12.5px;color:#5b5546;margin-top:2px;}
-  .pontotable{width:100%;border-collapse:collapse;font-size:9px;}
-  .pontotable th, .pontotable td{border:1px solid #999;padding:3px 4px;text-align:center;min-width:16px;}
-  .pontotable th.ponto-nome, .pontotable td.ponto-nome{text-align:left;min-width:150px;white-space:nowrap;}
-  .pontotable thead th{background:var(--sage);color:var(--forest-dark);font-weight:700;}
-  .pontosheet-legenda{margin-top:10px;font-size:10.5px;color:#5b5546;}
+  /* ---- Folha de Ponto (servidores) ---- */
+  .folha{background:#fff;border:1px solid var(--line);}
+  .folha-header{padding:14px 18px;border-bottom:2px solid var(--ink);}
+  .folha-header .orgao{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#555;}
+  .folha-header h3{margin:2px 0 10px;font-size:15px;text-align:center;font-family:'Fraunces',serif;}
+  .folha-info{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px;font-size:11.5px;padding:10px 18px;border-bottom:1px solid var(--line);}
+  .folha-info b{color:var(--forest-dark);}
+  .folha-instructions{font-size:10.5px;color:#555;padding:8px 18px;border-bottom:1px solid var(--line);line-height:1.5;}
+  .folha-instructions b{color:var(--danger);}
+  .folha-table{width:100%;border-collapse:collapse;font-size:10px;}
+  .folha-table th,.folha-table td{border:1px solid #999;padding:3px 5px;text-align:center;}
+  .folha-table thead th{background:var(--sage);color:var(--forest-dark);font-size:9px;text-transform:uppercase;}
+  .folha-table td.dia{font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap;}
+  .folha-table td.celula{text-align:left;font-size:9.5px;}
+  .folha-table td.bloqueado{background:repeating-linear-gradient(45deg,#eee,#eee 4px,#ddd 4px,#ddd 8px);color:#999;font-weight:700;}
+  .folha-table td.feriado{color:var(--danger);font-weight:600;}
+  .folha-table td.coordenacao{color:var(--forest-dark);font-weight:600;}
+  .folha-table td.fimdesemana{color:#888;font-style:italic;}
+  .folha-table td.afastamento{color:var(--danger);font-weight:700;}
+  .folha-table td.hora{width:34px;}
+  .folha-sign{display:flex;justify-content:space-between;gap:20px;padding:22px 18px 10px;font-size:10.5px;}
+  .folha-sign div{flex:1;text-align:center;}
+  .folha-sign .linha{border-top:1px solid #333;margin-top:26px;padding-top:4px;}
+  .folha-closing{padding:6px 18px 16px;font-size:10.5px;color:#444;}
 </style>
 </head>
 <body>
@@ -264,7 +283,10 @@
     <div class="navitem" data-tab="carteirinhas"><span class="idx">04</span> Carteirinhas</div>
 
     <div class="navgroup">Folha de Ponto</div>
-    <div class="navitem" data-tab="ponto"><span class="idx">05</span> Registro de Presença</div>
+    <div class="navitem" data-tab="ponto-importar"><span class="idx">05</span> Importar servidores</div>
+    <div class="navitem" data-tab="ponto-servidores"><span class="idx">06</span> Servidores</div>
+    <div class="navitem" data-tab="ponto-feriados"><span class="idx">07</span> Feriados & dias letivos</div>
+    <div class="navitem" data-tab="ponto-gerar"><span class="idx">08</span> Gerar folha</div>
 
     <div class="yearbox">
       <label>Ano ativo (numeração e layout)</label>
@@ -435,36 +457,129 @@
       <div class="empty" id="cardsEmpty" style="display:none;">Nenhum aluno cadastrado para este ano ainda.</div>
     </div>
 
-    <!-- ===================== TAB: FOLHA DE PONTO ===================== -->
-    <div class="panel" id="panel-ponto">
+    <!-- ===================== TAB: PONTO / IMPORTAR ===================== -->
+    <div class="panel" id="panel-ponto-importar">
       <div class="pagehead">
-        <h2>Folha de ponto — <span id="pontoYearLabel"></span></h2>
-        <p>Gere uma grade mensal por turma para controle de presença, marcada à mão após a impressão.</p>
+        <h2>Importar dados</h2>
+        <p>Servidores e feriados são importados separadamente — de planilhas diferentes, ou da mesma planilha, uma de cada vez.</p>
       </div>
 
       <div class="card-block">
+        <h3>Importar Servidores</h3>
+        <div class="helpbox">A aba <b>Servidores</b> deve ter as colunas: Servidor, Cargo, Função, Turno, Turno2, Turno3, Coordenação (M/V/N), Matrícula, Carga Hor. Semanal, Carga Horária Mensal, Afastamento, Coordenação4.</div>
+        <input type="file" id="fileInputServidores" accept=".xlsx,.xls,.xlsm">
+        <p id="importStatusServidores" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
+      </div>
+
+      <div class="card-block" id="importSummaryServidores" style="display:none;">
+        <h3>Resumo da última importação de servidores</h3>
+        <p id="importSummaryTextServidores" style="font-size:13.5px;"></p>
+      </div>
+
+      <div class="card-block">
+        <h3>Importar Feriados, Recessos e Férias</h3>
+        <div class="helpbox">A aba <b>Feriados, Recessos e FDS</b> deve ter Data e Feriado nas duas primeiras colunas.</div>
+        <input type="file" id="fileInputFeriados" accept=".xlsx,.xls,.xlsm">
+        <p id="importStatusFeriados" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
+      </div>
+
+      <div class="card-block" id="importSummaryFeriados" style="display:none;">
+        <h3>Resumo da última importação de feriados</h3>
+        <p id="importSummaryTextFeriados" style="font-size:13.5px;"></p>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: PONTO / SERVIDORES ===================== -->
+    <div class="panel" id="panel-ponto-servidores">
+      <div class="pagehead">
+        <h2>Servidores</h2>
+        <p>Dados importados da planilha. Ajustes aqui valem só para a geração da folha nesta sessão — a fonte oficial continua sendo a planilha.</p>
+      </div>
+      <div class="row" style="margin-bottom:14px;">
+        <input type="text" id="searchServidoresPonto" placeholder="Buscar por nome..." style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;">
+      </div>
+      <div class="card-block" style="padding:0;overflow:hidden;overflow-x:auto;">
+        <table>
+          <thead><tr><th>Servidor</th><th>Cargo</th><th>Turnos</th><th>Coordenação</th><th>Dia fixo (Coord.4)</th><th>Afastamento</th><th>Ações</th></tr></thead>
+          <tbody id="servidoresPontoTbody"></tbody>
+        </table>
+        <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor importado ainda. Vá em "Importar servidores".</div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: PONTO / FERIADOS ===================== -->
+    <div class="panel" id="panel-ponto-feriados">
+      <div class="pagehead">
+        <h2>Feriados, recessos e dias letivos</h2>
+        <p>A lista abaixo vem da planilha, mas você pode adicionar datas extras aqui — e marcar sábados/domingos que sejam excepcionalmente dias letivos.</p>
+      </div>
+
+      <div class="card-block">
+        <h3>Adicionar feriado / recesso / férias</h3>
         <div class="row" style="align-items:flex-end;">
-          <div class="field" style="max-width:220px;"><label>Turma</label><select id="pontoTurmaSelect"></select></div>
-          <div class="field" style="max-width:180px;"><label>Mês</label>
-            <select id="pontoMesSelect">
+          <div class="field" style="max-width:200px;"><label>Data</label><input type="date" id="novoFeriadoData"></div>
+          <div class="field" style="max-width:280px;"><label>Descrição</label><input type="text" id="novoFeriadoDesc" placeholder="Ex: Recesso, Férias Escolares..."></div>
+          <button class="btn" id="addFeriadoBtn">Adicionar</button>
+        </div>
+        <div class="taglist" id="feriadosTagList"></div>
+      </div>
+
+      <div class="card-block">
+        <h3>Dia letivo em fim de semana (exceção)</h3>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">Se um sábado ou domingo específico for dia letivo (reposição), marque aqui — a folha desse dia deixa de aparecer como "Sábado"/"Domingo" e passa a valer como dia normal.</p>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:200px;"><label>Data (sáb. ou dom.)</label><input type="date" id="novoDiaLetivoData"></div>
+          <button class="btn" id="addDiaLetivoBtn">Marcar como letivo</button>
+        </div>
+        <div class="taglist" id="diasLetivosTagList"></div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: PONTO / GERAR ===================== -->
+    <div class="panel" id="panel-ponto-gerar">
+      <div class="pagehead">
+        <h2>Gerar folha de ponto</h2>
+        <p>Escolha o mês, o ano e o(s) servidor(es). A impressão sai em A4, uma folha por servidor.</p>
+      </div>
+
+      <div class="card-block">
+        <h3>Cabeçalho da folha</h3>
+        <div class="row">
+          <div class="field"><label>Órgão / Secretaria</label><input type="text" id="cfgOrgaoPonto" placeholder="Ex: Secretaria de Educação"></div>
+          <div class="field"><label>Nome da escola</label><input type="text" id="cfgEscolaPonto" placeholder="Ex: Escola Municipal Casinha Feliz"></div>
+        </div>
+        <div class="row">
+          <div class="field" style="max-width:260px;"><label>Cidade/UF (para o fechamento)</label><input type="text" id="cfgCidadePonto" placeholder="Ex: Valparaíso de Goiás – GO"></div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <h3>Período e servidor</h3>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:180px;">
+            <label>Mês</label>
+            <select id="mesSelectPonto">
               <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
               <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
               <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
               <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
             </select>
           </div>
-          <div class="field" style="max-width:120px;"><label>Ano</label><input type="number" id="pontoAnoInput" step="1"></div>
-          <button class="btn" id="gerarPontoBtn">Gerar folha</button>
-          <button class="btn outline" id="printPontoBtn" disabled>Imprimir (folha A4)</button>
+          <div class="field" style="max-width:120px;"><label>Ano</label><input type="number" id="anoInputPonto" step="1"></div>
+          <div class="field" style="max-width:280px;">
+            <label>Servidor</label>
+            <select id="servidorSelectPonto"><option value="">— selecione —</option></select>
+          </div>
+          <label style="font-size:13px;margin-bottom:12px;"><input type="checkbox" id="todosServidoresChk"> Gerar para todos os servidores</label>
+        </div>
+        <div class="row">
+          <button class="btn" id="gerarPontoBtn">Gerar pré-visualização</button>
+          <button class="btn outline" id="imprimirPontoBtn" disabled>Imprimir (A4)</button>
         </div>
       </div>
 
-      <div class="helpbox">A folha sai em orientação paisagem para caber os dias do mês, com uma coluna por dia para marcar "P" (presente) ou "F" (falta) à caneta.</div>
-
-      <div class="card-block" id="pontoPreviewBlock" style="display:none;overflow-x:auto;">
-        <div id="pontoPreviewArea"></div>
-      </div>
-      <div class="empty" id="pontoEmpty">Escolha uma turma, o mês e o ano, depois clique em "Gerar folha".</div>
+      <div id="pontoPreviewArea"></div>
+      <div class="empty" id="pontoGerarEmpty">Escolha o período e o servidor, depois clique em "Gerar pré-visualização".</div>
     </div>
 
   </div>
@@ -681,12 +796,18 @@ async function init(){
   bindStudentsTab();
   bindConfigTab();
   bindCardsTab();
-  bindPontoTab();
+  bindPontoTabs();
   bindModals();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
   document.getElementById('cfgValidade').addEventListener('input', maskDateInput);
 
   await loadEverythingForActiveYear();
+
+  const now = new Date();
+  document.getElementById('mesSelectPonto').value = String(now.getMonth());
+  document.getElementById('anoInputPonto').value = now.getFullYear();
+  await loadPontoData();
+  renderPontoAll();
 }
 
 async function populateYearSelect(currentYr){
@@ -721,12 +842,11 @@ async function loadEverythingForActiveYear(){
   renderConfigForm();
   renderStudentsTable();
   renderCardsTab();
-  renderPontoTab();
 }
 
 function updateYearLabels(){
   const y = state.activeYear;
-  ['alunosYearLabel','configYearLabel','cartYearLabel','pontoYearLabel'].forEach(id=>{
+  ['alunosYearLabel','configYearLabel','cartYearLabel'].forEach(id=>{
     document.getElementById(id).textContent = y;
   });
   document.getElementById('confirmYearLabel').textContent = y;
@@ -744,7 +864,9 @@ function bindNav(){
       item.classList.add('active');
       document.getElementById('panel-'+item.dataset.tab).classList.add('active');
       if(item.dataset.tab==='carteirinhas') renderCardsTab();
-      if(item.dataset.tab==='ponto') renderPontoTab();
+      if(item.dataset.tab==='ponto-servidores') renderServidoresPontoTable();
+      if(item.dataset.tab==='ponto-feriados'){ renderFeriadosTags(); renderDiasLetivosTags(); }
+      if(item.dataset.tab==='ponto-gerar') refreshServidorSelectPonto();
     });
   });
 }
@@ -1610,83 +1732,475 @@ function printSelectedCards(){
 }
 
 /* =========================================================================
-   FOLHA DE PONTO
+   FOLHA DE PONTO (SERVIDORES) — banco de dados sempre carregado de Excel
 ========================================================================= */
 const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-function bindPontoTab(){
-  document.getElementById('gerarPontoBtn').addEventListener('click', gerarFolhaPonto);
-  document.getElementById('printPontoBtn').addEventListener('click', imprimirFolhaPonto);
-}
-
-function renderPontoTab(){
-  const turmaSelect = document.getElementById('pontoTurmaSelect');
-  const turmas = Array.from(new Set(state.students.map(s=>s.turma).filter(Boolean))).sort();
-  const prevTurma = turmaSelect.value;
-  turmaSelect.innerHTML = '<option value="">— selecione —</option>' + turmas.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-  if(turmas.includes(prevTurma)) turmaSelect.value = prevTurma;
-
-  const anoInput = document.getElementById('pontoAnoInput');
-  if(!anoInput.value) anoInput.value = state.activeYear;
-  const mesSelect = document.getElementById('pontoMesSelect');
-  if(mesSelect.selectedIndex < 0 || mesSelect.value === '') mesSelect.value = String(new Date().getMonth());
-
-  document.getElementById('pontoPreviewBlock').style.display = 'none';
-  document.getElementById('pontoEmpty').style.display = 'block';
-  document.getElementById('printPontoBtn').disabled = true;
-  state.pontoSheetHTML = null;
-}
+const pontoState = {
+  servidores: [],
+  feriados: [],     // {data:'YYYY-MM-DD', descricao, origem:'importado'|'manual'}
+  diasLetivos: [],  // {data:'YYYY-MM-DD'}
+  config: { orgao:'', escola:'', cidade:'' },
+  folhasGeradas: null
+};
 
 function daysInMonth(month, year){
   return new Date(year, month + 1, 0).getDate();
 }
+function isoLocal(date){ return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'); }
+function weekdayISO(date){ const d=date.getDay(); return d===0?7:d; } // 1=Mon..7=Sun
 
-function gerarFolhaPonto(){
-  const turma = document.getElementById('pontoTurmaSelect').value;
-  if(!turma){ alert('Selecione uma turma.'); return; }
-  const mes = parseInt(document.getElementById('pontoMesSelect').value, 10);
-  const ano = parseInt(document.getElementById('pontoAnoInput').value, 10) || state.activeYear;
-
-  const alunos = state.students
-    .filter(s=>normalize(s.turma)===normalize(turma))
-    .sort((a,b)=>a.nome.localeCompare(b.nome));
-
-  if(!alunos.length){ alert('Não há alunos cadastrados nesta turma.'); return; }
-
-  const totalDias = daysInMonth(mes, ano);
-  const nomeEscola = (state.config && state.config.nomeEscola) || 'Escola';
-
-  const diasHeader = Array.from({length: totalDias}, (_,i)=>`<th>${i+1}</th>`).join('');
-  const linhas = alunos.map(a=>{
-    const celulas = Array.from({length: totalDias}, ()=>'<td></td>').join('');
-    return `<tr><td class="ponto-nome">${escapeHtml(a.nome)}</td>${celulas}</tr>`;
-  }).join('');
-
-  const html = `
-    <div class="pontosheet">
-      <div class="pontosheet-header">
-        <div class="pontosheet-escola">${escapeHtml(nomeEscola)}</div>
-        <div class="pontosheet-titulo">Folha de Ponto — Turma ${escapeHtml(turma)} — ${MESES_PT[mes]}/${ano}</div>
-      </div>
-      <table class="pontotable">
-        <thead><tr><th class="ponto-nome">Nome do Aluno</th>${diasHeader}</tr></thead>
-        <tbody>${linhas}</tbody>
-      </table>
-      <div class="pontosheet-legenda">P = Presente &nbsp;&nbsp;&nbsp; F = Falta</div>
-    </div>
-  `;
-
-  state.pontoSheetHTML = html;
-  document.getElementById('pontoPreviewArea').innerHTML = html;
-  document.getElementById('pontoPreviewBlock').style.display = 'block';
-  document.getElementById('pontoEmpty').style.display = 'none';
-  document.getElementById('printPontoBtn').disabled = false;
+function bindPontoTabs(){
+  document.getElementById('fileInputServidores').addEventListener('change', handleFileServidores);
+  document.getElementById('fileInputFeriados').addEventListener('change', handleFileFeriados);
+  document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
+  document.getElementById('addFeriadoBtn').addEventListener('click', addFeriado);
+  document.getElementById('addDiaLetivoBtn').addEventListener('click', addDiaLetivo);
+  ['cfgOrgaoPonto','cfgEscolaPonto','cfgCidadePonto'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', savePontoConfig);
+  });
+  document.getElementById('todosServidoresChk').addEventListener('change', (e)=>{
+    document.getElementById('servidorSelectPonto').disabled = e.target.checked;
+  });
+  document.getElementById('gerarPontoBtn').addEventListener('click', gerarPontoPreview);
+  document.getElementById('imprimirPontoBtn').addEventListener('click', imprimirPonto);
 }
 
-function imprimirFolhaPonto(){
-  if(!state.pontoSheetHTML) return;
+async function loadPontoData(){
+  pontoState.servidores = [];
+  pontoState.feriados = [];
+  pontoState.diasLetivos = [];
+  try{
+    const list = await window.storage.list('servidor:');
+    if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.servidores.push(JSON.parse(r.value)); }catch(e){} }
+  }catch(e){}
+  try{
+    const list = await window.storage.list('feriado:');
+    if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.feriados.push(JSON.parse(r.value)); }catch(e){} }
+  }catch(e){}
+  try{
+    const list = await window.storage.list('diaLetivo:');
+    if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.diasLetivos.push(JSON.parse(r.value)); }catch(e){} }
+  }catch(e){}
+  try{
+    const r = await window.storage.get('pontoConfig');
+    pontoState.config = JSON.parse(r.value);
+  }catch(e){}
+
+  pontoState.servidores.sort((a,b)=>a.nome.localeCompare(b.nome));
+  pontoState.feriados.sort((a,b)=>a.data.localeCompare(b.data));
+  pontoState.diasLetivos.sort((a,b)=>a.data.localeCompare(b.data));
+
+  document.getElementById('cfgOrgaoPonto').value = pontoState.config.orgao || '';
+  document.getElementById('cfgEscolaPonto').value = pontoState.config.escola || '';
+  document.getElementById('cfgCidadePonto').value = pontoState.config.cidade || '';
+}
+
+function renderPontoAll(){
+  renderServidoresPontoTable();
+  renderFeriadosTags();
+  renderDiasLetivosTags();
+  refreshServidorSelectPonto();
+}
+
+/* ---- importar servidores + feriados ---- */
+function findSheetByName(wb, patterns){
+  const names = wb.SheetNames;
+  for(const n of names){ const nn = normalize(n); if(patterns.some(p=>nn.includes(p))) return n; }
+  return null;
+}
+function cellRaw(row, keys){
+  for(const k of Object.keys(row)){
+    const nk = normalize(k);
+    if(keys.some(p=>nk===p || nk.includes(p))) return row[k];
+  }
+  return '';
+}
+function toIsoDatePonto(value){
+  if(value === null || value === undefined || value==='') return null;
+  if(value instanceof Date && !isNaN(value)) return isoLocal(value);
+  if(typeof value === 'number'){ const d = excelSerialToDate(value); if(!isNaN(d)) return isoLocal(d); }
+  const str = value.toString().trim();
+  let m = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){ let [,d,mo,y]=m; if(y.length===2) y=(parseInt(y,10)>30?'19':'20')+y; return y+'-'+mo.padStart(2,'0')+'-'+d.padStart(2,'0'); }
+  m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){ const [,y,mo,d]=m; return y+'-'+mo.padStart(2,'0')+'-'+d.padStart(2,'0'); }
+  return null;
+}
+
+function handleFileServidores(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const status = document.getElementById('importStatusServidores');
+  status.textContent = 'Lendo planilha...';
+  const reader = new FileReader();
+  reader.onload = async (ev)=>{
+    try{
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+
+      const servidoresSheetName = findSheetByName(wb, ['servidor']);
+      if(!servidoresSheetName){
+        status.textContent = 'Não encontrei uma aba "Servidores" nessa planilha. Verifique o nome da aba.';
+        return;
+      }
+
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[servidoresSheetName], {defval:''});
+      const novosServidores = rows.map(row=>{
+        const nome = cellRaw(row,['servidor','nome']).toString().trim();
+        return {
+          id: 'srv_' + normalize(nome).replace(/[^a-z0-9]/g,'_'),
+          nome,
+          cargo: cellRaw(row,['cargo']).toString().trim().toUpperCase(),
+          funcao: cellRaw(row,['funcao','função']).toString().trim(),
+          turno1: cellRaw(row,['turno']).toString().trim().toUpperCase(),
+          turno2: cellRaw(row,['turno2']).toString().trim().toUpperCase(),
+          turno3: cellRaw(row,['turno3']).toString().trim().toUpperCase(),
+          coordenacao: cellRaw(row,['coordenacao','coordenação']).toString().trim().toUpperCase().charAt(0),
+          matricula: cellRaw(row,['matricula','matrícula']).toString().trim(),
+          cargaSemanal: cellRaw(row,['carga hor.sem','carga horaria semanal','carga hor. semanal']).toString().trim(),
+          cargaMensal: cellRaw(row,['carga horaria mensal','carga horária mensal']).toString().trim(),
+          afastamento: cellRaw(row,['afastamento']).toString().trim(),
+          coordenacao4: cellRaw(row,['coordenacao4','coordenação4']).toString().trim()
+        };
+      }).filter(s=>s.nome);
+
+      const oldList = await window.storage.list('servidor:');
+      if(oldList && oldList.keys) for(const k of oldList.keys) await window.storage.delete(k);
+      for(const s of novosServidores) await window.storage.set('servidor:'+s.id, JSON.stringify(s));
+
+      await loadPontoData();
+      renderPontoAll();
+
+      status.textContent = '';
+      const summary = document.getElementById('importSummaryServidores');
+      summary.style.display = 'block';
+      document.getElementById('importSummaryTextServidores').textContent =
+        novosServidores.length + ' servidor(es) importado(s) da aba "' + servidoresSheetName + '".';
+    }catch(err){
+      console.error(err);
+      status.textContent = 'Não foi possível ler o arquivo. Verifique se é um .xlsx/.xlsm válido.';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function handleFileFeriados(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const status = document.getElementById('importStatusFeriados');
+  status.textContent = 'Lendo planilha...';
+  const reader = new FileReader();
+  reader.onload = async (ev)=>{
+    try{
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+
+      const feriadosSheetName = findSheetByName(wb, ['feriado']);
+      if(!feriadosSheetName){
+        status.textContent = 'Não encontrei uma aba "Feriados" nessa planilha. Verifique o nome da aba.';
+        return;
+      }
+
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[feriadosSheetName], {header:1, defval:''});
+      const novosFeriados = [];
+      for(let i=1;i<rows.length;i++){
+        const r = rows[i];
+        const iso = toIsoDatePonto(r[0]);
+        const desc = (r[1]||'').toString().trim();
+        if(iso && desc) novosFeriados.push({data:iso, descricao:desc, origem:'importado'});
+      }
+
+      const feriadoList = await window.storage.list('feriado:');
+      if(feriadoList && feriadoList.keys){
+        for(const k of feriadoList.keys){
+          try{
+            const r = await window.storage.get(k);
+            const f = JSON.parse(r.value);
+            if(f.origem !== 'manual') await window.storage.delete(k);
+          }catch(e){}
+        }
+      }
+      for(const f of novosFeriados) await window.storage.set('feriado:'+f.data, JSON.stringify(f));
+
+      await loadPontoData();
+      renderPontoAll();
+
+      status.textContent = '';
+      const summary = document.getElementById('importSummaryFeriados');
+      summary.style.display = 'block';
+      document.getElementById('importSummaryTextFeriados').textContent =
+        novosFeriados.length + ' data(s) de feriado/recesso/férias importada(s) da aba "' + feriadosSheetName + '".';
+    }catch(err){
+      console.error(err);
+      status.textContent = 'Não foi possível ler o arquivo. Verifique se é um .xlsx/.xlsm válido.';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ---- servidores tab ---- */
+function renderServidoresPontoTable(){
+  const q = normalize(document.getElementById('searchServidoresPonto').value);
+  const tbody = document.getElementById('servidoresPontoTbody');
+  document.getElementById('servidoresPontoEmpty').style.display = pontoState.servidores.length ? 'none':'block';
+  const filtered = pontoState.servidores.filter(s=> !q || normalize(s.nome).includes(q));
+
+  tbody.innerHTML = filtered.map(s=>`
+    <tr>
+      <td><b>${escapeHtml(s.nome)}</b><br><span style="color:#8b8471;font-size:11.5px;">${escapeHtml(s.funcao||s.cargo)}</span></td>
+      <td>${escapeHtml(s.cargo)}</td>
+      <td style="font-size:11.5px;">${[s.turno1,s.turno2,s.turno3].filter(Boolean).join(' · ')}</td>
+      <td>
+        <select onchange="updateServidorPontoField('${s.id}','coordenacao',this.value)" style="padding:4px 6px;font-size:12.5px;">
+          <option value="" ${!s.coordenacao?'selected':''}>—</option>
+          <option value="M" ${s.coordenacao==='M'?'selected':''}>M (manhã)</option>
+          <option value="V" ${s.coordenacao==='V'?'selected':''}>V (tarde)</option>
+          <option value="N" ${s.coordenacao==='N'?'selected':''}>N (dia fixo)</option>
+        </select>
+      </td>
+      <td>
+        <select onchange="updateServidorPontoField('${s.id}','coordenacao4',this.value)" style="padding:4px 6px;font-size:12.5px;" ${s.coordenacao!=='N'?'disabled':''}>
+          <option value="">—</option>
+          <option value="1" ${s.coordenacao4==='1'?'selected':''}>Segunda</option>
+          <option value="2" ${s.coordenacao4==='2'?'selected':''}>Terça</option>
+          <option value="3" ${s.coordenacao4==='3'?'selected':''}>Quarta</option>
+          <option value="4" ${s.coordenacao4==='4'?'selected':''}>Quinta</option>
+          <option value="5" ${s.coordenacao4==='5'?'selected':''}>Sexta</option>
+        </select>
+      </td>
+      <td><input type="text" value="${escapeHtml(s.afastamento)}" placeholder="—" style="width:120px;padding:4px 6px;font-size:12.5px;" onchange="updateServidorPontoField('${s.id}','afastamento',this.value)"></td>
+      <td><button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
+    </tr>
+  `).join('');
+}
+
+async function updateServidorPontoField(id, field, value){
+  const s = pontoState.servidores.find(x=>x.id===id);
+  if(!s) return;
+  s[field] = value;
+  await window.storage.set('servidor:'+id, JSON.stringify(s));
+  if(field==='coordenacao') renderServidoresPontoTable();
+}
+
+async function deleteServidorPonto(id){
+  if(!confirm('Remover este servidor da lista (apenas nesta sessão — ele volta ao reimportar a planilha)?')) return;
+  try{ await window.storage.delete('servidor:'+id); }catch(e){}
+  pontoState.servidores = pontoState.servidores.filter(s=>s.id!==id);
+  renderServidoresPontoTable();
+  refreshServidorSelectPonto();
+}
+
+/* ---- feriados / dias letivos tab ---- */
+async function addFeriado(){
+  const data = document.getElementById('novoFeriadoData').value;
+  const desc = document.getElementById('novoFeriadoDesc').value.trim();
+  if(!data || !desc){ alert('Preencha a data e a descrição.'); return; }
+  const f = {data, descricao:desc, origem:'manual'};
+  await window.storage.set('feriado:'+data, JSON.stringify(f));
+  pontoState.feriados = pontoState.feriados.filter(x=>x.data!==data);
+  pontoState.feriados.push(f);
+  pontoState.feriados.sort((a,b)=>a.data.localeCompare(b.data));
+  document.getElementById('novoFeriadoData').value='';
+  document.getElementById('novoFeriadoDesc').value='';
+  renderFeriadosTags();
+}
+
+async function removeFeriado(data){
+  try{ await window.storage.delete('feriado:'+data); }catch(e){}
+  pontoState.feriados = pontoState.feriados.filter(x=>x.data!==data);
+  renderFeriadosTags();
+}
+
+function renderFeriadosTags(){
+  const box = document.getElementById('feriadosTagList');
+  if(!pontoState.feriados.length){ box.innerHTML = '<p style="color:#8b8471;font-size:13px;">Nenhum feriado cadastrado ainda.</p>'; return; }
+  box.innerHTML = pontoState.feriados.map(f=>{
+    const [y,m,d] = f.data.split('-');
+    return `<span class="tag ${f.origem==='manual'?'manual':''}">${d}/${m}/${y} — ${escapeHtml(f.descricao)}
+      ${f.origem==='manual' ? `<button onclick="removeFeriado('${f.data}')" title="Remover">×</button>` : ''}
+    </span>`;
+  }).join('');
+}
+
+async function addDiaLetivo(){
+  const data = document.getElementById('novoDiaLetivoData').value;
+  if(!data){ alert('Escolha uma data.'); return; }
+  const wd = weekdayISO(new Date(data+'T12:00:00'));
+  if(wd!==6 && wd!==7){ alert('Escolha um sábado ou domingo.'); return; }
+  const d = {data};
+  await window.storage.set('diaLetivo:'+data, JSON.stringify(d));
+  pontoState.diasLetivos = pontoState.diasLetivos.filter(x=>x.data!==data);
+  pontoState.diasLetivos.push(d);
+  pontoState.diasLetivos.sort((a,b)=>a.data.localeCompare(b.data));
+  document.getElementById('novoDiaLetivoData').value='';
+  renderDiasLetivosTags();
+}
+
+async function removeDiaLetivo(data){
+  try{ await window.storage.delete('diaLetivo:'+data); }catch(e){}
+  pontoState.diasLetivos = pontoState.diasLetivos.filter(x=>x.data!==data);
+  renderDiasLetivosTags();
+}
+
+function renderDiasLetivosTags(){
+  const box = document.getElementById('diasLetivosTagList');
+  if(!pontoState.diasLetivos.length){ box.innerHTML = '<p style="color:#8b8471;font-size:13px;">Nenhuma exceção cadastrada.</p>'; return; }
+  box.innerHTML = pontoState.diasLetivos.map(d=>{
+    const [y,m,dd] = d.data.split('-');
+    return `<span class="tag manual">${dd}/${m}/${y} <button onclick="removeDiaLetivo('${d.data}')" title="Remover">×</button></span>`;
+  }).join('');
+}
+
+/* ---- rule engine ---- */
+function findFeriado(iso){ return pontoState.feriados.find(f=>f.data===iso) || null; }
+function isDiaLetivoOverride(iso){ return pontoState.diasLetivos.some(d=>d.data===iso); }
+
+function celula(servidor, date, turno){
+  const iso = isoLocal(date);
+  const wd = weekdayISO(date);
+
+  if(servidor.cargo === 'ASSISTENTE DE EDUCAÇÃO'){
+    if(turno==='manha' && (servidor.turno2==='VESPERTINO (X)' || servidor.turno3==='VESPERTINO (X)')) return {text:'****', tipo:'bloqueado'};
+    if(turno==='tarde' && (servidor.turno2==='MATUTINO (X)' || servidor.turno3==='MATUTINO (X)')) return {text:'****', tipo:'bloqueado'};
+  }
+  if(servidor.afastamento) return {text:servidor.afastamento, tipo:'afastamento'};
+
+  const feriado = findFeriado(iso);
+  const overridden = isDiaLetivoOverride(iso);
+  const coord = (servidor.coordenacao||'').toUpperCase();
+
+  function checaFDS(){
+    if(wd===6 && !overridden) return {text:'Sábado', tipo:'fimdesemana'};
+    if(wd===7 && !overridden) return {text:'Domingo', tipo:'fimdesemana'};
+    return null;
+  }
+  function padrao(){ return feriado ? {text:feriado.descricao, tipo:'feriado'} : {text:'', tipo:'normal'}; }
+
+  if(coord==='M'){
+    if(feriado && (wd===1||wd===5)) return {text:feriado.descricao, tipo:'feriado'};
+    if(turno==='manha' && (wd===1||wd===5)) return {text:'Coordenação Livre', tipo:'coordenacao'};
+    return checaFDS() || padrao();
+  }
+  if(coord==='V'){
+    if(feriado && (wd===1||wd===5)) return {text:feriado.descricao, tipo:'feriado'};
+    if(turno==='tarde' && (wd===1||wd===5)) return {text:'Coordenação Livre', tipo:'coordenacao'};
+    return checaFDS() || padrao();
+  }
+  if(coord==='N'){
+    const c4 = parseInt(servidor.coordenacao4, 10);
+    if(c4 && wd===c4) return {text:'Coordenação Livre', tipo:'coordenacao'};
+    if(feriado && (wd===1||wd===5)) return {text:feriado.descricao, tipo:'feriado'};
+    return checaFDS() || padrao();
+  }
+  return checaFDS() || padrao();
+}
+
+/* ---- gerar folha tab ---- */
+async function savePontoConfig(){
+  pontoState.config = {
+    orgao: document.getElementById('cfgOrgaoPonto').value.trim(),
+    escola: document.getElementById('cfgEscolaPonto').value.trim(),
+    cidade: document.getElementById('cfgCidadePonto').value.trim()
+  };
+  try{ await window.storage.set('pontoConfig', JSON.stringify(pontoState.config)); }catch(e){}
+}
+
+function refreshServidorSelectPonto(){
+  const sel = document.getElementById('servidorSelectPonto');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— selecione —</option>' + pontoState.servidores.map(s=>`<option value="${s.id}">${escapeHtml(s.nome)}</option>`).join('');
+  if(pontoState.servidores.some(s=>s.id===prev)) sel.value = prev;
+}
+
+function buildFolhaHtml(servidor, mes, ano){
+  const total = daysInMonth(mes, ano);
+  const cfg = pontoState.config;
+
+  let linhas = '';
+  for(let d=1; d<=total; d++){
+    const date = new Date(ano, mes, d);
+    const wd = weekdayISO(date);
+    const diaLabel = String(d).padStart(2,'0') + '/' + String(mes+1).padStart(2,'0') + ' (' + ['','Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][wd] + ')';
+    const manha = celula(servidor, date, 'manha');
+    const tarde = celula(servidor, date, 'tarde');
+    const horaManhaBlocked = manha.text !== '';
+    const horaTardeBlocked = tarde.text !== '';
+
+    linhas += `<tr>
+      <td class="dia">${diaLabel}</td>
+      <td class="hora ${horaManhaBlocked?'bloqueado':''}">${horaManhaBlocked?'****':''}</td>
+      <td class="celula ${manha.tipo}">${escapeHtml(manha.text)}</td>
+      <td class="hora ${horaManhaBlocked?'bloqueado':''}">${horaManhaBlocked?'****':''}</td>
+      <td class="hora ${horaTardeBlocked?'bloqueado':''}">${horaTardeBlocked?'****':''}</td>
+      <td class="celula ${tarde.tipo}">${escapeHtml(tarde.text)}</td>
+      <td class="hora ${horaTardeBlocked?'bloqueado':''}">${horaTardeBlocked?'****':''}</td>
+    </tr>`;
+  }
+
+  return `<div class="folha">
+    <div class="folha-header">
+      <div class="orgao">${escapeHtml(cfg.orgao||'Secretaria de Educação')}${cfg.escola ? ' - '+escapeHtml(cfg.escola) : ''}</div>
+      <h3>FOLHA DE PONTO — ${MESES_PT[mes].toUpperCase()}/${ano}</h3>
+    </div>
+    <div class="folha-info">
+      <div><b>Servidor:</b> ${escapeHtml(servidor.nome)}</div>
+      <div><b>Matrícula:</b> ${escapeHtml(servidor.matricula||'-')}</div>
+      <div><b>Cargo:</b> ${escapeHtml(servidor.cargo)}</div>
+      <div><b>Função:</b> ${escapeHtml(servidor.funcao||'-')}</div>
+      <div><b>Turno(s):</b> ${escapeHtml([servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' / '))}</div>
+      <div><b>Carga horária:</b> ${escapeHtml(servidor.cargaSemanal||'-')} semanal / ${escapeHtml(servidor.cargaMensal||'-')} mensal</div>
+    </div>
+    <div class="folha-instructions">
+      * Usar somente caneta <b>PRETA</b>. &nbsp; * Não assinar nos dias de atestado, folga, abono ou coordenação.
+    </div>
+    <table class="folha-table">
+      <thead><tr>
+        <th rowspan="2">Dias</th>
+        <th colspan="3">Manhã</th>
+        <th colspan="3">Tarde</th>
+      </tr>
+      <tr>
+        <th>Entrada</th><th>Servidor</th><th>Saída</th>
+        <th>Entrada</th><th>Servidor</th><th>Saída</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div class="folha-sign">
+      <div><div class="linha">Assinatura do Chefe Imediato</div></div>
+      <div><div class="linha">Assinatura do Servidor</div></div>
+      <div><div class="linha">Assinatura Secretário Escolar</div></div>
+    </div>
+    <div class="folha-closing">${escapeHtml(cfg.cidade||'________________ – ___')}, ______ de ${MESES_PT[mes]} de ${ano}.</div>
+  </div>`;
+}
+
+function gerarPontoPreview(){
+  const mes = parseInt(document.getElementById('mesSelectPonto').value, 10);
+  const ano = parseInt(document.getElementById('anoInputPonto').value, 10);
+  const todos = document.getElementById('todosServidoresChk').checked;
+  const servidorId = document.getElementById('servidorSelectPonto').value;
+
+  let alvos = [];
+  if(todos){ alvos = pontoState.servidores; }
+  else{
+    const s = pontoState.servidores.find(x=>x.id===servidorId);
+    if(!s){ alert('Selecione um servidor, ou marque "Gerar para todos".'); return; }
+    alvos = [s];
+  }
+  if(!alvos.length){ alert('Nenhum servidor disponível.'); return; }
+
+  pontoState.folhasGeradas = alvos.map(s=>({servidor:s, html: buildFolhaHtml(s, mes, ano)}));
+
+  document.getElementById('pontoGerarEmpty').style.display = 'none';
+  document.getElementById('pontoPreviewArea').innerHTML = pontoState.folhasGeradas.map(f=>`<div class="card-block" style="padding:0;overflow-x:auto;">${f.html}</div>`).join('<div style="height:18px;"></div>');
+  document.getElementById('imprimirPontoBtn').disabled = false;
+}
+
+function imprimirPonto(){
+  if(!pontoState.folhasGeradas || !pontoState.folhasGeradas.length) return;
   const printarea = document.getElementById('printarea');
-  printarea.innerHTML = `<div class="pontoprint">${state.pontoSheetHTML}</div>`;
+  printarea.innerHTML = pontoState.folhasGeradas.map(f=>`<div class="print-page">${f.html}</div>`).join('');
   setTimeout(()=>{ window.print(); }, 150);
 }
 </script>
