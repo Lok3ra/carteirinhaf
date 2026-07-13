@@ -233,6 +233,8 @@
     body *{visibility:hidden;}
     #printarea, #printarea *{visibility:visible;}
     #printarea{position:absolute;top:0;left:0;width:190mm;}
+    #printarea .folha{border:none;margin:0;width:190mm;min-height:auto;}
+    #printarea .print-page{width:190mm;page-break-after:always;}
     .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
     .printrow .idcard{box-shadow:none;}
     .print-page{page-break-after:always;width:190mm;}
@@ -240,30 +242,33 @@
   }
   @media screen{ #printarea{ display:none; } }
 
-  /* ---- Folha de Ponto (servidores) ---- */
-  .folha{background:#fff;border:1px solid var(--line);}
-  .folha-header{padding:14px 18px;border-bottom:2px solid var(--ink);}
-  .folha-header .orgao{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#555;}
-  .folha-header h3{margin:2px 0 10px;font-size:15px;text-align:center;font-family:'Fraunces',serif;}
-  .folha-info{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px;font-size:11.5px;padding:10px 18px;border-bottom:1px solid var(--line);}
-  .folha-info b{color:var(--forest-dark);}
-  .folha-instructions{font-size:10.5px;color:#555;padding:8px 18px;border-bottom:1px solid var(--line);line-height:1.5;}
-  .folha-instructions b{color:var(--danger);}
-  .folha-table{width:100%;border-collapse:collapse;font-size:10px;}
-  .folha-table th,.folha-table td{border:1px solid #999;padding:3px 5px;text-align:center;}
-  .folha-table thead th{background:var(--sage);color:var(--forest-dark);font-size:9px;text-transform:uppercase;}
-  .folha-table td.dia{font-family:'JetBrains Mono',monospace;font-weight:600;white-space:nowrap;}
-  .folha-table td.celula{text-align:left;font-size:9.5px;}
-  .folha-table td.bloqueado{background:repeating-linear-gradient(45deg,#eee,#eee 4px,#ddd 4px,#ddd 8px);color:#999;font-weight:700;}
-  .folha-table td.feriado{color:var(--danger);font-weight:600;}
-  .folha-table td.coordenacao{color:var(--forest-dark);font-weight:600;}
-  .folha-table td.fimdesemana{color:#888;font-style:italic;}
-  .folha-table td.afastamento{color:var(--danger);font-weight:700;}
-  .folha-table td.hora{width:34px;}
-  .folha-sign{display:flex;justify-content:space-between;gap:20px;padding:22px 18px 10px;font-size:10.5px;}
-  .folha-sign div{flex:1;text-align:center;}
-  .folha-sign .linha{border-top:1px solid #333;margin-top:26px;padding-top:4px;}
-  .folha-closing{padding:6px 18px 16px;font-size:10.5px;color:#444;}
+  /* ---- Folha de Ponto (modelo oficial da planilha) ---- */
+  .folha{width:190mm;min-height:277mm;background:#fff;border:1px solid #222;color:#000;font-family:Arial,sans-serif;font-size:10px;margin:0 auto;}
+  .folha-modelo-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .folha-modelo-table td,.folha-modelo-table th{border:1px solid #222;padding:2px 4px;vertical-align:middle;}
+  .folha-modelo-table .sem-borda{border:none!important;}
+  .folha-modelo-table .cabecalho-escola{height:11mm;text-align:center;font-size:12px;font-weight:700;}
+  .folha-modelo-table .servidor-label{height:17mm;text-align:center;font-size:11px;font-weight:700;}
+  .folha-modelo-table .servidor-nome{text-align:center;font-family:'Times New Roman',serif;font-size:13px;font-weight:700;}
+  .folha-modelo-table .titulo{height:7mm;text-align:center;color:#0000ff;font-size:14px;font-weight:700;}
+  .folha-modelo-table .rotulo{font-weight:700;font-size:9px;}
+  .folha-modelo-table .valor{text-align:center;font-family:'Times New Roman',serif;font-size:11px;}
+  .folha-modelo-table .turno{text-align:center;font-size:9px;font-weight:700;height:7mm;}
+  .folha-modelo-table .carga-label{text-align:center;font-size:8px;font-weight:700;height:7mm;}
+  .folha-modelo-table .cab-dia{height:9mm;text-align:center;font-size:8px;font-weight:700;line-height:1.05;}
+  .folha-modelo-table .cab-servidor{font-family:'Times New Roman',serif;font-size:10px;}
+  .folha-modelo-table .linha-dia{height:6.2mm;}
+  .folha-modelo-table .dia-num{text-align:center;font-family:'Times New Roman',serif;font-size:11px;}
+  .folha-modelo-table .hora{text-align:center;font-family:'Times New Roman',serif;font-size:12px;letter-spacing:1px;}
+  .folha-modelo-table .registro{text-align:center;font-family:'Times New Roman',serif;font-size:12px;font-weight:700;}
+  .folha-modelo-table .registro.feriado,.folha-modelo-table .registro.afastamento,.folha-modelo-table .registro.coordenacao{font-size:9px;line-height:1.05;}
+  .folha-modelo-table .obs-label{height:8mm;font-size:8px;font-weight:700;vertical-align:top;}
+  .folha-modelo-table .obs-area{height:12mm;}
+  .folha-assinaturas{display:grid;grid-template-columns:1fr 1fr 1fr;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;}
+  .folha-assinaturas>div{height:24mm;text-align:center;font-size:9px;font-weight:700;padding-top:3px;border-right:1px solid #222;}
+  .folha-assinaturas>div:last-child{border-right:none;}
+  .folha-fechamento{text-align:center;padding-top:7mm;font-family:'Times New Roman',serif;font-size:10px;}
+  .folha-preview-wrap{background:#ddd;padding:10px;overflow-x:auto;}
 
 
   /* ---------- Festa Junina / Caixa ---------- */
@@ -2311,62 +2316,77 @@ function refreshServidorSelectPonto(){
 function buildFolhaHtml(servidor, mes, ano){
   const total = daysInMonth(mes, ano);
   const cfg = pontoState.config;
+  const turnos = [servidor.turno1, servidor.turno2, servidor.turno3].filter(Boolean).map(t=>t.toUpperCase());
+  const temMatutino = turnos.some(t=>t.includes('MATUTINO') && t.includes('X'));
+  const temVespertino = turnos.some(t=>t.includes('VESPERTINO') && t.includes('X'));
+  const temNoturno = turnos.some(t=>t.includes('NOTURNO') && t.includes('X'));
+  const turnoTexto = (nome, marcado)=> nome + ' (' + (marcado ? 'X' : ' ') + ')';
 
   let linhas = '';
   for(let d=1; d<=total; d++){
     const date = new Date(ano, mes, d);
-    const wd = weekdayISO(date);
-    const diaLabel = String(d).padStart(2,'0') + '/' + String(mes+1).padStart(2,'0') + ' (' + ['','Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][wd] + ')';
     const manha = celula(servidor, date, 'manha');
     const tarde = celula(servidor, date, 'tarde');
-    const horaManhaBlocked = manha.text !== '';
-    const horaTardeBlocked = tarde.text !== '';
-
-    linhas += `<tr>
-      <td class="dia">${diaLabel}</td>
-      <td class="hora ${horaManhaBlocked?'bloqueado':''}">${horaManhaBlocked?'****':''}</td>
-      <td class="celula ${manha.tipo}">${escapeHtml(manha.text)}</td>
-      <td class="hora ${horaManhaBlocked?'bloqueado':''}">${horaManhaBlocked?'****':''}</td>
-      <td class="hora ${horaTardeBlocked?'bloqueado':''}">${horaTardeBlocked?'****':''}</td>
-      <td class="celula ${tarde.tipo}">${escapeHtml(tarde.text)}</td>
-      <td class="hora ${horaTardeBlocked?'bloqueado':''}">${horaTardeBlocked?'****':''}</td>
+    const bloqueiaManha = manha.text !== '';
+    const bloqueiaTarde = tarde.text !== '';
+    linhas += `<tr class="linha-dia">
+      <td class="dia-num">${d}</td>
+      <td class="hora">${bloqueiaManha?'****':''}</td>
+      <td class="registro ${manha.tipo}">${escapeHtml(manha.text)}</td>
+      <td class="hora">${bloqueiaManha?'****':''}</td>
+      <td class="hora">${bloqueiaTarde?'****':''}</td>
+      <td class="registro ${tarde.tipo}">${escapeHtml(tarde.text)}</td>
+      <td class="hora">${bloqueiaTarde?'****':''}</td>
     </tr>`;
   }
 
   return `<div class="folha">
-    <div class="folha-header">
-      <div class="orgao">${escapeHtml(cfg.orgao||'Secretaria de Educação')}${cfg.escola ? ' - '+escapeHtml(cfg.escola) : ''}</div>
-      <h3>FOLHA DE PONTO — ${MESES_PT[mes].toUpperCase()}/${ano}</h3>
-    </div>
-    <div class="folha-info">
-      <div><b>Servidor:</b> ${escapeHtml(servidor.nome)}</div>
-      <div><b>Matrícula:</b> ${escapeHtml(servidor.matricula||'-')}</div>
-      <div><b>Cargo:</b> ${escapeHtml(servidor.cargo)}</div>
-      <div><b>Função:</b> ${escapeHtml(servidor.funcao||'-')}</div>
-      <div><b>Turno(s):</b> ${escapeHtml([servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' / '))}</div>
-      <div><b>Carga horária:</b> ${escapeHtml(servidor.cargaSemanal||'-')} semanal / ${escapeHtml(servidor.cargaMensal||'-')} mensal</div>
-    </div>
-    <div class="folha-instructions">
-      * Usar somente caneta <b>PRETA</b>. &nbsp; * Não assinar nos dias de atestado, folga, abono ou coordenação.
-    </div>
-    <table class="folha-table">
-      <thead><tr>
-        <th rowspan="2">Dias</th>
-        <th colspan="3">Manhã</th>
-        <th colspan="3">Tarde</th>
-      </tr>
-      <tr>
-        <th>Entrada</th><th>Servidor</th><th>Saída</th>
-        <th>Entrada</th><th>Servidor</th><th>Saída</th>
-      </tr></thead>
-      <tbody>${linhas}</tbody>
+    <table class="folha-modelo-table">
+      <colgroup>
+        <col style="width:8%"><col style="width:7%"><col style="width:31%"><col style="width:7%">
+        <col style="width:7%"><col style="width:32%"><col style="width:8%">
+      </colgroup>
+      <tbody>
+        <tr><td colspan="7" class="cabecalho-escola">${escapeHtml(cfg.orgao||'Secretaria de Educação')}${cfg.escola ? ' - '+escapeHtml(cfg.escola) : ''}</td></tr>
+        <tr>
+          <td colspan="2" class="servidor-label">Servidor (a):</td>
+          <td colspan="5" class="servidor-nome">${escapeHtml(servidor.nome)}</td>
+        </tr>
+        <tr><td colspan="7" class="titulo">FOLHA DE PONTO</td></tr>
+        <tr>
+          <td colspan="2" class="rotulo">Cargo</td><td colspan="3" class="valor">${escapeHtml(servidor.cargo||'')}</td>
+          <td class="rotulo">Matrícula</td><td class="valor">${escapeHtml(servidor.matricula||'')}</td>
+        </tr>
+        <tr>
+          <td colspan="2" class="rotulo">Função</td><td colspan="3" class="valor">${escapeHtml(servidor.funcao||'')}</td>
+          <td class="rotulo">Mês/Ano</td><td class="valor">${mes+1} / ${ano}</td>
+        </tr>
+        <tr>
+          <td colspan="2" class="rotulo">Horário</td>
+          <td colspan="2" class="turno">${turnoTexto('MATUTINO',temMatutino)}</td>
+          <td colspan="2" class="turno">${turnoTexto('VESPERTINO',temVespertino)}</td>
+          <td class="turno">${turnoTexto('NOTURNO',temNoturno)}</td>
+        </tr>
+        <tr>
+          <td colspan="2" class="carga-label">Carga Horária Semanal</td><td class="valor">${escapeHtml(servidor.cargaSemanal||'')}</td>
+          <td colspan="2" class="carga-label">Carga Horária mensal</td><td class="valor">${escapeHtml(servidor.cargaMensal||'')}</td>
+          <td class="carga-label">Total de Horas Semanais</td>
+        </tr>
+        <tr>
+          <th class="cab-dia">DIAS</th><th class="cab-dia">HORA<br>ENTRADA</th><th class="cab-dia cab-servidor">SERVIDOR</th><th class="cab-dia">HORA SAÍDA</th>
+          <th class="cab-dia">HORA<br>ENTRADA</th><th class="cab-dia cab-servidor">SERVIDOR</th><th class="cab-dia">HORA SAÍDA</th>
+        </tr>
+        ${linhas}
+        <tr><td class="obs-label">OBS:</td><td colspan="6" class="obs-area"></td></tr>
+        <tr><td></td><td colspan="6" class="obs-area"></td></tr>
+      </tbody>
     </table>
-    <div class="folha-sign">
-      <div><div class="linha">Assinatura do Chefe Imediato</div></div>
-      <div><div class="linha">Assinatura do Servidor</div></div>
-      <div><div class="linha">Assinatura Secretário Escolar</div></div>
+    <div class="folha-assinaturas">
+      <div>Assinatura do Chefe Imediato:</div>
+      <div>Assinatura Servidor:</div>
+      <div>Assinatura Secretário Escolar:</div>
     </div>
-    <div class="folha-closing">${escapeHtml(cfg.cidade||'________________ – ___')}, ______ de ${MESES_PT[mes]} de ${ano}.</div>
+    <div class="folha-fechamento">${escapeHtml(cfg.cidade||'Valparaíso de Goiás – GO')}, ______ de _____________________ de ${ano}.</div>
   </div>`;
 }
 
@@ -2388,7 +2408,7 @@ function gerarPontoPreview(){
   pontoState.folhasGeradas = alvos.map(s=>({servidor:s, html: buildFolhaHtml(s, mes, ano)}));
 
   document.getElementById('pontoGerarEmpty').style.display = 'none';
-  document.getElementById('pontoPreviewArea').innerHTML = pontoState.folhasGeradas.map(f=>`<div class="card-block" style="padding:0;overflow-x:auto;">${f.html}</div>`).join('<div style="height:18px;"></div>');
+  document.getElementById('pontoPreviewArea').innerHTML = pontoState.folhasGeradas.map(f=>`<div class="folha-preview-wrap">${f.html}</div>`).join('<div style="height:18px;"></div>');
   document.getElementById('imprimirPontoBtn').disabled = false;
 }
 
