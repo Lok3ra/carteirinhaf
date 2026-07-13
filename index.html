@@ -228,15 +228,26 @@
   .tag button{border:none;background:none;cursor:pointer;color:var(--danger);font-weight:700;font-size:13px;line-height:1;padding:0;}
   .tag.manual{background:var(--sage);}
 
+  .lista-servidores-table td:first-child{text-align:center;font-family:'JetBrains Mono',monospace;font-weight:700;}
+  .lista-impressao{width:185mm;background:#fff;color:#000;font-family:Arial,sans-serif;}
+  .lista-impressao h1{text-align:center;font-family:Arial,sans-serif;font-size:16px;margin:0 0 4mm;}
+  .lista-impressao .subtitulo{text-align:center;font-size:11px;margin-bottom:5mm;}
+  .lista-impressao table{width:100%;border-collapse:collapse;font-size:11px;}
+  .lista-impressao th,.lista-impressao td{border:1px solid #222;padding:5px 7px;}
+  .lista-impressao th{text-align:left;background:#eee;color:#000;font-size:10px;}
+  .lista-impressao th:first-child,.lista-impressao td:first-child{text-align:center;width:18mm;}
+  .lista-impressao th:nth-child(2),.lista-impressao td:nth-child(2){width:38mm;}
+
   @media print{
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
     html,body{margin:0!important;padding:0!important;background:#fff!important;}
-    body.print-ponto > *:not(#printarea){display:none!important;}
-    body.print-ponto #printarea{display:block!important;position:static!important;width:170mm!important;margin:0!important;padding:0!important;}
-    body.print-ponto #printarea .print-page{page:folha-ponto;width:170mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
+    body.print-ponto > *:not(#printarea),body.print-lista > *:not(#printarea){display:none!important;}
+    body.print-ponto #printarea,body.print-lista #printarea{display:block!important;position:static!important;width:185mm!important;margin:0!important;padding:0!important;}
+    body.print-ponto #printarea .print-page{page:folha-ponto;width:185mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
     body.print-ponto #printarea .print-page:last-child{page-break-after:auto;break-after:auto;}
-    body.print-ponto #printarea .folha{width:170mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
-    body.print-ponto #printarea,body.print-ponto #printarea *{visibility:visible!important;}
+    body.print-ponto #printarea .folha{width:185mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
+    body.print-ponto #printarea,body.print-ponto #printarea *,body.print-lista #printarea,body.print-lista #printarea *{visibility:visible!important;}
+    body.print-lista #printarea .print-page{page:lista-servidores;width:185mm!important;margin:0!important;padding:0!important;}
 
     body:not(.print-ponto) *{visibility:hidden;}
     body:not(.print-ponto) #printarea,body:not(.print-ponto) #printarea *{visibility:visible;}
@@ -245,7 +256,8 @@
     .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
     .printrow .idcard{box-shadow:none;}
     @page{size:A4;margin:10mm;}
-    @page folha-ponto{size:A4 portrait;margin:10mm 10mm 10mm 30mm;}
+    @page folha-ponto{size:A4 portrait;margin:5mm 5mm 5mm 20mm;}
+    @page lista-servidores{size:A4 portrait;margin:10mm;}
   }
   @media screen{ #printarea{ display:none; } }
 
@@ -351,11 +363,12 @@
     <div class="navitem" data-tab="ponto-servidores"><span class="idx">06</span> Servidores</div>
     <div class="navitem" data-tab="ponto-feriados"><span class="idx">07</span> Feriados & dias letivos</div>
     <div class="navitem" data-tab="ponto-gerar"><span class="idx">08</span> Gerar folha</div>
+    <div class="navitem" data-tab="ponto-listas"><span class="idx">09</span> Listas</div>
 
 
     <div class="navgroup">Festa Junina</div>
-    <div class="navitem" data-tab="festa-junina"><span class="idx">09</span> Calculadora</div>
-    <div class="navitem" data-tab="festa-config"><span class="idx">10</span> Configuração</div>
+    <div class="navitem" data-tab="festa-junina"><span class="idx">10</span> Calculadora</div>
+    <div class="navitem" data-tab="festa-config"><span class="idx">11</span> Configuração</div>
 
     <div class="yearbox">
       <label>Ano ativo (numeração e layout)</label>
@@ -687,6 +700,27 @@
       <div class="empty" id="pontoGerarEmpty">Escolha o período e o servidor, depois clique em "Gerar pré-visualização".</div>
     </div>
 
+
+    <!-- ===================== TAB: PONTO / LISTAS ===================== -->
+    <div class="panel" id="panel-ponto-listas">
+      <div class="pagehead">
+        <h2>Lista de servidores</h2>
+        <p>Relação completa dos servidores, organizada em ordem alfabética.</p>
+      </div>
+
+      <div class="row" style="margin-bottom:14px;align-items:center;">
+        <input type="text" id="searchListaServidores" placeholder="Buscar por nome ou matrícula..." style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;">
+        <button class="btn outline" id="imprimirListaServidoresBtn">Imprimir lista</button>
+      </div>
+
+      <div class="card-block" style="padding:0;overflow:hidden;">
+        <table class="lista-servidores-table">
+          <thead><tr><th style="width:90px;text-align:center;">Número</th><th style="width:180px;">Matrícula</th><th>Nome</th></tr></thead>
+          <tbody id="listaServidoresTbody"></tbody>
+        </table>
+        <div class="empty" id="listaServidoresEmpty" style="display:none;">Nenhum servidor importado.</div>
+      </div>
+    </div>
 
     <!-- ===================== TAB: FESTA JUNINA ===================== -->
     <div class="panel" id="panel-festa-junina">
@@ -1043,6 +1077,7 @@ function bindNav(){
       if(item.dataset.tab==='ponto-servidores') renderServidoresPontoTable();
       if(item.dataset.tab==='ponto-feriados'){ renderFeriadosTags(); renderDiasLetivosTags(); refreshServidorPeriodoSelect(); renderPeriodosServidor(); }
       if(item.dataset.tab==='ponto-gerar') refreshServidorSelectPonto();
+      if(item.dataset.tab==='ponto-listas') renderListaServidores();
     });
   });
 }
@@ -1950,6 +1985,8 @@ function bindPontoTabs(){
   });
   document.getElementById('gerarPontoBtn').addEventListener('click', gerarPontoPreview);
   document.getElementById('imprimirPontoBtn').addEventListener('click', imprimirPonto);
+  document.getElementById('searchListaServidores').addEventListener('input', renderListaServidores);
+  document.getElementById('imprimirListaServidoresBtn').addEventListener('click', imprimirListaServidores);
 }
 
 async function loadPontoData(){
@@ -2002,6 +2039,7 @@ function renderPontoAll(){
   renderPeriodosServidor();
   refreshServidorPeriodoSelect();
   refreshServidorSelectPonto();
+  renderListaServidores();
 }
 
 /* ---- importar servidores + feriados ---- */
@@ -2664,6 +2702,50 @@ function gerarPontoPreview(){
   document.getElementById('pontoGerarEmpty').style.display = 'none';
   document.getElementById('pontoPreviewArea').innerHTML = pontoState.folhasGeradas.map(f=>`<div class="folha-preview-wrap">${f.html}</div>`).join('<div style="height:18px;"></div>');
   document.getElementById('imprimirPontoBtn').disabled = false;
+}
+
+function getServidoresOrdenados(){
+  return [...pontoState.servidores].sort((a,b)=>
+    (a.nome||'').localeCompare(b.nome||'', 'pt-BR', {sensitivity:'base'})
+  );
+}
+
+function renderListaServidores(){
+  const tbody = document.getElementById('listaServidoresTbody');
+  if(!tbody) return;
+  const qEl = document.getElementById('searchListaServidores');
+  const q = normalize(qEl ? qEl.value : '');
+  const servidores = getServidoresOrdenados().filter(s=>
+    !q || normalize(s.nome).includes(q) || normalize(s.matricula).includes(q)
+  );
+  const empty = document.getElementById('listaServidoresEmpty');
+  if(empty) empty.style.display = servidores.length ? 'none' : 'block';
+  tbody.innerHTML = servidores.map((s,i)=>`<tr>
+    <td>${i+1}</td>
+    <td>${escapeHtml(s.matricula||'')}</td>
+    <td>${escapeHtml(s.nome||'')}</td>
+  </tr>`).join('');
+}
+
+function imprimirListaServidores(){
+  const servidores = getServidoresOrdenados();
+  if(!servidores.length){ alert('Nenhum servidor importado.'); return; }
+  const cfg = pontoState.config || {};
+  const linhas = servidores.map((s,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(s.matricula||'')}</td><td>${escapeHtml(s.nome||'')}</td></tr>`).join('');
+  const html = `<div class="lista-impressao">
+    <h1>LISTA DE SERVIDORES</h1>
+    <div class="subtitulo">${escapeHtml(cfg.escola||'')}</div>
+    <table><thead><tr><th>Número</th><th>Matrícula</th><th>Nome</th></tr></thead><tbody>${linhas}</tbody></table>
+  </div>`;
+  const printarea = document.getElementById('printarea');
+  printarea.innerHTML = `<div class="print-page lista-page">${html}</div>`;
+  document.body.classList.add('print-lista');
+  const limpar = ()=>{
+    document.body.classList.remove('print-lista');
+    window.removeEventListener('afterprint', limpar);
+  };
+  window.addEventListener('afterprint', limpar);
+  setTimeout(()=>window.print(),150);
 }
 
 function imprimirPonto(){
