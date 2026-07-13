@@ -1436,116 +1436,254 @@ async function diarioExtrairTextoPDF(file){
   const pdf=await pdfjsLib.getDocument({data:buffer}).promise;
   const paginasTexto=[];
   const paginasDados=[];
+
   for(let p=1;p<=pdf.numPages;p++){
     const page=await pdf.getPage(p);
-    const content=await page.getTextContent();
+    const content=await page.getTextContent({normalizeWhitespace:true,disableCombineTextItems:false});
+    const itens=(content.items||[]).map(item=>({
+      str:String(item.str||'').replace(/\s+/g,' ').trim(),
+      x:Number(item.transform?.[4]||0),
+      y:Number(item.transform?.[5]||0),
+      w:Number(item.width||0),
+      h:Math.abs(Number(item.height||item.transform?.[3]||0))
+    })).filter(i=>i.str);
+
+    // O PDF do diário fragmenta algumas palavras e linhas. Agrupa por uma
+    // tolerância dinâmica e preserva lacunas horizontais relevantes.
+    const toleranciaY=Math.max(2.5,Math.min(5,(itens.reduce((a,i)=>a+i.h,0)/(itens.length||1))*0.45));
     const grupos=[];
-    content.items.forEach(item=>{
-      const str=(item.str||'').trim();
-      if(!str) return;
-      const x=item.transform?.[4]||0;
-      const y=item.transform?.[5]||0;
-      let grupo=grupos.find(g=>Math.abs(g.y-y)<=2.2);
-      if(!grupo){ grupo={y,itens:[]}; grupos.push(grupo); }
-      grupo.itens.push({x,str});
+    itens.sort((a,b)=>b.y-a.y||a.x-b.x).forEach(item=>{
+      let grupo=grupos.find(g=>Math.abs(g.y-item.y)<=toleranciaY);
+      if(!grupo){ grupo={y:item.y,itens:[]}; grupos.push(grupo); }
+      grupo.itens.push(item);
+      grupo.y=(grupo.y*(grupo.itens.length-1)+item.y)/grupo.itens.length;
     });
     grupos.sort((a,b)=>b.y-a.y);
-    const linhas=grupos.map(g=>g.itens.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+
+    const linhasDetalhadas=grupos.map(g=>{
+      const ordenados=g.itens.sort((a,b)=>a.x-b.x);
+      let texto=''; let fimAnterior=null;
+      ordenados.forEach(i=>{
+        if(fimAnterior!==null){
+          const gap=i.x-fimAnterior;
+          texto += gap>18?'   ':gap>2?' ':'';
+        }
+        texto+=i.str;
+        fimAnterior=i.x+Math.max(i.w,1);
+      });
+      return {y:g.y,texto:texto.replace(/\s+/g,' ').trim(),itens:ordenados};
+    }).filter(l=>l.texto);
+
+    const linhas=linhasDetalhadas.map(l=>l.texto);
     const textoPagina=linhas.join('\n');
     paginasTexto.push(textoPagina);
-    paginasDados.push({numero:p, texto:textoPagina, linhas});
+    paginasDados.push({numero:p,texto:textoPagina,linhas,linhasDetalhadas,itens});
   }
-  return {texto:paginasTexto.join('\n'), paginas:pdf.numPages, paginasDados};
+  return {texto:paginasTexto.join('\n'),paginas:pdf.numPages,paginasDados};
 }
 
-
-function diarioExtrairSituacaoTurma(paginasDados, meta){
-  const alunos=new Map();
-  (paginasDados||[]).forEach(pagina=>{
-    (pagina.linhas||[]).forEach(linha=>{
-      const statusMatch=linha.match(/(CURSANDO|TRANSFERIDO)\s*$/i);
-      if(!statusMatch) return;
-      const nums=linha.match(/\d{1,2}/g)||[];
-      if(!nums.length) return;
-      const numero=String(parseInt(nums[0],10)).padStart(2,'0');
-      alunos.set(numero,statusMatch[1].toUpperCase());
-    });
-  });
-  const ativos=Array.from(alunos.values()).filter(s=>s==='CURSANDO').length;
-  const turmaTexto=((meta&&meta.turma)||'')+' '+((meta&&meta.serie)||'');
-  const m=turmaTexto.match(/INFANTIL\s*(?:III|3|IV|4|V|5)/i);
-  if(!m) return {ativos,capacidade:0,vagas:0};
-  const token=m[0].toUpperCase();
-  let etapa=0;
-  if(/III|3/.test(token)) etapa=3;
-  else if(/IV|4/.test(token)) etapa=4;
-  else if(/V|5/.test(token)) etapa=5;
-  const capacidade=etapa===5?25:(etapa===3||etapa===4?20:0);
-  const vagas=capacidade>ativos?capacidade-ativos:0;
-  return {ativos,capacidade,vagas,etapa};
+function diarioLimparCampo(valor){
+  return String(valor||'')
+    .replace(/\s+/g,' ')
+    .replace(/\s+(?:DISCIPLINA|PROFESSOR|COMPOSIÇÃO DE ENSINO|TURNO|TURMA|SÉRIE|BIMESTRE|COORDENADOR|ANO LETIVO|DATA\s*\/\s*QTDE DE AULAS)\s*:.*$/i,'')
+    .trim();
 }
 
-function diarioExtrairFaltasConsecutivas(paginasDados){
+function diarioBuscarCampo(texto,rotulos,proximos=[]){
+  const rot=rotulos.map(r=>r.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+  const prox=proximos.length?'(?=\\s+(?:'+proximos.map(r=>r.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\\s*:|$)':'(?=\\n|$)';
+  const re=new RegExp('(?:^|\\n|\\s)(?:'+rot+')\\s*:\\s*(.+?)'+prox,'i');
+  const m=String(texto||'').match(re);
+  return m?diarioLimparCampo(m[1]):'';
+}
+
+function diarioExtrairMetadadosPDF(texto){
+  texto=String(texto||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ');
+  let escola=diarioBuscarCampo(texto,['ESCOLA','UNIDADE ESCOLAR'],['DISCIPLINA','PROFESSOR']);
+  if(!escola){
+    const m=texto.match(/(?:CENTRO MUNICIPAL DE EDUCA(?:C|Ç)[AÃ]O INFANTIL|CMEI|ESCOLA MUNICIPAL)\s+([^\n]+?)(?=\s+(?:DISCIPLINA|PROFESSOR|DIÁRIO DE CLASSE)\s*:|\n|$)/i);
+    if(m) escola=diarioLimparCampo((m[0]||'').replace(/^.*?(?=CENTRO|CMEI|ESCOLA)/i,''));
+  }
+  const meta={
+    escola,
+    professor:diarioBuscarCampo(texto,['PROFESSOR','PROFESSORA'],['COMPOSIÇÃO DE ENSINO','TURNO','TURMA','COORDENADOR']),
+    turma:diarioBuscarCampo(texto,['TURMA'],['SÉRIE','SERIE','BIMESTRE','COORDENADOR']),
+    serie:diarioBuscarCampo(texto,['SÉRIE','SERIE'],['BIMESTRE','COORDENADOR','ANO LETIVO']),
+    turno:diarioBuscarCampo(texto,['TURNO'],['TURMA','SÉRIE','SERIE','BIMESTRE']),
+    disciplina:diarioBuscarCampo(texto,['DISCIPLINA'],['PROFESSOR','PROFESSORA','COMPOSIÇÃO DE ENSINO']),
+    bimestreTexto:diarioBuscarCampo(texto,['BIMESTRE'],['COORDENADOR','ANO LETIVO']),
+    ano:diarioCapturar(texto,/ANO\s+LETIVO\s*:\s*(20\d{2})/i)
+  };
+  // Fallbacks para cabeçalhos extraídos sem quebras de linha confiáveis.
+  if(!meta.bimestreTexto){ const m=texto.match(/([1-4])\s*[º°o]?\s*BIMESTRE/i); if(m) meta.bimestreTexto=m[0]; }
+  if(!meta.turno){ const m=texto.match(/\b(MATUTINO|VESPERTINO|NOTURNO|INTEGRAL)\b/i); if(m) meta.turno=m[1]; }
+  if(!meta.ano){ const m=texto.match(/\bANO\s+LETIVO\D{0,8}(20\d{2})\b/i); if(m) meta.ano=m[1]; }
+  return meta;
+}
+
+function diarioExtrairDatasTexto(texto){
+  const arr=[]; let m;
+  // Aceita "05/02/2026 - 1 AULA", "05/02/2026 – 1 AULA" e
+  // datas isoladas no cabeçalho da grade quando o PDF perde "1 AULA".
+  const principal=/(\d{1,2}\/\d{1,2}\/20\d{2})\s*[-–—]?\s*(?:\d+\s*)?AULAS?/gi;
+  while((m=principal.exec(String(texto||'')))!==null){ const iso=diarioValorParaISO(m[1]); if(iso) arr.push(iso); }
+  if(!arr.length){
+    const bloco=String(texto||'').match(/DATA\s*\/\s*QTDE\s+DE\s+AULAS?([\s\S]*?)(?=FALTAS\s+JUSTIFICADAS|SITUAÇÃO\s+DO\s+ALUNO|ALUNOS)/i);
+    const alvo=bloco?bloco[1]:String(texto||'');
+    const soltas=/(\d{1,2}\/\d{1,2}\/20\d{2})/g;
+    while((m=soltas.exec(alvo))!==null){ const iso=diarioValorParaISO(m[1]); if(iso) arr.push(iso); }
+  }
+  return arr;
+}
+
+function diarioExtrairLinhasAlunos(paginasDados){
   const alunos=new Map();
   (paginasDados||[]).forEach(pagina=>{
     const datas=diarioExtrairDatasTexto(pagina.texto);
     if(!datas.length) return;
-    pagina.linhas.forEach(linha=>{
-      const m=linha.match(/^\s*(\d{1,2})\s+(.+?)\s+((?:[•F\-~]\s*){3,})/);
-      if(!m) return;
-      const numero=String(parseInt(m[1],10)).padStart(2,'0');
-      const nome=m[2].replace(/\s+/g,' ').trim();
-      const marcacoes=(m[3].match(/[•F\-~]/g)||[]).slice(0,datas.length);
-      if(!marcacoes.length) return;
-      if(!alunos.has(numero)) alunos.set(numero,{numero,nome,registros:[]});
-      const aluno=alunos.get(numero);
-      if(nome.length>aluno.nome.length) aluno.nome=nome;
-      marcacoes.forEach((marca,idx)=>aluno.registros.push({data:datas[idx],marca}));
-    });
-  });
-  const alertas=[];
-  alunos.forEach(aluno=>{
-    aluno.registros.sort((a,b)=>a.data.localeCompare(b.data));
-    let atual=[]; let maior=[];
-    aluno.registros.forEach(reg=>{
-      if(reg.marca==='F'){
-        atual.push(reg);
-        if(atual.length>maior.length) maior=[...atual];
-      }else atual=[];
-    });
-    if(maior.length>5){
-      alertas.push({
-        numero:aluno.numero,
-        nome:aluno.nome,
-        quantidade:maior.length,
-        inicio:maior[0].data,
-        fim:maior[maior.length-1].data
-      });
+    const linhas=pagina.linhas||[];
+    for(let i=0;i<linhas.length;i++){
+      let linha=linhas[i];
+      // Alguns nomes quebram em duas linhas no PDF. Junta a linha anterior ou
+      // seguinte quando uma delas contém o número e a outra aparenta ser nome.
+      if(!/^\s*\d{1,2}\b/.test(linha) && i+1<linhas.length && /^\s*\d{1,2}\b/.test(linhas[i+1]) && /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ ]{5,}$/i.test(linha)){
+        linha=linhas[i+1].replace(/^(\s*\d{1,2})\s+/,'$1 '+linha+' '); i++;
+      }
+      const inicio=linha.match(/^\s*(\d{1,2})\s+(.+)/);
+      if(!inicio) continue;
+      const numero=String(parseInt(inicio[1],10)).padStart(2,'0');
+      const resto=inicio[2];
+      const statusM=resto.match(/\b(CURSANDO|TRANSFERIDO|REMANEJADO|ABANDONO)\b\s*$/i);
+      const status=statusM?statusM[1].toUpperCase():'';
+      const tokens=resto.match(/•|F|[-~]|\bP\b/g)||[];
+      if(tokens.length<Math.min(3,datas.length)) continue;
+      const primeiraMarca=resto.search(/(?:•|\bF\b|[-~])/);
+      const nome=diarioLimparCampo(primeiraMarca>=0?resto.slice(0,primeiraMarca):resto)
+        .replace(/\b\d+\s+\d+\s+\d+\s*(?:CURSANDO|TRANSFERIDO|REMANEJADO)?$/i,'').trim();
+      if(!nome) continue;
+      const marcacoes=tokens.slice(0,datas.length).map(t=>t.toUpperCase());
+      if(!alunos.has(numero)) alunos.set(numero,{numero,nome,status,registros:new Map()});
+      const a=alunos.get(numero);
+      if(nome.length>a.nome.length) a.nome=nome;
+      if(status) a.status=status;
+      marcacoes.forEach((marca,idx)=>a.registros.set(datas[idx],marca));
     }
+  });
+  return Array.from(alunos.values()).map(a=>({...a,registros:Array.from(a.registros.entries()).map(([data,marca])=>({data,marca}))}));
+}
+
+function diarioExtrairSituacaoTurma(paginasDados,meta){
+  const alunos=diarioExtrairLinhasAlunos(paginasDados);
+  const ativos=alunos.filter(a=>a.status==='CURSANDO').length;
+  const turmaTexto=((meta&&meta.turma)||'')+' '+((meta&&meta.serie)||'');
+  const m=turmaTexto.match(/INFANTIL\s*(?:III|3|IV|4|V|5)/i);
+  if(!m) return {ativos,capacidade:0,vagas:0,total:alunos.length};
+  const token=m[0].toUpperCase();
+  let etapa=0;
+  if(/III|3/.test(token)) etapa=3; else if(/IV|4/.test(token)) etapa=4; else if(/V|5/.test(token)) etapa=5;
+  const capacidade=etapa===5?25:(etapa===3||etapa===4?20:0);
+  return {ativos,capacidade,vagas:capacidade>ativos?capacidade-ativos:0,etapa,total:alunos.length};
+}
+
+function diarioExtrairFaltasConsecutivas(paginasDados){
+  const alertas=[];
+  diarioExtrairLinhasAlunos(paginasDados).forEach(aluno=>{
+    aluno.registros.sort((a,b)=>a.data.localeCompare(b.data));
+    let atual=[],maior=[];
+    aluno.registros.forEach(reg=>{
+      if(reg.marca==='F'){ atual.push(reg); if(atual.length>maior.length) maior=[...atual]; }
+      else atual=[];
+    });
+    if(maior.length>5) alertas.push({numero:aluno.numero,nome:aluno.nome,quantidade:maior.length,inicio:maior[0].data,fim:maior.at(-1).data});
   });
   return alertas.sort((a,b)=>b.quantidade-a.quantidade||a.nome.localeCompare(b.nome,'pt-BR'));
 }
 
-function diarioCapturar(texto, regex){ const m=texto.match(regex); return m ? m[1].trim() : ''; }
-function diarioNormalizarBimestre(txt){ const m=(txt||'').match(/([1-4])\s*[º°]?\s*BIMESTRE/i); return m?m[1]:''; }
-function diarioExtrairDatasTexto(texto){
-  const arr=[]; let m;
-  const re=/(\d{2}\/\d{2}\/\d{4})\s*-\s*\d+\s*AULA/gi;
-  while((m=re.exec(texto))!==null){ const iso=diarioValorParaISO(m[1]); if(iso) arr.push(iso); }
-  return arr;
+function diarioCapturar(texto,regex){ const m=String(texto||'').match(regex); return m?m[1].trim():''; }
+function diarioNormalizarBimestre(txt){ const m=String(txt||'').match(/([1-4])\s*[º°o]?\s*BIMESTRE/i); return m?m[1]:''; }
+
+function diarioParseCSV(texto, delimitador=';'){
+  const linhas=[];
+  let linha=[], campo='', entreAspas=false;
+  for(let i=0;i<texto.length;i++){
+    const ch=texto[i];
+    if(ch==='"'){
+      if(entreAspas && texto[i+1]==='"'){ campo+='"'; i++; }
+      else entreAspas=!entreAspas;
+    }else if(ch===delimitador && !entreAspas){ linha.push(campo); campo=''; }
+    else if((ch==='\n'||ch==='\r')&&!entreAspas){
+      if(ch==='\r'&&texto[i+1]==='\n') i++;
+      linha.push(campo); campo='';
+      if(linha.some(v=>String(v).trim()!=='')) linhas.push(linha);
+      linha=[];
+    }else campo+=ch;
+  }
+  linha.push(campo);
+  if(linha.some(v=>String(v).trim()!=='')) linhas.push(linha);
+  return linhas;
 }
-function diarioExtrairMetadadosPDF(texto){
-  return {
-    escola: diarioCapturar(texto,/CENTRO MUNICIPAL DE EDUCA(?:C|Ç)AO INFANTIL\s+([^\n]+?)(?=\s+DISCIPLINA:|\s+DIÁRIO DE CLASSE)/i),
-    professor: diarioCapturar(texto,/PROFESSOR:\s*([^\n]+?)(?=\s+COMPOSIÇÃO DE ENSINO:|\s+COORDENADOR:|\s+TURNO:)/i),
-    turma: diarioCapturar(texto,/TURMA:\s*([^\n]+?)(?=\s+SÉRIE:|\s+BIMESTRE:|\s+COORDENADOR:)/i),
-    serie: diarioCapturar(texto,/SÉRIE:\s*([^\n]+?)(?=\s+BIMESTRE:|\s+COORDENADOR:|\s+ANO LETIVO:)/i),
-    turno: diarioCapturar(texto,/TURNO:\s*([^\n]+?)(?=\s+TURMA:|\s+SÉRIE:)/i),
-    disciplina: diarioCapturar(texto,/DISCIPLINA:\s*([^\n]+?)(?=\s+PROFESSOR:|\s+TURNO:)/i),
-    bimestreTexto: diarioCapturar(texto,/BIMESTRE:\s*([^\n]+?)(?=\s+COORDENADOR:|\s+ANO LETIVO:)/i),
-    ano: diarioCapturar(texto,/ANO LETIVO:\s*(\d{4})/i)
-  };
+
+function diarioExtrairCSVPadrao(texto){
+  texto=String(texto||'').replace(/^\uFEFF/,'');
+  const delimitador=(texto.split('\n')[0].match(/;/g)||[]).length >= (texto.split('\n')[0].match(/,/g)||[]).length ? ';' : ',';
+  const linhasCSV=diarioParseCSV(texto,delimitador);
+  const linhasTexto=linhasCSV.map(l=>l.map(v=>String(v||'').trim()).filter(Boolean).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+  const textoNormalizado=linhasTexto.join('\n');
+  const meta=diarioExtrairMetadadosPDF(textoNormalizado);
+  const encontradas=diarioExtrairDatasTexto(textoNormalizado);
+
+  let cabecalhoDatas=[];
+  for(const linha of linhasCSV){
+    const candidatas=[];
+    linha.forEach((valor,indice)=>{
+      const m=String(valor||'').match(/(\d{1,2}\/\d{1,2}\/20\d{2})(?:\s*[-–—]?\s*(?:\d+\s*)?AULAS?)?/i);
+      if(m){ const iso=diarioValorParaISO(m[1]); if(iso) candidatas.push({indice,data:iso}); }
+    });
+    if(candidatas.length>cabecalhoDatas.length) cabecalhoDatas=candidatas;
+  }
+
+  const alunos=[];
+  linhasCSV.forEach(linha=>{
+    let numeroIdx=linha.findIndex(v=>/^\s*\d{1,2}\s*$/.test(String(v||'')));
+    if(numeroIdx<0) return;
+    const numeroBruto=String(linha[numeroIdx]||'').trim();
+    let nome='';
+    for(let i=numeroIdx+1;i<Math.min(linha.length,numeroIdx+4);i++){
+      const v=String(linha[i]||'').trim();
+      if(v && !/^[•F\-~]$/i.test(v) && !/^(CURSANDO|TRANSFERIDO|REMANEJADO)$/i.test(v)){ nome=v; break; }
+    }
+    if(!nome) return;
+    let situacao='';
+    for(let i=linha.length-1;i>=0;i--){
+      const valor=String(linha[i]||'').trim().toUpperCase();
+      if(/^(CURSANDO|TRANSFERIDO|REMANEJADO|ABANDONO)$/.test(valor)){ situacao=valor; break; }
+    }
+    const registros=cabecalhoDatas.map(item=>({data:item.data,marca:String(linha[item.indice]||'').trim().toUpperCase()}));
+    alunos.push({numero:String(parseInt(numeroBruto,10)).padStart(2,'0'),nome:nome.replace(/\s+/g,' '),situacao,registros});
+  });
+
+  const alertasFaltas=[];
+  alunos.forEach(aluno=>{
+    let atual=[],maior=[];
+    aluno.registros.forEach(reg=>{
+      if(reg.marca==='F'){ atual.push(reg); if(atual.length>maior.length) maior=[...atual]; }
+      else atual=[];
+    });
+    if(maior.length>5) alertasFaltas.push({numero:aluno.numero,nome:aluno.nome,quantidade:maior.length,inicio:maior[0].data,fim:maior.at(-1).data});
+  });
+  alertasFaltas.sort((a,b)=>b.quantidade-a.quantidade||a.nome.localeCompare(b.nome,'pt-BR'));
+
+  const ativos=alunos.filter(a=>a.situacao==='CURSANDO').length;
+  const turmaTexto=((meta.turma||'')+' '+(meta.serie||'')).toUpperCase();
+  let etapa=0;
+  if(/INFANTIL\s*(III|3)\b/.test(turmaTexto)) etapa=3;
+  else if(/INFANTIL\s*(IV|4)\b/.test(turmaTexto)) etapa=4;
+  else if(/INFANTIL\s*(V|5)\b/.test(turmaTexto)) etapa=5;
+  const capacidade=etapa===5?25:(etapa===3||etapa===4?20:0);
+  const situacaoTurma={ativos,capacidade,vagas:capacidade>ativos?capacidade-ativos:0,etapa,total:alunos.length};
+  return {encontradas,meta,alertasFaltas,situacaoTurma,alunos};
 }
+
 function diarioInferirBimestre(encontradas, meta={}){
   const peloCabecalho = diarioNormalizarBimestre(meta.bimestreTexto||'');
   if(peloCabecalho) return peloCabecalho;
@@ -1647,11 +1785,25 @@ async function verificarArquivoDiario(){
       diarioMontarResultado(file,encontradas,meta,paginas,alertasFaltas,situacaoTurma);
       return;
     }
+    if(file.name.toLowerCase().endsWith('.csv')){
+      const buffer=await file.arrayBuffer();
+      let textoCSV='';
+      try{ textoCSV=new TextDecoder('utf-8',{fatal:true}).decode(buffer); }
+      catch(e){ textoCSV=new TextDecoder('windows-1252').decode(buffer); }
+      const dados=diarioExtrairCSVPadrao(textoCSV);
+      diarioMontarResultado(file,dados.encontradas,dados.meta,0,dados.alertasFaltas,dados.situacaoTurma);
+      return;
+    }
     const buffer=await file.arrayBuffer();
     const wb=XLSX.read(new Uint8Array(buffer),{type:'array',cellDates:true});
     const encontradas=[];
-    wb.SheetNames.forEach(nome=>XLSX.utils.sheet_to_json(wb.Sheets[nome],{header:1,defval:'',raw:true}).forEach(linha=>linha.forEach(valor=>{const iso=diarioValorParaISO(valor);if(iso)encontradas.push(iso);}))); 
-    diarioMontarResultado(file,encontradas,{},0);
+    const textos=[];
+    wb.SheetNames.forEach(nome=>XLSX.utils.sheet_to_json(wb.Sheets[nome],{header:1,defval:'',raw:true}).forEach(linha=>linha.forEach(valor=>{
+      const iso=diarioValorParaISO(valor); if(iso) encontradas.push(iso);
+      if(typeof valor==='string'){ textos.push(valor); diarioExtrairDatasTexto(valor).forEach(d=>encontradas.push(d)); }
+    })));
+    const meta=diarioExtrairMetadadosPDF(textos.join('\n'));
+    diarioMontarResultado(file,encontradas,meta,0);
   }catch(err){ console.error(err); status.textContent='Não foi possível ler o arquivo. Verifique se ele segue o padrão do Diário de Classe.'; resultado.style.display='none'; }
 }
 
