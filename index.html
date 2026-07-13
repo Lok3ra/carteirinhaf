@@ -521,7 +521,11 @@
 
       <div class="card-block">
         <h3>Importar Servidores</h3>
-        <div class="helpbox">A aba <b>Servidores</b> deve ter as colunas: Servidor, Cargo, Função, Turno, Turno2, Turno3, Coordenação (M/V/N), Matrícula, Carga Hor. Semanal, Carga Horária Mensal, Afastamento, Coordenação4.</div>
+        <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b> e <b>Matrícula</b>. Para 40h, o sistema define automaticamente 200h mensais e os turnos Matutino e Vespertino. Para 30h, define 150h mensais e utiliza o turno informado.</div>
+        <div class="row" style="align-items:center;margin-bottom:12px;">
+          <button class="btn outline" id="baixarModeloServidoresBtn" type="button">Baixar modelo Excel</button>
+          <span style="font-size:12.5px;color:#6b6355;">Preencha o modelo e importe o arquivo abaixo.</span>
+        </div>
         <input type="file" id="fileInputServidores" accept=".xlsx,.xls,.xlsm">
         <p id="importStatusServidores" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
       </div>
@@ -558,7 +562,7 @@
       </div>
       <div class="card-block" style="padding:0;overflow:hidden;overflow-x:auto;">
         <table>
-          <thead><tr><th>Servidor</th><th>Cargo</th><th>Turnos</th><th>Coordenação</th><th>Dia fixo (Coord.4)</th><th>Afastamento</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Servidor</th><th>Cargo</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th>Ações</th></tr></thead>
           <tbody id="servidoresPontoTbody"></tbody>
         </table>
         <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor importado ainda. Vá em "Importar servidores".</div>
@@ -1184,15 +1188,14 @@ function renderStudentsTable(){
 
   tbody.innerHTML = filtered.map(s=>`
     <tr>
-      <td>${s.foto ? `<img class="thumb" src="${s.foto}">` : `<div class="noimg">sem foto</div>`}</td>
-      <td>${escapeHtml(s.nome)}</td>
-      <td>${escapeHtml(s.turma)}</td>
-      <td class="idnum">${s.numero}</td>
-      <td>
-        <button class="btn small outline" onclick="openPhotoModal('${s.id}')">Foto</button>
-        <button class="btn small outline" onclick="openStudentModal('${s.id}')">Editar</button>
-        <button class="btn small danger" onclick="deleteStudent('${s.id}')">Excluir</button>
-      </td>
+      <td><b>${escapeHtml(s.nome)}</b><br><span style="color:#8b8471;font-size:11.5px;">${escapeHtml(s.funcao||'')}</span></td>
+      <td>${escapeHtml(s.cargo)}</td>
+      <td>${escapeHtml(s.cargaSemanal||'')}</td>
+      <td>${escapeHtml(s.cargaMensal||'')}</td>
+      <td style="font-size:11.5px;">${[s.turno1,s.turno2].filter(Boolean).join(' · ')}</td>
+      <td>${escapeHtml(s.coordenacao||'—')}</td>
+      <td>${escapeHtml(s.matricula||'')}</td>
+      <td><button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
     </tr>
   `).join('');
 
@@ -1867,6 +1870,7 @@ function weekdayISO(date){ const d=date.getDay(); return d===0?7:d; } // 1=Mon..
 
 function bindPontoTabs(){
   document.getElementById('fileInputServidores').addEventListener('change', handleFileServidores);
+  document.getElementById('baixarModeloServidoresBtn').addEventListener('click', baixarModeloServidores);
   document.getElementById('calendarioAnoSelect').addEventListener('change', handleCalendarioAnoChange);
   document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
   document.getElementById('addFeriadoBtn').addEventListener('click', addFeriado);
@@ -1954,6 +1958,29 @@ function toIsoDatePonto(value){
   return null;
 }
 
+function baixarModeloServidores(){
+  const dados = [
+    ['Servidor','Cargo','Função','Carga Horária Semanal','Turno','Coordenação (M/V)','Matrícula'],
+    ['EXEMPLO SERVIDOR 40H','PROFESSOR','REGENTE',40,'','M','000001'],
+    ['EXEMPLO SERVIDOR 30H','ASSISTENTE DE EDUCAÇÃO','APOIO',30,'VESPERTINO','V','000002']
+  ];
+  const instrucoes = [
+    ['MODELO PARA IMPORTAÇÃO DE SERVIDORES'],
+    ['Preencha somente a aba Servidores e não altere os nomes das colunas.'],
+    ['Servidor de 40h: 200h mensais e turnos Matutino e Vespertino, definidos automaticamente.'],
+    ['Servidor de 30h: 150h mensais; informe MATUTINO ou VESPERTINO na coluna Turno.'],
+    ['Coordenação: use M para manhã, V para tarde ou deixe em branco.']
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(dados);
+  const wi = XLSX.utils.aoa_to_sheet(instrucoes);
+  ws['!cols'] = [{wch:32},{wch:24},{wch:22},{wch:22},{wch:16},{wch:20},{wch:16}];
+  wi['!cols'] = [{wch:95}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Servidores');
+  XLSX.utils.book_append_sheet(wb, wi, 'Instruções');
+  XLSX.writeFile(wb, 'modelo_importacao_servidores.xlsx');
+}
+
 function handleFileServidores(e){
   const file = e.target.files[0];
   if(!file) return;
@@ -1974,20 +2001,22 @@ function handleFileServidores(e){
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[servidoresSheetName], {defval:''});
       const novosServidores = rows.map(row=>{
         const nome = cellRaw(row,['servidor','nome']).toString().trim();
+        const cargaNumero = parseInt(String(cellRaw(row,['carga hor.sem','carga horaria semanal','carga hor. semanal'])).replace(/\D/g,''),10);
+        const turnoInformado = cellRaw(row,['turno']).toString().trim().toUpperCase();
+        const is40 = cargaNumero === 40;
+        const is30 = cargaNumero === 30;
         return {
           id: 'srv_' + normalize(nome).replace(/[^a-z0-9]/g,'_'),
           nome,
           cargo: cellRaw(row,['cargo']).toString().trim().toUpperCase(),
           funcao: cellRaw(row,['funcao','função']).toString().trim(),
-          turno1: cellRaw(row,['turno']).toString().trim().toUpperCase(),
-          turno2: cellRaw(row,['turno2']).toString().trim().toUpperCase(),
-          turno3: cellRaw(row,['turno3']).toString().trim().toUpperCase(),
+          turno1: is40 ? 'MATUTINO' : turnoInformado,
+          turno2: is40 ? 'VESPERTINO' : '',
+          turno3: '',
           coordenacao: cellRaw(row,['coordenacao','coordenação']).toString().trim().toUpperCase().charAt(0),
           matricula: cellRaw(row,['matricula','matrícula']).toString().trim(),
-          cargaSemanal: cellRaw(row,['carga hor.sem','carga horaria semanal','carga hor. semanal']).toString().trim(),
-          cargaMensal: cellRaw(row,['carga horaria mensal','carga horária mensal']).toString().trim(),
-          afastamento: cellRaw(row,['afastamento']).toString().trim(),
-          coordenacao4: cellRaw(row,['coordenacao4','coordenação4']).toString().trim()
+          cargaSemanal: cargaNumero ? String(cargaNumero) + 'H' : '',
+          cargaMensal: is40 ? '200H' : (is30 ? '150H' : '')
         };
       }).filter(s=>s.nome);
 
@@ -2268,43 +2297,29 @@ function isDiaLetivoOverride(iso){ return pontoState.diasLetivos.some(d=>d.data=
 function celula(servidor, date, turno){
   const iso = isoLocal(date);
   const wd = weekdayISO(date);
+  const overridden = isDiaLetivoOverride(iso);
 
   const cargaHoras = parseInt(String(servidor.cargaSemanal||'').replace(/\D/g,''),10);
   const turnosServidor = [servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' ').toUpperCase();
+
+  // Em servidores de 30h, o turno que não é trabalhado permanece bloqueado.
   if(cargaHoras === 30){
     if(turno==='manha' && turnosServidor.includes('VESPERTINO')) return {text:'****', tipo:'bloqueado'};
     if(turno==='tarde' && turnosServidor.includes('MATUTINO')) return {text:'****', tipo:'bloqueado'};
   }
-  if(servidor.afastamento) return {text:servidor.afastamento, tipo:'afastamento'};
 
+  // Fim de semana tem prioridade: mesmo que exista feriado/recesso/férias na data,
+  // deve aparecer apenas Sábado ou Domingo.
+  if(!overridden){
+    if(wd===6) return {text:'Sábado', tipo:'fimdesemana'};
+    if(wd===7) return {text:'Domingo', tipo:'fimdesemana'};
+  }
+
+  // Nos demais dias, só são exibidos feriados, recessos e férias cadastrados.
   const feriado = findFeriado(iso);
-  const overridden = isDiaLetivoOverride(iso);
-  const coord = (servidor.coordenacao||'').toUpperCase();
+  if(feriado) return {text:feriado.descricao, tipo:'feriado'};
 
-  function checaFDS(){
-    if(wd===6 && !overridden) return {text:'Sábado', tipo:'fimdesemana'};
-    if(wd===7 && !overridden) return {text:'Domingo', tipo:'fimdesemana'};
-    return null;
-  }
-  function padrao(){ return feriado ? {text:feriado.descricao, tipo:'feriado'} : {text:'', tipo:'normal'}; }
-
-  if(coord==='M'){
-    if(feriado && (wd===1||wd===5)) return {text:feriado.descricao, tipo:'feriado'};
-    if(turno==='manha' && (wd===1||wd===5)) return {text:'Coordenação Livre', tipo:'coordenacao'};
-    return checaFDS() || padrao();
-  }
-  if(coord==='V'){
-    if(feriado && (wd===1||wd===5)) return {text:feriado.descricao, tipo:'feriado'};
-    if(turno==='tarde' && (wd===1||wd===5)) return {text:'Coordenação Livre', tipo:'coordenacao'};
-    return checaFDS() || padrao();
-  }
-  if(coord==='N'){
-    const c4 = parseInt(servidor.coordenacao4, 10);
-    if(c4 && wd===c4) return {text:'Coordenação Livre', tipo:'coordenacao'};
-    if(feriado && (wd===1||wd===5)) return {text:feriado.descricao, tipo:'feriado'};
-    return checaFDS() || padrao();
-  }
-  return checaFDS() || padrao();
+  return {text:'', tipo:'normal'};
 }
 
 /* ---- gerar folha tab ---- */
