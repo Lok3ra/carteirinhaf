@@ -1498,26 +1498,95 @@ function diarioBuscarCampo(texto,rotulos,proximos=[]){
 }
 
 function diarioExtrairMetadadosPDF(texto){
-  texto=String(texto||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ');
-  let escola=diarioBuscarCampo(texto,['ESCOLA','UNIDADE ESCOLAR'],['DISCIPLINA','PROFESSOR']);
-  if(!escola){
-    const m=texto.match(/(?:CENTRO MUNICIPAL DE EDUCA(?:C|Ç)[AÃ]O INFANTIL|CMEI|ESCOLA MUNICIPAL)\s+([^\n]+?)(?=\s+(?:DISCIPLINA|PROFESSOR|DIÁRIO DE CLASSE)\s*:|\n|$)/i);
-    if(m) escola=diarioLimparCampo((m[0]||'').replace(/^.*?(?=CENTRO|CMEI|ESCOLA)/i,''));
+  const original=String(texto||'').replace(/\u00a0/g,' ');
+  const compacto=original.replace(/[\t\r\n]+/g,' ').replace(/\s+/g,' ').trim();
+
+  // Alguns PDFs devolvem todo o cabeçalho em uma única linha e até colam o
+  // final de um valor ao rótulo seguinte. Em vez de depender das quebras de
+  // linha, localiza todos os rótulos e recorta o texto existente entre eles.
+  const rotulos=[
+    {chave:'disciplina', re:/\bDISCIPLINA\s*:/gi},
+    {chave:'professor', re:/\bPROFESSOR(?:A)?\s*:/gi},
+    {chave:'composicao', re:/\bCOMPOSI(?:Ç|C)[AÃ]O\s+DE\s+ENSINO\s*:/gi},
+    {chave:'turno', re:/\bTURNO\s*:/gi},
+    {chave:'turma', re:/\bTURMA\s*:/gi},
+    {chave:'serie', re:/\bS(?:É|E)RIE\s*:/gi},
+    {chave:'bimestreTexto', re:/\bBIMESTRE\s*:/gi},
+    {chave:'coordenador', re:/\bCOORDENADOR(?:A)?\s*:/gi},
+    {chave:'ano', re:/\bANO\s+LETIVO\s*:/gi},
+    {chave:'dataAulas', re:/\bDATA\s*\/\s*QTDE\s+DE\s+AULAS\b/gi}
+  ];
+  const ocorrencias=[];
+  rotulos.forEach(rot=>{
+    rot.re.lastIndex=0;
+    let m;
+    while((m=rot.re.exec(compacto))!==null){
+      ocorrencias.push({chave:rot.chave,inicio:m.index,fim:rot.re.lastIndex});
+    }
+  });
+  ocorrencias.sort((a,b)=>a.inicio-b.inicio||a.fim-b.fim);
+
+  const campos={};
+  ocorrencias.forEach((oc,idx)=>{
+    if(campos[oc.chave]) return;
+    const proxima=ocorrencias.slice(idx+1).find(x=>x.inicio>oc.fim);
+    let valor=compacto.slice(oc.fim,proxima?proxima.inicio:compacto.length);
+    valor=valor
+      .replace(/^\s*[\-–—|]+\s*/,'')
+      .replace(/\s*(?:DATA\s*\/\s*QTDE\s+DE\s+AULAS|Nr\b|FALTAS\s+JUSTIFICADAS|IMPRESS(?:ÃO|AO)\s*:).*$/i,'')
+      .replace(/\s+/g,' ')
+      .trim();
+    campos[oc.chave]=valor;
+  });
+
+  let escola='';
+  const padroesEscola=[
+    /CENTRO\s+MUNICIPAL\s+DE\s+EDUCA(?:Ç|C)[AÃ]O\s+INFANTIL\s+[^\n]+?(?=\s+DI(?:Á|A)RIO\s+DE\s+CLASSE|\s+DISCIPLINA\s*:|$)/i,
+    /CMEI\s+[^\n]+?(?=\s+DI(?:Á|A)RIO\s+DE\s+CLASSE|\s+DISCIPLINA\s*:|$)/i,
+    /ESCOLA\s+MUNICIPAL\s+[^\n]+?(?=\s+DI(?:Á|A)RIO\s+DE\s+CLASSE|\s+DISCIPLINA\s*:|$)/i
+  ];
+  for(const re of padroesEscola){
+    const m=compacto.match(re);
+    if(m){ escola=m[0].trim(); break; }
   }
+  // Evita que "DIÁRIO DE CLASSE" seja incorporado ao nome da escola.
+  escola=escola.replace(/\s*DI(?:Á|A)RIO\s+DE\s+CLASSE.*$/i,'').trim();
+
+  const limparValor=(v)=>String(v||'')
+    .replace(/^\[|\]$/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+
   const meta={
-    escola,
-    professor:diarioBuscarCampo(texto,['PROFESSOR','PROFESSORA'],['COMPOSIÇÃO DE ENSINO','TURNO','TURMA','COORDENADOR']),
-    turma:diarioBuscarCampo(texto,['TURMA'],['SÉRIE','SERIE','BIMESTRE','COORDENADOR']),
-    serie:diarioBuscarCampo(texto,['SÉRIE','SERIE'],['BIMESTRE','COORDENADOR','ANO LETIVO']),
-    turno:diarioBuscarCampo(texto,['TURNO'],['TURMA','SÉRIE','SERIE','BIMESTRE']),
-    disciplina:diarioBuscarCampo(texto,['DISCIPLINA'],['PROFESSOR','PROFESSORA','COMPOSIÇÃO DE ENSINO']),
-    bimestreTexto:diarioBuscarCampo(texto,['BIMESTRE'],['COORDENADOR','ANO LETIVO']),
-    ano:diarioCapturar(texto,/ANO\s+LETIVO\s*:\s*(20\d{2})/i)
+    escola:limparValor(escola),
+    professor:limparValor(campos.professor),
+    turma:limparValor(campos.turma),
+    serie:limparValor(campos.serie),
+    turno:limparValor(campos.turno),
+    disciplina:limparValor(campos.disciplina),
+    bimestreTexto:limparValor(campos.bimestreTexto),
+    ano:''
   };
-  // Fallbacks para cabeçalhos extraídos sem quebras de linha confiáveis.
-  if(!meta.bimestreTexto){ const m=texto.match(/([1-4])\s*[º°o]?\s*BIMESTRE/i); if(m) meta.bimestreTexto=m[0]; }
-  if(!meta.turno){ const m=texto.match(/\b(MATUTINO|VESPERTINO|NOTURNO|INTEGRAL)\b/i); if(m) meta.turno=m[1]; }
-  if(!meta.ano){ const m=texto.match(/\bANO\s+LETIVO\D{0,8}(20\d{2})\b/i); if(m) meta.ano=m[1]; }
+
+  const anoFonte=campos.ano||compacto;
+  const anoM=String(anoFonte).match(/\b(20\d{2})\b/);
+  if(anoM) meta.ano=anoM[1];
+
+  // Fallbacks bem restritos para arquivos em que um rótulo específico foi
+  // perdido durante a extração, sem capturar toda a tabela como valor.
+  if(!meta.professor){ const m=compacto.match(/PROFESSOR(?:A)?\s*:\s*([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ .'-]{3,}?)(?=\s+(?:COORDENADOR|COMPOSI|TURNO|TURMA|S[ÉE]RIE|BIMESTRE|ANO\s+LETIVO)\s*:)/i); if(m) meta.professor=m[1].trim(); }
+  if(!meta.turma){ const m=compacto.match(/TURMA\s*:\s*([^:]{2,30}?)(?=\s+(?:S[ÉE]RIE|BIMESTRE|COORDENADOR|ANO\s+LETIVO)\s*:)/i); if(m) meta.turma=m[1].trim(); }
+  if(!meta.serie){ const m=compacto.match(/S[ÉE]RIE\s*:\s*([^:]{2,30}?)(?=\s+(?:BIMESTRE|COORDENADOR|ANO\s+LETIVO)\s*:)/i); if(m) meta.serie=m[1].trim(); }
+  if(!meta.turno){ const m=compacto.match(/\b(MATUTINO|VESPERTINO|NOTURNO|INTEGRAL)\b/i); if(m) meta.turno=m[1].toUpperCase(); }
+  if(!meta.bimestreTexto){ const m=compacto.match(/([1-4])\s*[º°o]?\s*BIMESTRE/i); if(m) meta.bimestreTexto=m[0]; }
+
+  // Limpeza final contra valores indevidamente longos.
+  ['professor','turma','serie','turno','disciplina','bimestreTexto'].forEach(chave=>{
+    let v=String(meta[chave]||'').trim();
+    v=v.replace(/\s+(?:DATA\s*\/\s*QTDE|Nr\b|ALUNOS\b|IMPRESS(?:ÃO|AO)\s*:).*$/i,'').trim();
+    if(v.length>120) v='';
+    meta[chave]=v;
+  });
   return meta;
 }
 
