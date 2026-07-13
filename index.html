@@ -528,7 +528,7 @@
 
       <div class="card-block">
         <h3>Importar Servidores</h3>
-        <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b> e <b>Matrícula</b>. Para 40h, o sistema define automaticamente 200h mensais e os turnos Matutino e Vespertino. Para 30h, define 150h mensais e utiliza o turno informado.</div>
+        <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b> e <b>Matrícula</b>. Para 40h, o sistema define automaticamente 200h mensais e os turnos Matutino e Vespertino. Para 30h, define 150h mensais e utiliza o turno informado. O campo <b>Coordenação</b> é aplicado somente quando a função for <b>Professor</b>.</div>
         <div class="row" style="align-items:center;margin-bottom:12px;">
           <button class="btn outline" id="baixarModeloServidoresBtn" type="button">Baixar modelo Excel</button>
           <span style="font-size:12.5px;color:#6b6355;">Preencha o modelo e importe o arquivo abaixo.</span>
@@ -2062,15 +2062,17 @@ function handleFileServidores(e){
         const turnoInformado = cellRaw(row,['turno']).toString().trim().toUpperCase();
         const is40 = cargaNumero === 40;
         const is30 = cargaNumero === 30;
+        const funcao = cellRaw(row,['funcao','função']).toString().trim();
+        const ehProfessor = normalize(funcao) === 'professor';
         return {
           id: 'srv_' + normalize(nome).replace(/[^a-z0-9]/g,'_'),
           nome,
           cargo: cellRaw(row,['cargo']).toString().trim().toUpperCase(),
-          funcao: cellRaw(row,['funcao','função']).toString().trim(),
+          funcao,
           turno1: is40 ? 'MATUTINO' : turnoInformado,
           turno2: is40 ? 'VESPERTINO' : '',
           turno3: '',
-          coordenacao: cellRaw(row,['coordenacao','coordenação']).toString().trim().toUpperCase().charAt(0),
+          coordenacao: ehProfessor ? cellRaw(row,['coordenacao','coordenação']).toString().trim().toUpperCase().charAt(0) : '',
           matricula: cellRaw(row,['matricula','matrícula']).toString().trim(),
           cargaSemanal: cargaNumero ? String(cargaNumero) + 'H' : '',
           cargaMensal: is40 ? '200H' : (is30 ? '150H' : '')
@@ -2217,12 +2219,12 @@ function renderServidoresPontoTable(){
       <td>${escapeHtml(s.cargo)}</td>
       <td style="font-size:11.5px;">${[s.turno1,s.turno2,s.turno3].filter(Boolean).join(' · ')}</td>
       <td>
+        ${normalize(s.funcao)==='professor' ? `
         <select onchange="updateServidorPontoField('${s.id}','coordenacao',this.value)" style="padding:4px 6px;font-size:12.5px;">
           <option value="" ${!s.coordenacao?'selected':''}>—</option>
           <option value="M" ${s.coordenacao==='M'?'selected':''}>M (manhã)</option>
           <option value="V" ${s.coordenacao==='V'?'selected':''}>V (tarde)</option>
-          <option value="N" ${s.coordenacao==='N'?'selected':''}>N (dia fixo)</option>
-        </select>
+        </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
       </td>
       <td>
         <select onchange="updateServidorPontoField('${s.id}','coordenacao4',this.value)" style="padding:4px 6px;font-size:12.5px;" ${s.coordenacao!=='N'?'disabled':''}>
@@ -2243,7 +2245,11 @@ function renderServidoresPontoTable(){
 async function updateServidorPontoField(id, field, value){
   const s = pontoState.servidores.find(x=>x.id===id);
   if(!s) return;
-  s[field] = value;
+  if(field==='coordenacao' && normalize(s.funcao)!=='professor'){
+    s.coordenacao = '';
+  }else{
+    s[field] = value;
+  }
   await window.storage.set('servidor:'+id, JSON.stringify(s));
   if(field==='coordenacao') renderServidoresPontoTable();
 }
@@ -2500,6 +2506,17 @@ function celula(servidor, date, turno){
     if(descricaoNormalizada.includes('ferias')) return {text:'Férias', tipo:'feriado'};
     if(descricaoNormalizada.includes('recesso')) return {text:'Recesso', tipo:'feriado'};
     return {text:'Feriado', tipo:'feriado'};
+  }
+
+  // Para professores, a coordenação livre ocorre às segundas e sextas-feiras
+  // apenas no turno indicado. Feriados, recessos e férias têm prioridade,
+  // pois já foram verificados acima.
+  const ehProfessor = normalize(servidor.funcao) === 'professor';
+  const ehSegundaOuSexta = wd === 1 || wd === 5;
+  const coordenacao = String(servidor.coordenacao || '').trim().toUpperCase();
+  if(ehProfessor && ehSegundaOuSexta){
+    if(coordenacao === 'M' && turno === 'manha') return {text:'Coordenação livre', tipo:'coordenacao'};
+    if(coordenacao === 'V' && turno === 'tarde') return {text:'Coordenação livre', tipo:'coordenacao'};
   }
 
   return {text:'', tipo:'normal'};
