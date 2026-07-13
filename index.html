@@ -246,7 +246,7 @@
     body.print-ponto #printarea .print-page{page:folha-ponto;width:185mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
     body.print-ponto #printarea .print-page:last-child{page-break-after:auto;break-after:auto;}
     body.print-ponto #printarea .folha{width:185mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
-    body.print-ponto #printarea .folha-assinaturas>div{height:14mm!important;padding-top:1.5mm!important;}
+    body.print-ponto #printarea .folha-assinaturas>div{height:9mm!important;padding-top:1mm!important;}
     body.print-ponto #printarea .folha-fechamento{padding-top:2mm!important;}
     body.print-ponto #printarea,body.print-ponto #printarea *,body.print-lista #printarea,body.print-lista #printarea *{visibility:visible!important;}
     body.print-lista #printarea .print-page{page:lista-servidores;width:185mm!important;margin:0!important;padding:0!important;}
@@ -273,8 +273,11 @@
   .folha-modelo-table .cabecalho-logo-celula{padding:0!important;text-align:center;vertical-align:middle;height:20mm;}
   .folha-modelo-table .cabecalho-logo-wrap{height:20mm;display:flex;align-items:center;justify-content:center;padding:1mm;overflow:hidden;}
   .folha-modelo-table .cabecalho-logo-wrap img{display:block;max-width:100%;max-height:18mm;object-fit:contain;}
-  .folha-modelo-table .servidor-label{height:12mm;text-align:center;font-size:11px;font-weight:700;}
-  .folha-modelo-table .servidor-nome{text-align:center;font-family:'Times New Roman',serif;font-size:13px;font-weight:700;}
+  .folha-modelo-table .servidor-row-wrap{padding:0!important;height:12mm;}
+  .folha-servidor-table{width:100%;height:12mm;border-collapse:collapse;table-layout:fixed;}
+  .folha-servidor-table td{border:none;padding:2px 4px;vertical-align:middle;}
+  .folha-servidor-table .servidor-label{width:62mm;text-align:center;font-size:11px;font-weight:700;border-right:1px solid #222;}
+  .folha-servidor-table .servidor-nome{text-align:center;font-family:'Times New Roman',serif;font-size:13px;font-weight:700;}
   .folha-modelo-table .titulo{height:7mm;text-align:center;color:#0000ff;font-size:14px;font-weight:700;}
   .folha-modelo-table .rotulo{font-weight:700;font-size:9px;}
   .folha-modelo-table .valor{text-align:center;font-family:'Times New Roman',serif;font-size:11px;}
@@ -295,7 +298,7 @@
   .folha-modelo-table .obs-label{height:5mm;font-size:8px;font-weight:700;vertical-align:top;}
   .folha-modelo-table .obs-area{height:5mm;}
   .folha-assinaturas{display:grid;grid-template-columns:1fr 1fr 1fr;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;}
-  .folha-assinaturas>div{height:16mm;text-align:center;font-size:9px;font-weight:700;padding-top:2px;border-right:1px solid #222;}
+  .folha-assinaturas>div{height:11mm;text-align:center;font-size:9px;font-weight:700;padding-top:1.5px;border-right:1px solid #222;}
   .folha-assinaturas>div:last-child{border-right:none;}
   .folha-fechamento{text-align:center;padding-top:3mm;font-family:'Times New Roman',serif;font-size:10px;}
   .folha-preview-wrap{background:#ddd;padding:10px;overflow-x:auto;}
@@ -2631,8 +2634,14 @@ function buildFolhaHtml(servidor, mes, ano){
           <td rowspan="2" class="cabecalho-logo-celula"><div class="cabecalho-logo-wrap"><img src="${logoFolha}" alt="Logotipo"></div></td>
         </tr>
         <tr>
-          <td colspan="2" class="servidor-label">Servidor (a):</td>
-          <td colspan="3" class="servidor-nome">${escapeHtml(servidor.nome)}</td>
+          <td colspan="5" class="servidor-row-wrap">
+            <table class="folha-servidor-table" aria-hidden="true">
+              <tr>
+                <td class="servidor-label">Servidor (a):</td>
+                <td class="servidor-nome">${escapeHtml(servidor.nome)}</td>
+              </tr>
+            </table>
+          </td>
         </tr>
         <tr><td colspan="7" class="titulo">FOLHA DE PONTO</td></tr>
         <tr>
