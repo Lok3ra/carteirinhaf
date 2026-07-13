@@ -299,6 +299,8 @@
   .festa-preco-promocao{color:#c54d42;font-weight:800;}
   .festa-promo-label{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:11.5px;font-weight:700;color:#7a3f17;cursor:pointer;user-select:none;}
   .festa-promo-label input{accent-color:#f08c1e;cursor:pointer;}
+  .festa-remover-item{margin-top:5px;border:0;background:none;color:#a3423a;font-size:11.5px;font-weight:700;cursor:pointer;padding:0;text-align:left;}
+  .festa-remover-item:hover{text-decoration:underline;}
   .festa-item.em-promocao{outline:2px solid rgba(232,87,74,.35);background:rgba(232,87,74,.08);}
   .festa-stepper{display:flex;align-items:center;gap:5px;flex-shrink:0;}
   .festa-stepper button{width:38px;height:38px;border:0;border-radius:7px;background:#f5a623;color:#fff;font-size:22px;font-weight:700;cursor:pointer;}
@@ -313,6 +315,10 @@
   .festa-fichas{list-style:none;padding:0;margin:0 0 14px;}
   .festa-fichas li{display:flex;align-items:center;gap:8px;background:#fff;border:2px dashed #f5a623;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:16px;}
   .festa-fichas li strong{color:#f08c1e;font-size:21px;min-width:28px;text-align:center;}
+  .festa-fichas-config{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .festa-ficha-chip{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #ead7b7;border-radius:20px;padding:6px 10px;font-size:13px;font-weight:600;color:#4a3b32;}
+  .festa-ficha-chip button{border:none;background:none;color:#c54d42;font-weight:800;cursor:pointer;font-size:15px;line-height:1;}
+
   @media(max-width:760px){.festa-grid{grid-template-columns:1fr}.festa-total-bar{flex-wrap:wrap}.festa-total{width:100%}}
 
 </style>
@@ -340,8 +346,9 @@
     <div class="navitem" data-tab="ponto-gerar"><span class="idx">08</span> Gerar folha</div>
 
 
-    <div class="navgroup">Eventos</div>
-    <div class="navitem" data-tab="festa-junina"><span class="idx">09</span> Festa Junina</div>
+    <div class="navgroup">Festa Junina</div>
+    <div class="navitem" data-tab="festa-junina"><span class="idx">09</span> Calculadora</div>
+    <div class="navitem" data-tab="festa-config"><span class="idx">10</span> Configuração</div>
 
     <div class="yearbox">
       <label>Ano ativo (numeração e layout)</label>
@@ -671,7 +678,6 @@
 
       <div class="festa-banner">
         <h2>Cardápio <span>Junino</span></h2>
-        <p>CMEI Pró Saber</p>
       </div>
 
       <div class="festa-grid" id="festaApp"></div>
@@ -680,6 +686,39 @@
         <div class="festa-total"><small>Total do pedido</small><strong id="festaTotal">R$ 0,00</strong></div>
         <button class="btn outline" id="festaLimpar" type="button" style="color:#fff;border-color:rgba(255,255,255,.65);">Limpar</button>
         <button class="btn festa-calc" id="festaCalcular" type="button" disabled>Calcular fichas</button>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: CONFIGURAÇÃO DA FESTA ===================== -->
+    <div class="panel" id="panel-festa-config">
+      <div class="pagehead">
+        <h2>Configuração — Festa Junina</h2>
+        <p>Adicione ou remova produtos e defina os valores de fichas disponíveis.</p>
+      </div>
+
+      <div class="card-block">
+        <h3>Adicionar item</h3>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:180px;"><label>Categoria</label><input type="text" id="festaNovoCategoria" placeholder="Ex: Salgados"></div>
+          <div class="field"><label>Nome do item</label><input type="text" id="festaNovoNome" placeholder="Ex: Espetinho"></div>
+          <div class="field" style="max-width:150px;"><label>Preço</label><input type="number" id="festaNovoPreco" min="0" step="0.50" placeholder="0,00"></div>
+          <button class="btn" id="festaAdicionarItem" type="button">+ Adicionar item</button>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <h3>Itens cadastrados</h3>
+        <div id="festaItensConfig"></div>
+      </div>
+
+      <div class="card-block">
+        <h3>Valores de ficha disponíveis</h3>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:180px;margin-bottom:0;"><label>Valor da ficha</label><input type="number" id="festaNovoValorFicha" min="0.01" step="0.50" placeholder="Ex: 5,00"></div>
+          <button class="btn outline" id="festaAdicionarFicha" type="button">+ Adicionar ficha</button>
+        </div>
+        <div class="festa-fichas-config" id="festaFichasConfig"></div>
+        <p style="font-size:12.5px;color:#6b6355;margin:8px 0 0;">A calculadora usará somente os valores cadastrados aqui.</p>
       </div>
     </div>
 
@@ -2060,9 +2099,9 @@ const CALENDARIOS_PONTO = {
       ['2026-12-25','Natal']
     ],
     ferias: [
-      ['2026-01-02','2026-02-01','Férias escolares — início do ano'],
-      ['2026-07-10','2026-07-26','Recesso/férias escolares — meio do ano'],
-      ['2026-12-23','2026-12-31','Férias escolares — fim do ano']
+      ['2026-01-02','2026-02-01','Férias'],
+      ['2026-07-10','2026-07-26','Recesso'],
+      ['2026-12-23','2026-12-31','Férias']
     ]
   }
 };
@@ -2469,7 +2508,7 @@ function imprimirPonto(){
 /* =========================================================================
    FESTA JUNINA / CAIXA
 ========================================================================= */
-const FESTA_CATEGORIAS = [
+const FESTA_CATEGORIAS_PADRAO = [
   { nome:'Salgados', itens:[
     {nome:'Caldo',preco:8},{nome:'Arroz Carreteiro',preco:10},{nome:'Galinhada',preco:10},
     {nome:'Cachorro-quente',preco:8},{nome:'Torta Salgada (pedaço)',preco:6},
@@ -2486,57 +2525,56 @@ const FESTA_CATEGORIAS = [
     {nome:'Pula-pula (5 min)',preco:3},{nome:'Pescaria',preco:6},{nome:'Estalinho (caixinha)',preco:2}
   ]}
 ];
-const FESTA_FICHAS=[
-  {rotulo:'R$ 5,00',meios:10},{rotulo:'R$ 3,00',meios:6},{rotulo:'R$ 2,00',meios:4},
-  {rotulo:'R$ 1,00',meios:2},{rotulo:'R$ 0,50',meios:1}
-];
-const FESTA_PRODUTOS=FESTA_CATEGORIAS.flatMap(c=>c.itens);
-const festaQuantidades=new Array(FESTA_PRODUTOS.length).fill(0);
+const FESTA_FICHAS_PADRAO=[5,3,2,1,0.5];
+const FESTA_ITENS_STORAGE='gestao_escolar:festa_itens';
 const FESTA_PROMO_STORAGE='gestao_escolar:festa_promocoes';
+const FESTA_FICHAS_STORAGE='gestao_escolar:festa_fichas';
+let festaCategorias=[];
+let festaFichas=[];
+let festaProdutos=[];
+let festaQuantidades=[];
 let festaPromocoes={};
-try{ festaPromocoes=JSON.parse(localStorage.getItem(FESTA_PROMO_STORAGE)||'{}')||{}; }catch(e){ festaPromocoes={}; }
 
+function festaCarregarDados(){
+  try{
+    const salvo=JSON.parse(localStorage.getItem(FESTA_ITENS_STORAGE)||'null');
+    festaCategorias=Array.isArray(salvo)&&salvo.length ? salvo : JSON.parse(JSON.stringify(FESTA_CATEGORIAS_PADRAO));
+  }catch(e){ festaCategorias=JSON.parse(JSON.stringify(FESTA_CATEGORIAS_PADRAO)); }
+  try{ festaPromocoes=JSON.parse(localStorage.getItem(FESTA_PROMO_STORAGE)||'{}')||{}; }catch(e){ festaPromocoes={}; }
+  try{
+    const fichasSalvas=JSON.parse(localStorage.getItem(FESTA_FICHAS_STORAGE)||'null');
+    festaFichas=Array.isArray(fichasSalvas)&&fichasSalvas.length ? fichasSalvas.map(Number).filter(v=>Number.isFinite(v)&&v>0) : [...FESTA_FICHAS_PADRAO];
+  }catch(e){ festaFichas=[...FESTA_FICHAS_PADRAO]; }
+  festaFichas=[...new Set(festaFichas.map(v=>Math.round(v*100)/100))].sort((a,b)=>b-a);
+  festaProdutos=festaCategorias.flatMap((c,ci)=>c.itens.map((item,ii)=>({...item,categoriaIndex:ci,itemIndex:ii})));
+  festaQuantidades=new Array(festaProdutos.length).fill(0);
+}
+function festaSalvarItens(){ try{ localStorage.setItem(FESTA_ITENS_STORAGE,JSON.stringify(festaCategorias)); }catch(e){} }
 function festaMoeda(v){ return 'R$ '+Number(v).toFixed(2).replace('.',','); }
 function festaPrecoAtual(i){
   const promo=Number(festaPromocoes[i]);
-  return Number.isFinite(promo) && promo>=0 ? promo : FESTA_PRODUTOS[i].preco;
+  return Number.isFinite(promo) && promo>=0 ? promo : festaProdutos[i].preco;
 }
-function festaSalvarPromocoes(){
-  try{ localStorage.setItem(FESTA_PROMO_STORAGE,JSON.stringify(festaPromocoes)); }catch(e){}
-}
+function festaSalvarPromocoes(){ try{ localStorage.setItem(FESTA_PROMO_STORAGE,JSON.stringify(festaPromocoes)); }catch(e){} }
 function festaTotalAtual(){ return festaQuantidades.reduce((t,q,i)=>t+q*festaPrecoAtual(i),0); }
 function festaAtualizarPrecoItem(i){
-  const p=FESTA_PRODUTOS[i];
-  const precoEl=document.getElementById('festaPreco-'+i);
-  const row=document.getElementById('festaItem-'+i);
-  const chk=document.getElementById('festaPromo-'+i);
+  const p=festaProdutos[i],precoEl=document.getElementById('festaPreco-'+i),row=document.getElementById('festaItem-'+i),chk=document.getElementById('festaPromo-'+i);
   if(!precoEl||!row||!chk) return;
   const temPromo=Object.prototype.hasOwnProperty.call(festaPromocoes,i);
-  chk.checked=temPromo;
-  row.classList.toggle('em-promocao',temPromo);
-  precoEl.innerHTML=temPromo
-    ? `<span class="festa-preco-original">${festaMoeda(p.preco)}</span><span class="festa-preco-promocao">${festaMoeda(festaPrecoAtual(i))}</span>`
-    : festaMoeda(p.preco);
+  chk.checked=temPromo; row.classList.toggle('em-promocao',temPromo);
+  precoEl.innerHTML=temPromo?`<span class="festa-preco-original">${festaMoeda(p.preco)}</span><span class="festa-preco-promocao">${festaMoeda(festaPrecoAtual(i))}</span>`:festaMoeda(p.preco);
 }
 function festaAlternarPromocao(i,marcada){
   const chk=document.getElementById('festaPromo-'+i);
   if(marcada){
-    const atual=Object.prototype.hasOwnProperty.call(festaPromocoes,i)?festaPromocoes[i]:FESTA_PRODUTOS[i].preco;
-    const resposta=prompt('Digite o novo valor promocional de '+FESTA_PRODUTOS[i].nome+':',String(atual).replace('.',','));
+    const atual=Object.prototype.hasOwnProperty.call(festaPromocoes,i)?festaPromocoes[i]:festaProdutos[i].preco;
+    const resposta=prompt('Digite o novo valor promocional de '+festaProdutos[i].nome+':',String(atual).replace('.',','));
     if(resposta===null){ chk.checked=false; return; }
     const valor=Number(String(resposta).replace(/\s/g,'').replace('R$','').replace(',','.'));
-    if(!Number.isFinite(valor)||valor<0){
-      alert('Informe um valor válido. Exemplo: 5,50');
-      chk.checked=false;
-      return;
-    }
+    if(!Number.isFinite(valor)||valor<0){ alert('Informe um valor válido. Exemplo: 5,50'); chk.checked=false; return; }
     festaPromocoes[i]=Math.round(valor*100)/100;
-  }else{
-    delete festaPromocoes[i];
-  }
-  festaSalvarPromocoes();
-  festaAtualizarPrecoItem(i);
-  festaAtualizarTotal();
+  }else delete festaPromocoes[i];
+  festaSalvarPromocoes(); festaAtualizarPrecoItem(i); festaAtualizarTotal();
 }
 function festaAtualizarTotal(){
   const t=festaTotalAtual();
@@ -2545,57 +2583,92 @@ function festaAtualizarTotal(){
 }
 function festaAlterar(i,delta){
   festaQuantidades[i]=Math.max(0,festaQuantidades[i]+delta);
-  const el=document.getElementById('festaQtd-'+i);
-  el.textContent=festaQuantidades[i];
-  el.closest('.festa-item').classList.toggle('ativo',festaQuantidades[i]>0);
-  festaAtualizarTotal();
+  const el=document.getElementById('festaQtd-'+i); if(!el) return;
+  el.textContent=festaQuantidades[i]; el.closest('.festa-item').classList.toggle('ativo',festaQuantidades[i]>0); festaAtualizarTotal();
 }
 function festaLimparPedido(){
-  festaQuantidades.fill(0);
-  document.querySelectorAll('.festa-qtd').forEach(el=>el.textContent='0');
-  document.querySelectorAll('.festa-item.ativo').forEach(el=>el.classList.remove('ativo'));
-  festaAtualizarTotal();
+  festaQuantidades.fill(0); document.querySelectorAll('.festa-qtd').forEach(el=>el.textContent='0');
+  document.querySelectorAll('.festa-item.ativo').forEach(el=>el.classList.remove('ativo')); festaAtualizarTotal();
+}
+function festaSalvarFichas(){ try{ localStorage.setItem(FESTA_FICHAS_STORAGE,JSON.stringify(festaFichas)); }catch(e){} }
+function festaRenderizarFichasConfig(){
+  const box=document.getElementById('festaFichasConfig'); if(!box) return;
+  box.innerHTML=festaFichas.map((v,i)=>`<span class="festa-ficha-chip">${festaMoeda(v)}<button type="button" data-i="${i}" aria-label="Remover ficha de ${festaMoeda(v)}">×</button></span>`).join('');
+  box.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>festaRemoverFicha(Number(btn.dataset.i))));
+}
+function festaAdicionarFicha(){
+  const input=document.getElementById('festaNovoValorFicha');
+  const valor=Number(String(input.value).replace(',','.'));
+  if(!Number.isFinite(valor)||valor<=0){ alert('Informe um valor de ficha válido.'); return; }
+  const arred=Math.round(valor*100)/100;
+  if(festaFichas.some(v=>Math.abs(v-arred)<0.001)){ alert('Esse valor de ficha já está cadastrado.'); return; }
+  festaFichas.push(arred); festaFichas.sort((a,b)=>b-a); festaSalvarFichas(); festaRenderizarFichasConfig(); input.value='';
+}
+function festaRemoverFicha(i){
+  if(festaFichas.length===1){ alert('É necessário manter pelo menos um valor de ficha.'); return; }
+  festaFichas.splice(i,1); festaSalvarFichas(); festaRenderizarFichasConfig();
 }
 function festaCalcularFichas(total){
-  let restante=Math.round(total*2);
-  return FESTA_FICHAS.map(f=>{const qtd=Math.floor(restante/f.meios);restante-=qtd*f.meios;return {...f,qtd};}).filter(f=>f.qtd>0);
+  let restante=Math.round(total*100);
+  const fichas=festaFichas.map(v=>({valor:v,centavos:Math.round(v*100)})).sort((a,b)=>b.centavos-a.centavos);
+  const resultado=[];
+  fichas.forEach(f=>{ const qtd=Math.floor(restante/f.centavos); restante-=qtd*f.centavos; if(qtd>0) resultado.push({qtd,rotulo:festaMoeda(f.valor)}); });
+  return {resultado,restante};
 }
-function bindFestaJunina(){
-  const app=document.getElementById('festaApp');
-  if(!app) return;
-  let indice=0;
-  FESTA_CATEGORIAS.forEach(cat=>{
-    const sec=document.createElement('section');
-    sec.className='festa-categoria';
-    sec.innerHTML='<h3>'+cat.nome+'</h3>';
-    cat.itens.forEach(()=>{
-      const i=indice++,p=FESTA_PRODUTOS[i],row=document.createElement('div');
-      row.className='festa-item';
-      row.id='festaItem-'+i;
-      row.innerHTML=`<div class="festa-item-info"><span class="festa-item-nome">${escapeHtml(p.nome)}</span><span class="festa-item-preco" id="festaPreco-${i}">${festaMoeda(p.preco)}</span><label class="festa-promo-label"><input type="checkbox" id="festaPromo-${i}"> Promoção</label></div><div class="festa-stepper"><button type="button" aria-label="Remover ${escapeHtml(p.nome)}">−</button><span class="festa-qtd" id="festaQtd-${i}">0</span><button type="button" aria-label="Adicionar ${escapeHtml(p.nome)}">+</button></div>`;
-      const [menos,mais]=row.querySelectorAll('.festa-stepper button');
-      menos.addEventListener('click',()=>festaAlterar(i,-1));
-      mais.addEventListener('click',()=>festaAlterar(i,1));
+function festaRenderizar(){
+  const app=document.getElementById('festaApp'); app.innerHTML=''; let indice=0;
+  festaCategorias.forEach((cat,ci)=>{
+    if(!cat.itens.length) return;
+    const sec=document.createElement('section'); sec.className='festa-categoria'; sec.innerHTML='<h3>'+escapeHtml(cat.nome)+'</h3>';
+    cat.itens.forEach((item,ii)=>{
+      const i=indice++,p=festaProdutos[i],row=document.createElement('div'); row.className='festa-item'; row.id='festaItem-'+i;
+      row.innerHTML=`<div class="festa-item-info"><span class="festa-item-nome">${escapeHtml(p.nome)}</span><span class="festa-item-preco" id="festaPreco-${i}">${festaMoeda(p.preco)}</span><label class="festa-promo-label"><input type="checkbox" id="festaPromo-${i}"> Promoção</label></div><div class="festa-stepper"><button type="button" aria-label="Diminuir ${escapeHtml(p.nome)}">−</button><span class="festa-qtd" id="festaQtd-${i}">0</span><button type="button" aria-label="Adicionar ${escapeHtml(p.nome)}">+</button></div>`;
+      const [menos,mais]=row.querySelectorAll('.festa-stepper button'); menos.addEventListener('click',()=>festaAlterar(i,-1)); mais.addEventListener('click',()=>festaAlterar(i,1));
       row.querySelector('#festaPromo-'+i).addEventListener('change',e=>festaAlternarPromocao(i,e.target.checked));
-      sec.appendChild(row);
-      festaAtualizarPrecoItem(i);
+      sec.appendChild(row); festaAtualizarPrecoItem(i);
     });
     app.appendChild(sec);
   });
+  festaAtualizarTotal();
+}
+function festaAdicionarItem(){
+  const categoria=document.getElementById('festaNovoCategoria').value.trim();
+  const nome=document.getElementById('festaNovoNome').value.trim();
+  const preco=Number(document.getElementById('festaNovoPreco').value);
+  if(!categoria||!nome||!Number.isFinite(preco)||preco<0){ alert('Preencha a categoria, o nome e um preço válido.'); return; }
+  let cat=festaCategorias.find(c=>normalize(c.nome)===normalize(categoria));
+  if(!cat){ cat={nome:categoria,itens:[]}; festaCategorias.push(cat); }
+  cat.itens.push({nome,preco:Math.round(preco*100)/100});
+  festaSalvarItens(); festaPromocoes={}; festaSalvarPromocoes(); festaCarregarDados(); festaRenderizar(); festaRenderizarItensConfig();
+  document.getElementById('festaNovoNome').value=''; document.getElementById('festaNovoPreco').value='';
+}
+function festaRemoverItem(ci,ii,nome){
+  if(!confirm('Remover “'+nome+'” da calculadora?')) return;
+  festaCategorias[ci].itens.splice(ii,1); festaCategorias=festaCategorias.filter(c=>c.itens.length);
+  festaSalvarItens(); festaPromocoes={}; festaSalvarPromocoes(); festaCarregarDados(); festaRenderizar(); festaRenderizarItensConfig();
+}
+function festaRenderizarItensConfig(){
+  const box=document.getElementById('festaItensConfig'); if(!box) return;
+  if(!festaCategorias.length){ box.innerHTML='<div class="empty">Nenhum item cadastrado.</div>'; return; }
+  box.innerHTML=festaCategorias.map((cat,ci)=>`<div class="festa-categoria" style="margin-bottom:12px;"><h3>${escapeHtml(cat.nome)}</h3>${cat.itens.map((item,ii)=>`<div class="festa-item"><div class="festa-item-info"><span class="festa-item-nome">${escapeHtml(item.nome)}</span><span class="festa-item-preco">${festaMoeda(item.preco)}</span></div><button class="btn danger small festa-config-remover" type="button" data-ci="${ci}" data-ii="${ii}" data-nome="${escapeHtml(item.nome)}">Remover</button></div>`).join('')}</div>`).join('');
+  box.querySelectorAll('.festa-config-remover').forEach(btn=>btn.addEventListener('click',()=>festaRemoverItem(Number(btn.dataset.ci),Number(btn.dataset.ii),btn.dataset.nome)));
+}
+function bindFestaJunina(){
+  const app=document.getElementById('festaApp'); if(!app) return;
+  festaCarregarDados(); festaRenderizar(); festaRenderizarFichasConfig(); festaRenderizarItensConfig();
+  document.getElementById('festaAdicionarItem').addEventListener('click',festaAdicionarItem);
+  document.getElementById('festaAdicionarFicha').addEventListener('click',festaAdicionarFicha);
   document.getElementById('festaLimpar').addEventListener('click',festaLimparPedido);
   document.getElementById('festaCalcular').addEventListener('click',()=>{
     const total=festaTotalAtual(); if(!total) return;
-    document.getElementById('festaListaFichas').innerHTML=festaCalcularFichas(total).map(f=>`<li><strong>${f.qtd}</strong> de <span>${f.rotulo}</span></li>`).join('');
-    document.getElementById('festaModalValor').textContent=festaMoeda(total);
-    document.getElementById('festaModalOverlay').classList.add('active');
+    const calc=festaCalcularFichas(total);
+    let html=calc.resultado.map(f=>`<li><strong>${f.qtd}</strong> de <span>${f.rotulo}</span></li>`).join('');
+    if(calc.restante>0) html+=`<li style="border-color:#c54d42;"><strong>!</strong><span>Não é possível completar ${festaMoeda(total)} exatamente com as fichas configuradas. Falta representar ${festaMoeda(calc.restante/100)}.</span></li>`;
+    document.getElementById('festaListaFichas').innerHTML=html;
+    document.getElementById('festaModalValor').textContent=festaMoeda(total); document.getElementById('festaModalOverlay').classList.add('active');
   });
   document.getElementById('festaVoltar').addEventListener('click',()=>document.getElementById('festaModalOverlay').classList.remove('active'));
-  document.getElementById('festaFinalizar').addEventListener('click',()=>{
-    festaLimparPedido();
-    document.getElementById('festaModalOverlay').classList.remove('active');
-    document.getElementById('panel-festa-junina').scrollIntoView({behavior:'smooth',block:'start'});
-  });
-  festaAtualizarTotal();
+  document.getElementById('festaFinalizar').addEventListener('click',()=>{ festaLimparPedido(); document.getElementById('festaModalOverlay').classList.remove('active'); document.getElementById('panel-festa-junina').scrollIntoView({behavior:'smooth',block:'start'}); });
 }
 
 </script>
