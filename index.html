@@ -230,15 +230,22 @@
 
   @media print{
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
-    body *{visibility:hidden;}
-    #printarea, #printarea *{visibility:visible;}
-    #printarea{position:absolute;top:0;left:0;width:190mm;}
-    #printarea .folha{border:none;margin:0;width:190mm;min-height:auto;}
-    #printarea .print-page{width:190mm;page-break-after:always;}
+    html,body{margin:0!important;padding:0!important;background:#fff!important;}
+    body.print-ponto > *:not(#printarea){display:none!important;}
+    body.print-ponto #printarea{display:block!important;position:static!important;width:170mm!important;margin:0!important;padding:0!important;}
+    body.print-ponto #printarea .print-page{page:folha-ponto;width:170mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
+    body.print-ponto #printarea .print-page:last-child{page-break-after:auto;break-after:auto;}
+    body.print-ponto #printarea .folha{width:170mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
+    body.print-ponto #printarea,body.print-ponto #printarea *{visibility:visible!important;}
+
+    body:not(.print-ponto) *{visibility:hidden;}
+    body:not(.print-ponto) #printarea,body:not(.print-ponto) #printarea *{visibility:visible;}
+    body:not(.print-ponto) #printarea{position:absolute;top:0;left:0;width:190mm;}
+    body:not(.print-ponto) #printarea .folha{border:none;margin:0;width:190mm;min-height:auto;}
     .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
     .printrow .idcard{box-shadow:none;}
-    .print-page{page-break-after:always;width:190mm;}
     @page{size:A4;margin:10mm;}
+    @page folha-ponto{size:A4 portrait;margin:10mm 10mm 10mm 30mm;}
   }
   @media screen{ #printarea{ display:none; } }
 
@@ -2662,7 +2669,13 @@ function gerarPontoPreview(){
 function imprimirPonto(){
   if(!pontoState.folhasGeradas || !pontoState.folhasGeradas.length) return;
   const printarea = document.getElementById('printarea');
-  printarea.innerHTML = pontoState.folhasGeradas.map(f=>`<div class="print-page">${f.html}</div>`).join('');
+  printarea.innerHTML = pontoState.folhasGeradas.map(f=>`<div class="print-page ponto-page">${f.html}</div>`).join('');
+  document.body.classList.add('print-ponto');
+  const limparModoImpressao = ()=>{
+    document.body.classList.remove('print-ponto');
+    window.removeEventListener('afterprint', limparModoImpressao);
+  };
+  window.addEventListener('afterprint', limparModoImpressao);
   setTimeout(()=>{ window.print(); }, 150);
 }
 
