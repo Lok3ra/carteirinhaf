@@ -378,6 +378,24 @@
 
   @media(max-width:760px){.festa-grid{grid-template-columns:1fr}.festa-total-bar{flex-wrap:wrap}.festa-total{width:100%}}
 
+
+  /* ---------- Calendário Escolar Central ---------- */
+  .cal-toolbar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;}
+  .cal-year-grid{display:grid;grid-template-columns:repeat(3,minmax(250px,1fr));gap:14px;}
+  .cal-month{background:#fff;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+  .cal-month h3{margin:0;padding:10px 12px;background:var(--sage);font-family:'Fraunces',serif;font-size:15px;text-align:center;}
+  .cal-week,.cal-days{display:grid;grid-template-columns:repeat(7,1fr);}
+  .cal-week span{font-size:10px;font-weight:700;text-align:center;padding:6px 2px;color:#6b6355;}
+  .cal-day{min-height:42px;border-top:1px solid #eee;border-right:1px solid #eee;padding:4px;cursor:pointer;position:relative;background:#fff;}
+  .cal-day:nth-child(7n){border-right:0;}.cal-day.empty{background:#fafafa;cursor:default;}
+  .cal-day:hover:not(.empty){outline:2px solid var(--gold);outline-offset:-2px;}
+  .cal-day .num{font-size:11px;font-weight:700;}.cal-day .mark{display:block;margin-top:3px;border-radius:3px;padding:2px 3px;font-size:8px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-legend-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}.cal-legend-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:18px;padding:5px 9px;font-size:12px;background:#fff;}
+  .cal-dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
+  .cal-events-table td:first-child{white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:12px;}
+  @media(max-width:980px){.cal-year-grid{grid-template-columns:repeat(2,minmax(240px,1fr));}}
+  @media(max-width:650px){.cal-year-grid{grid-template-columns:1fr;}}
+
 </style>
 </head>
 <body>
@@ -399,6 +417,17 @@
         <div class="navitem" data-tab="alunos"><span class="idx">02</span> Alunos</div>
         <div class="navitem" data-tab="config"><span class="idx">03</span> Configurações</div>
         <div class="navitem" data-tab="carteirinhas"><span class="idx">04</span> Gerar carteirinhas</div>
+      </div>
+    </div>
+
+
+    <div class="navsection" data-section="calendario">
+      <button class="navsection-toggle" type="button" aria-expanded="false">
+        <span>Calendário Escolar</span><span class="arrow">▶</span>
+      </button>
+      <div class="navsubmenu">
+        <div class="navitem" data-tab="calendario-central"><span class="idx">05</span> Calendário</div>
+        <div class="navitem" data-tab="calendario-legendas"><span class="idx">06</span> Legendas</div>
       </div>
     </div>
 
@@ -608,6 +637,48 @@
       <h3 id="cardsGridTitle" style="font-size:14px;color:var(--forest-dark);margin:0 0 12px;">Alunos disponíveis</h3>
       <div class="cardgrid" id="cardsGrid"></div>
       <div class="empty" id="cardsEmpty" style="display:none;">Nenhum aluno cadastrado para este ano ainda.</div>
+    </div>
+
+
+    <!-- ===================== TAB: CALENDÁRIO ESCOLAR CENTRAL ===================== -->
+    <div class="panel" id="panel-calendario-central">
+      <div class="pagehead"><h2>Calendário Escolar Central</h2><p>Cadastre uma única vez as datas que serão consultadas pela Folha de Ponto e pelo Diário Escolar.</p></div>
+      <div class="card-block">
+        <div class="cal-toolbar">
+          <div class="field" style="max-width:150px;margin-bottom:0"><label>Ano</label><input type="number" id="calCentralAno" min="2020" max="2100"></div>
+          <button class="btn outline" id="calCentralCarregar" type="button">Carregar ano</button>
+          <button class="btn" id="calCentralExportar" type="button">Exportar calendário</button>
+          <label class="btn outline" style="cursor:pointer">Importar calendário<input type="file" id="calCentralImportar" accept=".json" style="display:none"></label>
+          <button class="btn danger small" id="calCentralLimpar" type="button">Limpar ano</button>
+        </div>
+        <div class="helpbox">Clique em um dia para cadastrá-lo. Para intervalos, use o formulário abaixo. Os dados ficam salvos neste navegador; use <b>Exportar calendário</b> para guardar ou enviar o arquivo.</div>
+        <div id="calCentralGrade" class="cal-year-grid"></div>
+      </div>
+      <div class="card-block">
+        <h3>Adicionar data ou período</h3>
+        <div class="row" style="align-items:flex-end">
+          <div class="field" style="max-width:190px"><label>Data inicial</label><input type="date" id="calEventoInicio"></div>
+          <div class="field" style="max-width:190px"><label>Data final</label><input type="date" id="calEventoFim"></div>
+          <div class="field" style="max-width:240px"><label>Legenda</label><select id="calEventoLegenda"></select></div>
+          <div class="field" style="min-width:250px"><label>Observação</label><input type="text" id="calEventoObs" placeholder="Opcional"></div>
+          <button class="btn" id="calEventoAdicionar" type="button">Adicionar</button>
+        </div>
+        <div style="overflow-x:auto"><table class="cal-events-table"><thead><tr><th>Período</th><th>Legenda</th><th>Observação</th><th>Ações</th></tr></thead><tbody id="calEventosTbody"></tbody></table></div>
+        <div class="empty" id="calEventosEmpty" style="display:none">Nenhuma data cadastrada neste ano.</div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-calendario-legendas">
+      <div class="pagehead"><h2>Legendas do calendário</h2><p>Crie as categorias que serão usadas para marcar datas e períodos.</p></div>
+      <div class="card-block">
+        <div class="row" style="align-items:flex-end">
+          <div class="field"><label>Nome da legenda</label><input type="text" id="calLegendaNome" placeholder="Ex: Evento escolar"></div>
+          <div class="field" style="max-width:120px"><label>Cor</label><input type="color" id="calLegendaCor" value="#B8902E"></div>
+          <div class="field" style="max-width:240px"><label>Comportamento</label><select id="calLegendaTipo"><option value="letivo">Dia letivo</option><option value="nao-letivo">Dia sem aula</option><option value="informativo">Somente informativo</option></select></div>
+          <button class="btn" id="calLegendaAdicionar" type="button">Adicionar legenda</button>
+        </div>
+        <div id="calLegendasLista" class="cal-legend-list"></div>
+      </div>
     </div>
 
     <!-- ===================== TAB: PONTO / IMPORTAR ===================== -->
@@ -1137,6 +1208,7 @@ async function init(){
   bindPontoTabs();
   bindFestaJunina();
   bindDiarioEscolar();
+  bindCalendarioCentral();
   bindModals();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
   document.getElementById('cfgValidade').addEventListener('input', maskDateInput);
@@ -1235,6 +1307,8 @@ function bindNav(){
       if(item.dataset.tab==='ponto-listas') renderListaServidores();
       if(item.dataset.tab==='diario-verificador') renderDiarioVerificador();
       if(item.dataset.tab==='diario-config') renderDiarioVerificador();
+      if(item.dataset.tab==='calendario-central') renderCalendarioCentral();
+      if(item.dataset.tab==='calendario-legendas') renderLegendasCalendario();
     });
   });
 }
@@ -1289,6 +1363,12 @@ function diarioExcecoesDoBimestre(bim){
   return diarioExcecoes[bim] || [];
 }
 function diarioEhLetivoBase(iso){
+  const central = calendarioEventoNaData(iso);
+  if(central){
+    const leg = calendarioLegendaPorId(central.legendaId);
+    if(leg && leg.tipo==='letivo') return true;
+    if(leg && leg.tipo==='nao-letivo') return false;
+  }
   const data = diarioDataLocal(iso);
   const semana = data.getDay();
   if(DIARIO_DIAS_ADICIONADOS.has(iso)) return true;
@@ -3366,8 +3446,16 @@ function renderDiasLetivosTags(){
 }
 
 /* ---- rule engine ---- */
-function findFeriado(iso){ return pontoState.feriados.find(f=>f.data===iso) || null; }
-function isDiaLetivoOverride(iso){ return pontoState.diasLetivos.some(d=>d.data===iso); }
+function findFeriado(iso){
+  const central=calendarioEventoNaData(iso);
+  if(central){ const leg=calendarioLegendaPorId(central.legendaId); if(leg && leg.tipo==='nao-letivo') return {data:iso,descricao:leg.nome,origem:'calendario-central'}; }
+  return pontoState.feriados.find(f=>f.data===iso) || null;
+}
+function isDiaLetivoOverride(iso){
+  const central=calendarioEventoNaData(iso);
+  if(central){ const leg=calendarioLegendaPorId(central.legendaId); if(leg && leg.tipo==='letivo') return true; }
+  return pontoState.diasLetivos.some(d=>d.data===iso);
+}
 
 function celula(servidor, date, turno){
   const iso = isoLocal(date);
@@ -3798,6 +3886,72 @@ function bindFestaJunina(){
   document.getElementById('festaVoltar').addEventListener('click',()=>document.getElementById('festaModalOverlay').classList.remove('active'));
   document.getElementById('festaFinalizar').addEventListener('click',()=>{ festaLimparPedido(); document.getElementById('festaModalOverlay').classList.remove('active'); document.getElementById('panel-festa-junina').scrollIntoView({behavior:'smooth',block:'start'}); });
 }
+
+
+/* =========================================================================
+   CALENDÁRIO ESCOLAR CENTRAL
+========================================================================= */
+const CAL_MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const CAL_DIAS=['D','S','T','Q','Q','S','S'];
+let calendarioCentral={ano:new Date().getFullYear(),legendas:[],eventos:[]};
+const CAL_LEGENDAS_PADRAO=[
+  {id:'feriado',nome:'Feriado',cor:'#C94C4C',tipo:'nao-letivo'},
+  {id:'ferias',nome:'Férias',cor:'#7A6FC2',tipo:'nao-letivo'},
+  {id:'recesso',nome:'Recesso',cor:'#E39A3B',tipo:'nao-letivo'},
+  {id:'dia-sem-aula',nome:'Dia sem aula',cor:'#777777',tipo:'nao-letivo'},
+  {id:'reposicao',nome:'Reposição',cor:'#2E8B57',tipo:'letivo'},
+  {id:'anteposicao',nome:'Anteposição',cor:'#3182BD',tipo:'letivo'},
+  {id:'dia-letivo',nome:'Dia letivo',cor:'#4FA66A',tipo:'letivo'},
+  {id:'evento',nome:'Evento escolar',cor:'#B8902E',tipo:'informativo'}
+];
+function calKey(ano){return 'calendario-central:'+ano;}
+async function carregarCalendarioCentral(ano){
+  ano=parseInt(ano,10)||new Date().getFullYear();
+  try{const r=await window.storage.get(calKey(ano));calendarioCentral=JSON.parse(r.value);}
+  catch(e){
+    calendarioCentral={ano,legendas:JSON.parse(JSON.stringify(CAL_LEGENDAS_PADRAO)),eventos:[]};
+    try{const resp=await fetch('calendarios/calendario_'+ano+'.json',{cache:'no-store'});if(resp.ok){const j=await resp.json();if(j&&j.ano)calendarioCentral=j;}}catch(err){}
+  }
+  if(!Array.isArray(calendarioCentral.legendas)||!calendarioCentral.legendas.length) calendarioCentral.legendas=JSON.parse(JSON.stringify(CAL_LEGENDAS_PADRAO));
+  if(!Array.isArray(calendarioCentral.eventos)) calendarioCentral.eventos=[];
+  calendarioCentral.ano=ano;
+  renderCalendarioCentral();renderLegendasCalendario();
+}
+async function salvarCalendarioCentral(){try{await window.storage.set(calKey(calendarioCentral.ano),JSON.stringify(calendarioCentral));}catch(e){alert('Não foi possível salvar o calendário.');}}
+function calendarioLegendaPorId(id){return (calendarioCentral.legendas||[]).find(l=>l.id===id)||null;}
+function calendarioEventoNaData(iso){return (calendarioCentral.eventos||[]).find(e=>iso>=e.inicio&&iso<=e.fim)||null;}
+function calSlug(s){return normalize(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Date.now().toString(36);}
+function bindCalendarioCentral(){
+  const ano=document.getElementById('calCentralAno'); if(!ano)return; ano.value=new Date().getFullYear();
+  document.getElementById('calCentralCarregar').addEventListener('click',()=>carregarCalendarioCentral(ano.value));
+  document.getElementById('calEventoAdicionar').addEventListener('click',adicionarEventoCalendario);
+  document.getElementById('calLegendaAdicionar').addEventListener('click',adicionarLegendaCalendario);
+  document.getElementById('calCentralExportar').addEventListener('click',exportarCalendarioCentral);
+  document.getElementById('calCentralImportar').addEventListener('change',importarCalendarioCentral);
+  document.getElementById('calCentralLimpar').addEventListener('click',async()=>{if(confirm('Apagar todas as datas deste ano?')){calendarioCentral.eventos=[];await salvarCalendarioCentral();renderCalendarioCentral();}});
+  carregarCalendarioCentral(ano.value);
+}
+function renderCalendarioCentral(){
+  const grade=document.getElementById('calCentralGrade');if(!grade)return;
+  const ano=calendarioCentral.ano; const anoInput=document.getElementById('calCentralAno');if(anoInput)anoInput.value=ano;
+  grade.innerHTML=CAL_MESES.map((nome,mes)=>{
+    const primeiro=new Date(ano,mes,1).getDay(),total=new Date(ano,mes+1,0).getDate();let dias='';
+    for(let i=0;i<primeiro;i++)dias+='<div class="cal-day empty"></div>';
+    for(let d=1;d<=total;d++){const iso=ano+'-'+pad2(mes+1)+'-'+pad2(d);const ev=calendarioEventoNaData(iso);const leg=ev?calendarioLegendaPorId(ev.legendaId):null;dias+=`<div class="cal-day" data-date="${iso}"><span class="num">${d}</span>${leg?`<span class="mark" style="background:${leg.cor};color:#fff" title="${escapeHtml(leg.nome+(ev.observacao?' — '+ev.observacao:''))}">${escapeHtml(leg.nome)}</span>`:''}</div>`;}
+    return `<section class="cal-month"><h3>${nome}</h3><div class="cal-week">${CAL_DIAS.map(x=>'<span>'+x+'</span>').join('')}</div><div class="cal-days">${dias}</div></section>`;
+  }).join('');
+  grade.querySelectorAll('.cal-day:not(.empty)').forEach(el=>el.addEventListener('click',()=>{document.getElementById('calEventoInicio').value=el.dataset.date;document.getElementById('calEventoFim').value=el.dataset.date;document.getElementById('calEventoLegenda').focus();}));
+  const sel=document.getElementById('calEventoLegenda');if(sel)sel.innerHTML=calendarioCentral.legendas.map(l=>`<option value="${l.id}">${escapeHtml(l.nome)}</option>`).join('');
+  renderEventosCalendario();
+}
+function renderEventosCalendario(){const tb=document.getElementById('calEventosTbody'),empty=document.getElementById('calEventosEmpty');if(!tb)return;const evs=[...calendarioCentral.eventos].sort((a,b)=>a.inicio.localeCompare(b.inicio));empty.style.display=evs.length?'none':'block';tb.innerHTML=evs.map(e=>{const l=calendarioLegendaPorId(e.legendaId)||{nome:'Legenda removida',cor:'#999'};const fmt=x=>x.split('-').reverse().join('/');return `<tr><td>${fmt(e.inicio)}${e.fim!==e.inicio?' a '+fmt(e.fim):''}</td><td><span class="cal-dot" style="background:${l.cor}"></span> ${escapeHtml(l.nome)}</td><td>${escapeHtml(e.observacao||'')}</td><td><button class="btn danger small" onclick="removerEventoCalendario('${e.id}')">Remover</button></td></tr>`;}).join('');}
+async function adicionarEventoCalendario(){const inicio=document.getElementById('calEventoInicio').value,fim=document.getElementById('calEventoFim').value||inicio,legendaId=document.getElementById('calEventoLegenda').value,observacao=document.getElementById('calEventoObs').value.trim();if(!inicio||!legendaId){alert('Informe a data e a legenda.');return;}if(fim<inicio){alert('A data final não pode ser anterior à inicial.');return;}calendarioCentral.eventos.push({id:'evt-'+Date.now().toString(36),inicio,fim,legendaId,observacao});await salvarCalendarioCentral();renderCalendarioCentral();document.getElementById('calEventoObs').value='';}
+async function removerEventoCalendario(id){calendarioCentral.eventos=calendarioCentral.eventos.filter(e=>e.id!==id);await salvarCalendarioCentral();renderCalendarioCentral();}
+function renderLegendasCalendario(){const box=document.getElementById('calLegendasLista');if(!box)return;box.innerHTML=calendarioCentral.legendas.map(l=>`<span class="cal-legend-chip"><i class="cal-dot" style="background:${l.cor}"></i><b>${escapeHtml(l.nome)}</b><small>${l.tipo==='letivo'?'letivo':l.tipo==='nao-letivo'?'sem aula':'informativo'}</small><button class="btn danger small" onclick="removerLegendaCalendario('${l.id}')">×</button></span>`).join('');}
+async function adicionarLegendaCalendario(){const nome=document.getElementById('calLegendaNome').value.trim(),cor=document.getElementById('calLegendaCor').value,tipo=document.getElementById('calLegendaTipo').value;if(!nome){alert('Informe o nome da legenda.');return;}calendarioCentral.legendas.push({id:calSlug(nome),nome,cor,tipo});await salvarCalendarioCentral();document.getElementById('calLegendaNome').value='';renderLegendasCalendario();renderCalendarioCentral();}
+async function removerLegendaCalendario(id){if(calendarioCentral.eventos.some(e=>e.legendaId===id)){alert('Essa legenda está sendo usada. Remova primeiro as datas relacionadas.');return;}calendarioCentral.legendas=calendarioCentral.legendas.filter(l=>l.id!==id);await salvarCalendarioCentral();renderLegendasCalendario();renderCalendarioCentral();}
+function exportarCalendarioCentral(){const blob=new Blob([JSON.stringify(calendarioCentral,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='calendario_'+calendarioCentral.ano+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
+function importarCalendarioCentral(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const j=JSON.parse(r.result);if(!j.ano||!Array.isArray(j.legendas)||!Array.isArray(j.eventos))throw new Error();calendarioCentral=j;document.getElementById('calCentralAno').value=j.ano;await salvarCalendarioCentral();renderCalendarioCentral();renderLegendasCalendario();alert('Calendário importado com sucesso.');}catch(e){alert('Arquivo de calendário inválido.');}};r.readAsText(f);ev.target.value='';}
 
 </script>
 </body>
