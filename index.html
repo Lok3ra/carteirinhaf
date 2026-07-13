@@ -246,6 +246,8 @@
     body.print-ponto #printarea .print-page{page:folha-ponto;width:185mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
     body.print-ponto #printarea .print-page:last-child{page-break-after:auto;break-after:auto;}
     body.print-ponto #printarea .folha{width:185mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
+    body.print-ponto #printarea .folha-assinaturas>div{height:14mm!important;padding-top:1.5mm!important;}
+    body.print-ponto #printarea .folha-fechamento{padding-top:2mm!important;}
     body.print-ponto #printarea,body.print-ponto #printarea *,body.print-lista #printarea,body.print-lista #printarea *{visibility:visible!important;}
     body.print-lista #printarea .print-page{page:lista-servidores;width:185mm!important;margin:0!important;padding:0!important;}
 
@@ -293,9 +295,9 @@
   .folha-modelo-table .obs-label{height:5mm;font-size:8px;font-weight:700;vertical-align:top;}
   .folha-modelo-table .obs-area{height:5mm;}
   .folha-assinaturas{display:grid;grid-template-columns:1fr 1fr 1fr;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;}
-  .folha-assinaturas>div{height:24mm;text-align:center;font-size:9px;font-weight:700;padding-top:3px;border-right:1px solid #222;}
+  .folha-assinaturas>div{height:16mm;text-align:center;font-size:9px;font-weight:700;padding-top:2px;border-right:1px solid #222;}
   .folha-assinaturas>div:last-child{border-right:none;}
-  .folha-fechamento{text-align:center;padding-top:7mm;font-family:'Times New Roman',serif;font-size:10px;}
+  .folha-fechamento{text-align:center;padding-top:3mm;font-family:'Times New Roman',serif;font-size:10px;}
   .folha-preview-wrap{background:#ddd;padding:10px;overflow-x:auto;}
 
 
