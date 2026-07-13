@@ -290,8 +290,8 @@
   .folha-modelo-table .hora{text-align:center;font-family:'Times New Roman',serif;font-size:12px;letter-spacing:1px;}
   .folha-modelo-table .registro{text-align:center;font-family:'Times New Roman',serif;font-size:12px;font-weight:700;}
   .folha-modelo-table .registro.feriado,.folha-modelo-table .registro.afastamento,.folha-modelo-table .registro.coordenacao{font-size:9px;line-height:1.05;}
-  .folha-modelo-table .obs-label{height:8mm;font-size:8px;font-weight:700;vertical-align:top;}
-  .folha-modelo-table .obs-area{height:12mm;}
+  .folha-modelo-table .obs-label{height:5mm;font-size:8px;font-weight:700;vertical-align:top;}
+  .folha-modelo-table .obs-area{height:5mm;}
   .folha-assinaturas{display:grid;grid-template-columns:1fr 1fr 1fr;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;}
   .folha-assinaturas>div{height:24mm;text-align:center;font-size:9px;font-weight:700;padding-top:3px;border-right:1px solid #222;}
   .folha-assinaturas>div:last-child{border-right:none;}
@@ -2536,8 +2536,8 @@ function celula(servidor, date, turno){
   const periodoIndividual = findPeriodoServidor(servidor.id, iso);
   if(periodoIndividual){
     const tipoIndividual = normalize(periodoIndividual.descricao || periodoIndividual.tipo || '');
-    if(tipoIndividual.includes('ferias')) return {text:'Férias', tipo:'feriado'};
-    if(tipoIndividual.includes('recesso')) return {text:'Recesso', tipo:'feriado'};
+    if(tipoIndividual.includes('ferias')) return {text:'FÉRIAS', tipo:'feriado'};
+    if(tipoIndividual.includes('recesso')) return {text:'RECESSO', tipo:'feriado'};
     if(tipoIndividual.includes('atestado')) return {text:'Atestado médico', tipo:'afastamento'};
     if(tipoIndividual.includes('licenca premio')) return {text:'Licença Prêmio', tipo:'afastamento'};
     return {text:periodoIndividual.tipo || periodoIndividual.descricao || '', tipo:'afastamento'};
@@ -2548,9 +2548,9 @@ function celula(servidor, date, turno){
     const descricaoNormalizada = normalize(feriado.descricao || '');
     const ehRecessoMeioAno = descricaoNormalizada.includes('recesso') && iso >= '2026-07-10' && iso <= '2026-07-26' && (feriado.origem||'').startsWith('calendario-');
     if(ehRecessoMeioAno && isCargoSemRecessoEscolarMeioAno(servidor)) return {text:'', tipo:'normal'};
-    if(descricaoNormalizada.includes('ferias')) return {text:'Férias', tipo:'feriado'};
-    if(descricaoNormalizada.includes('recesso')) return {text:'Recesso', tipo:'feriado'};
-    return {text:'Feriado', tipo:'feriado'};
+    if(descricaoNormalizada.includes('ferias')) return {text:'FÉRIAS', tipo:'feriado'};
+    if(descricaoNormalizada.includes('recesso')) return {text:'RECESSO', tipo:'feriado'};
+    return {text:'FERIADO', tipo:'feriado'};
   }
 
   // Para professores, a coordenação livre ocorre às segundas e sextas-feiras
@@ -2560,8 +2560,8 @@ function celula(servidor, date, turno){
   const ehSegundaOuSexta = wd === 1 || wd === 5;
   const coordenacao = String(servidor.coordenacao || '').trim().toUpperCase();
   if(ehProfessor && ehSegundaOuSexta){
-    if(coordenacao === 'M' && turno === 'manha') return {text:'Coordenação livre', tipo:'coordenacao'};
-    if(coordenacao === 'V' && turno === 'tarde') return {text:'Coordenação livre', tipo:'coordenacao'};
+    if(coordenacao === 'M' && turno === 'manha') return {text:'COORDENAÇÃO LIVRE', tipo:'coordenacao'};
+    if(coordenacao === 'V' && turno === 'tarde') return {text:'COORDENAÇÃO LIVRE', tipo:'coordenacao'};
   }
 
   return {text:'', tipo:'normal'};
