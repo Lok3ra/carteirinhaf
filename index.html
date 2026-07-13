@@ -2326,7 +2326,7 @@ function buildFolhaHtml(servidor, mes, ano){
   const total = daysInMonth(mes, ano);
   const cfg = pontoState.config;
   const brasaoFolha = BRASAO_FOLHA_PADRAO;
-  const logoFolha = (state.config && state.config.logo) ? state.config.logo : LOGO_FOLHA_PADRAO;
+  const logoFolha = LOGO_FOLHA_PADRAO;
   const turnos = [servidor.turno1, servidor.turno2, servidor.turno3].filter(Boolean).map(t=>t.toUpperCase());
   const temMatutino = turnos.some(t=>t.includes('MATUTINO') && t.includes('X'));
   const temVespertino = turnos.some(t=>t.includes('VESPERTINO') && t.includes('X'));
