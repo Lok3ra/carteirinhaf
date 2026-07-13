@@ -247,20 +247,23 @@
   .folha-modelo-table{width:100%;border-collapse:collapse;table-layout:fixed;}
   .folha-modelo-table td,.folha-modelo-table th{border:1px solid #222;padding:2px 4px;vertical-align:middle;}
   .folha-modelo-table .sem-borda{border:none!important;}
-  .folha-modelo-table .cabecalho-escola{height:17mm;padding:0!important;}
-  .folha-cabecalho-grid{display:grid;grid-template-columns:23mm 1fr 27mm;align-items:center;min-height:17mm;width:100%;}
-  .folha-cabecalho-imagem{height:15mm;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:1mm;}
-  .folha-cabecalho-imagem img{display:block;max-width:100%;max-height:14mm;object-fit:contain;}
-  .folha-cabecalho-centro{text-align:center;font-size:12px;font-weight:700;line-height:1.25;padding:0 2mm;}
-  .folha-cabecalho-centro .orgao{font-size:10px;font-weight:700;}
-  .folha-cabecalho-centro .escola{font-size:12px;font-weight:700;margin-top:1px;}
-  .folha-modelo-table .servidor-label{height:17mm;text-align:center;font-size:11px;font-weight:700;}
+  .folha-modelo-table .cabecalho-escola-titulo{height:8mm;text-align:center;font-size:8px;font-weight:700;padding:0 6px!important;line-height:1.15;}
+  .folha-modelo-table .cabecalho-escola-titulo .linha-titulo{display:flex;align-items:center;justify-content:center;min-height:8mm;font-size:8px;font-weight:700;text-align:center;}
+  .folha-modelo-table .cabecalho-logo-celula{padding:0!important;text-align:center;vertical-align:middle;height:20mm;}
+  .folha-modelo-table .cabecalho-logo-wrap{height:20mm;display:flex;align-items:center;justify-content:center;padding:1mm;overflow:hidden;}
+  .folha-modelo-table .cabecalho-logo-wrap img{display:block;max-width:100%;max-height:18mm;object-fit:contain;}
+  .folha-modelo-table .servidor-label{height:12mm;text-align:center;font-size:11px;font-weight:700;}
   .folha-modelo-table .servidor-nome{text-align:center;font-family:'Times New Roman',serif;font-size:13px;font-weight:700;}
   .folha-modelo-table .titulo{height:7mm;text-align:center;color:#0000ff;font-size:14px;font-weight:700;}
   .folha-modelo-table .rotulo{font-weight:700;font-size:9px;}
   .folha-modelo-table .valor{text-align:center;font-family:'Times New Roman',serif;font-size:11px;}
   .folha-modelo-table .turno{text-align:center;font-size:9px;font-weight:700;height:7mm;}
-  .folha-modelo-table .carga-label{text-align:center;font-size:8px;font-weight:700;height:7mm;}
+  .folha-modelo-table .carga-row-wrap{padding:0!important;}
+  .folha-carga-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .folha-carga-table td{border:none;border-left:1px solid #222;height:7mm;padding:2px 4px;vertical-align:middle;}
+  .folha-carga-table td:first-child{border-left:none;}
+  .folha-carga-table .carga-label{text-align:center;font-size:8px;font-weight:700;}
+  .folha-carga-table .valor{text-align:center;font-family:'Times New Roman',serif;font-size:11px;}
   .folha-modelo-table .cab-dia{height:9mm;text-align:center;font-size:8px;font-weight:700;line-height:1.05;}
   .folha-modelo-table .cab-servidor{font-family:'Times New Roman',serif;font-size:10px;}
   .folha-modelo-table .linha-dia{height:6.2mm;}
@@ -2266,9 +2269,11 @@ function celula(servidor, date, turno){
   const iso = isoLocal(date);
   const wd = weekdayISO(date);
 
-  if(servidor.cargo === 'ASSISTENTE DE EDUCAÇÃO'){
-    if(turno==='manha' && (servidor.turno2==='VESPERTINO (X)' || servidor.turno3==='VESPERTINO (X)')) return {text:'****', tipo:'bloqueado'};
-    if(turno==='tarde' && (servidor.turno2==='MATUTINO (X)' || servidor.turno3==='MATUTINO (X)')) return {text:'****', tipo:'bloqueado'};
+  const cargaHoras = parseInt(String(servidor.cargaSemanal||'').replace(/\D/g,''),10);
+  const turnosServidor = [servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' ').toUpperCase();
+  if(cargaHoras === 30){
+    if(turno==='manha' && turnosServidor.includes('VESPERTINO')) return {text:'****', tipo:'bloqueado'};
+    if(turno==='tarde' && turnosServidor.includes('MATUTINO')) return {text:'****', tipo:'bloqueado'};
   }
   if(servidor.afastamento) return {text:servidor.afastamento, tipo:'afastamento'};
 
@@ -2358,19 +2363,14 @@ function buildFolhaHtml(servidor, mes, ano){
         <col style="width:7%"><col style="width:32%"><col style="width:8%">
       </colgroup>
       <tbody>
-        <tr><td colspan="7" class="cabecalho-escola">
-          <div class="folha-cabecalho-grid">
-            <div class="folha-cabecalho-imagem folha-brasao"><img src="${brasaoFolha}" alt="Brasão"></div>
-            <div class="folha-cabecalho-centro">
-              <div class="orgao">${escapeHtml(cfg.orgao||'Secretaria de Educação')}</div>
-              <div class="escola">${escapeHtml(cfg.escola||'Escola Municipal Casinha Feliz')}</div>
-            </div>
-            <div class="folha-cabecalho-imagem folha-logotipo"><img src="${logoFolha}" alt="Logotipo"></div>
-          </div>
-        </td></tr>
+        <tr>
+          <td rowspan="2" class="cabecalho-logo-celula"><div class="cabecalho-logo-wrap"><img src="${brasaoFolha}" alt="Brasão"></div></td>
+          <td colspan="5" class="cabecalho-escola-titulo"><div class="linha-titulo">${escapeHtml(((cfg.orgao||'Secretaria de Educação') + ' - ' + (cfg.escola||'Escola Municipal Casinha Feliz')).replace(/\s+-\s+/g,' - ').replace(/^\s*-\s*/,'').replace(/\s*-\s*$/,''))}</div></td>
+          <td rowspan="2" class="cabecalho-logo-celula"><div class="cabecalho-logo-wrap"><img src="${logoFolha}" alt="Logotipo"></div></td>
+        </tr>
         <tr>
           <td colspan="2" class="servidor-label">Servidor (a):</td>
-          <td colspan="5" class="servidor-nome">${escapeHtml(servidor.nome)}</td>
+          <td colspan="3" class="servidor-nome">${escapeHtml(servidor.nome)}</td>
         </tr>
         <tr><td colspan="7" class="titulo">FOLHA DE PONTO</td></tr>
         <tr>
@@ -2388,9 +2388,21 @@ function buildFolhaHtml(servidor, mes, ano){
           <td class="turno">${turnoTexto('NOTURNO',temNoturno)}</td>
         </tr>
         <tr>
-          <td colspan="2" class="carga-label">Carga Horária Semanal</td><td class="valor">${escapeHtml(servidor.cargaSemanal||'')}</td>
-          <td colspan="2" class="carga-label">Carga Horária mensal</td><td class="valor">${escapeHtml(servidor.cargaMensal||'')}</td>
-          <td class="carga-label">Total de Horas Semanais</td>
+          <td colspan="7" class="carga-row-wrap">
+            <table class="folha-carga-table" aria-hidden="true">
+              <colgroup>
+                <col style="width:24%"><col style="width:8%"><col style="width:22%"><col style="width:8%"><col style="width:30%"><col style="width:8%">
+              </colgroup>
+              <tr>
+                <td class="carga-label">Carga Horária Semanal</td>
+                <td class="valor">${escapeHtml(servidor.cargaSemanal||'')}</td>
+                <td class="carga-label">Carga Horária mensal</td>
+                <td class="valor">${escapeHtml(servidor.cargaMensal||'')}</td>
+                <td class="carga-label">Total de Horas Semanais</td>
+                <td class="valor"></td>
+              </tr>
+            </table>
+          </td>
         </tr>
         <tr>
           <th class="cab-dia">DIAS</th><th class="cab-dia">HORA<br>ENTRADA</th><th class="cab-dia cab-servidor">SERVIDOR</th><th class="cab-dia">HORA SAÍDA</th>
