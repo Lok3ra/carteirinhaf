@@ -1558,11 +1558,41 @@ function diarioInferirBimestre(encontradas, meta={}){
   return melhor;
 }
 
+function diarioItensNaoIdentificados(meta={}, encontradas=[], bim=''){
+  const itens=[];
+  if(!meta.escola) itens.push('Escola');
+  if(!meta.professor) itens.push('Professor');
+  if(!meta.turma) itens.push('Turma');
+  if(!meta.turno) itens.push('Turno');
+  if(!meta.serie) itens.push('Série');
+  if(!meta.disciplina) itens.push('Disciplina');
+  if(!meta.bimestreTexto && !bim) itens.push('Bimestre');
+  if(!meta.ano) itens.push('Ano letivo');
+  if(!encontradas.length) itens.push('Datas e quantidade de aulas');
+  return itens;
+}
+
 function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[], situacaoTurma=null){
   const bim=diarioInferirBimestre(encontradas, meta);
   diarioBimestreAtivo=bim;
   const info=DIARIO_BIMESTRES[bim];
-  if(!info){ throw new Error('Não foi possível identificar o bimestre do arquivo.'); }
+  const naoIdentificados=diarioItensNaoIdentificados(meta,encontradas,bim);
+  const status=document.getElementById('diarioArquivoStatus');
+  const resultado=document.getElementById('diarioArquivoResultado');
+
+  if(!info){
+    if(!naoIdentificados.includes('Bimestre')) naoIdentificados.push('Bimestre');
+    status.textContent=`Arquivo lido: ${file.name}, mas a verificação não pôde ser concluída.`;
+    resultado.style.display='block';
+    resultado.innerHTML=`
+      <div class="helpbox" style="background:#fbe9e7;border-left-color:var(--danger);">
+        <b>Erro: não foi possível identificar todas as informações necessárias.</b><br>
+        <span>Itens não identificados: ${naoIdentificados.map(escapeHtml).join(', ')}.</span><br>
+        <span style="display:block;margin-top:6px;">Verifique se o arquivo segue o padrão do Diário de Classe e tente novamente.</span>
+      </div>`;
+    return;
+  }
+
   const inicio=info.inicioISO, fim=info.fimISO;
   const noPeriodo=encontradas.filter(d=>d>=inicio&&d<=fim);
   const contagens={}; noPeriodo.forEach(d=>contagens[d]=(contagens[d]||0)+1);
@@ -1574,20 +1604,20 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
   const extras=unicas.filter(d=>!esperadoSet.has(d));
   const bimArquivo=diarioNormalizarBimestre(meta.bimestreTexto);
   const bimestreDivergente=bimArquivo&&bimArquivo!==bim;
-  const confere=!faltantes.length&&!extras.length&&!bimestreDivergente;
-  const status=document.getElementById('diarioArquivoStatus');
-  const resultado=document.getElementById('diarioArquivoResultado');
+  const confere=!faltantes.length&&!extras.length&&!bimestreDivergente&&!naoIdentificados.length;
   status.textContent=`Arquivo lido: ${file.name}. ${unicas.length} data(s) de aula única(s) identificada(s)${paginas?` em ${paginas} página(s)`:''}.`;
   resultado.style.display='block';
   resultado.innerHTML=`
-    <div class="helpbox" style="border-left-color:${confere?'var(--forest)':'var(--danger)'};"><b>${confere?'O diário confere com o calendário configurado.':'Foram encontradas diferenças no diário.'}</b></div>
+    ${naoIdentificados.length?`<div class="helpbox" style="background:#fbe9e7;border-left-color:var(--danger);"><b>Erro: algumas informações não puderam ser identificadas.</b><br>Itens não identificados: ${naoIdentificados.map(escapeHtml).join(', ')}.<br><span style="display:block;margin-top:6px;">A verificação foi feita apenas com os dados reconhecidos.</span></div>`:''}
+    <div class="helpbox" style="border-left-color:${confere?'var(--forest)':'var(--danger)'};"><b>${confere?'O diário confere com o calendário configurado.':'Foram encontradas diferenças ou informações incompletas no diário.'}</b></div>
     <div class="card-block" style="margin-bottom:14px;padding:16px;">
       <h3 style="margin-bottom:10px;">Dados identificados</h3>
       <div class="row"><div style="flex:1;"><b>Escola:</b> ${escapeHtml(meta.escola||'Não identificada')}</div><div style="flex:1;"><b>Professor:</b> ${escapeHtml(meta.professor||'Não identificado')}</div></div>
       <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Turma:</b> ${escapeHtml(meta.turma||'Não identificada')}</div><div style="flex:1;"><b>Turno:</b> ${escapeHtml(meta.turno||'Não identificado')}</div></div>
-      <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Série:</b> ${escapeHtml(meta.serie||'Não identificada')}</div><div style="flex:1;"><b>Bimestre:</b> ${escapeHtml(meta.bimestreTexto||'Não identificado')}</div></div>
+      <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Série:</b> ${escapeHtml(meta.serie||'Não identificada')}</div><div style="flex:1;"><b>Bimestre:</b> ${escapeHtml(meta.bimestreTexto||info.nome||'Não identificado')}</div></div>
+      <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Disciplina:</b> ${escapeHtml(meta.disciplina||'Não identificada')}</div><div style="flex:1;"><b>Ano letivo:</b> ${escapeHtml(meta.ano||'Não identificado')}</div></div>
     </div>
-    ${bimestreDivergente?`<div class="helpbox"><b>Atenção:</b> o arquivo parece ser do ${escapeHtml(meta.bimestreTexto)}, mas a configuração está no ${info.nome}.</div>`:''}
+    ${bimestreDivergente?`<div class="helpbox"><b>Atenção:</b> o arquivo parece ser do ${escapeHtml(meta.bimestreTexto)}, mas as datas correspondem ao ${info.nome}.</div>`:''}
     <div class="row" style="margin-bottom:14px;">
       <div class="card-block" style="flex:1;margin:0;padding:16px;text-align:center;"><div style="font-size:12px;color:#6b6355;">Dias esperados</div><strong style="font-size:24px;">${esperadas.length}</strong></div>
       <div class="card-block" style="flex:1;margin:0;padding:16px;text-align:center;"><div style="font-size:12px;color:#6b6355;">Dias encontrados</div><strong style="font-size:24px;">${unicas.length}</strong></div>
