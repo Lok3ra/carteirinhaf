@@ -602,11 +602,18 @@
         </div>
         <div class="taglist" id="feriadosTagList" style="margin-bottom:22px;"></div>
 
-        <h3>Adicionar feriado / recesso / férias</h3>
+        <h3>Adicionar férias ou recesso</h3>
         <div class="row" style="align-items:flex-end;">
-          <div class="field" style="max-width:200px;"><label>Data</label><input type="date" id="novoFeriadoData"></div>
-          <div class="field" style="max-width:280px;"><label>Descrição</label><input type="text" id="novoFeriadoDesc" placeholder="Ex: Recesso, Férias Escolares..."></div>
-          <button class="btn" id="addFeriadoBtn">Adicionar</button>
+          <div class="field" style="max-width:200px;"><label>Data de início</label><input type="date" id="novoPeriodoInicio"></div>
+          <div class="field" style="max-width:200px;"><label>Data de fim</label><input type="date" id="novoPeriodoFim"></div>
+          <div class="field" style="max-width:180px;">
+            <label>Tipo</label>
+            <select id="novoPeriodoTipo">
+              <option value="Férias">Férias</option>
+              <option value="Recesso">Recesso</option>
+            </select>
+          </div>
+          <button class="btn" id="addFeriadoBtn">Adicionar período</button>
         </div>
       </div>
 
@@ -2240,22 +2247,45 @@ async function deleteServidorPonto(id){
 
 /* ---- feriados / dias letivos tab ---- */
 async function addFeriado(){
-  const data = document.getElementById('novoFeriadoData').value;
-  const desc = document.getElementById('novoFeriadoDesc').value.trim();
-  if(!data || !desc){ alert('Preencha a data e a descrição.'); return; }
-  const f = {data, descricao:desc, origem:'manual'};
-  await window.storage.set('feriado:'+data, JSON.stringify(f));
-  pontoState.feriados = pontoState.feriados.filter(x=>x.data!==data);
-  pontoState.feriados.push(f);
+  const inicio = document.getElementById('novoPeriodoInicio').value;
+  const fim = document.getElementById('novoPeriodoFim').value;
+  const tipo = document.getElementById('novoPeriodoTipo').value;
+  if(!inicio || !fim){ alert('Preencha a data de início e a data de fim.'); return; }
+  if(fim < inicio){ alert('A data de fim não pode ser anterior à data de início.'); return; }
+
+  const periodoId = 'periodo-' + Date.now();
+  const atual = new Date(inicio + 'T12:00:00');
+  const ultima = new Date(fim + 'T12:00:00');
+  const novos = [];
+
+  while(atual <= ultima){
+    const data = atual.getFullYear() + '-' + pad2(atual.getMonth()+1) + '-' + pad2(atual.getDate());
+    const f = {data, descricao:tipo, origem:'manual', periodoId, inicio, fim, tipo};
+    await window.storage.set('feriado:'+data, JSON.stringify(f));
+    novos.push(f);
+    atual.setDate(atual.getDate()+1);
+  }
+
+  const datasNovas = new Set(novos.map(f=>f.data));
+  pontoState.feriados = pontoState.feriados.filter(x=>!datasNovas.has(x.data));
+  pontoState.feriados.push(...novos);
   pontoState.feriados.sort((a,b)=>a.data.localeCompare(b.data));
-  document.getElementById('novoFeriadoData').value='';
-  document.getElementById('novoFeriadoDesc').value='';
+  document.getElementById('novoPeriodoInicio').value='';
+  document.getElementById('novoPeriodoFim').value='';
+  document.getElementById('novoPeriodoTipo').value='Férias';
   renderFeriadosTags();
 }
 
-async function removeFeriado(data){
-  try{ await window.storage.delete('feriado:'+data); }catch(e){}
-  pontoState.feriados = pontoState.feriados.filter(x=>x.data!==data);
+async function removeFeriado(data, periodoId){
+  const remover = periodoId
+    ? pontoState.feriados.filter(x=>x.periodoId===periodoId)
+    : pontoState.feriados.filter(x=>x.data===data);
+  for(const f of remover){
+    try{ await window.storage.delete('feriado:'+f.data); }catch(e){}
+  }
+  pontoState.feriados = periodoId
+    ? pontoState.feriados.filter(x=>x.periodoId!==periodoId)
+    : pontoState.feriados.filter(x=>x.data!==data);
   renderFeriadosTags();
 }
 
@@ -2285,7 +2315,26 @@ function renderFeriadosTags(){
       '</p>';
     return;
   }
-  box.innerHTML = filtrados.map(f=>{
+  const exibidos = [];
+  const periodosVistos = new Set();
+  for(const f of filtrados){
+    if(f.periodoId){
+      if(periodosVistos.has(f.periodoId)) continue;
+      periodosVistos.add(f.periodoId);
+      exibidos.push(f);
+    }else{
+      exibidos.push(f);
+    }
+  }
+
+  box.innerHTML = exibidos.map(f=>{
+    if(f.periodoId){
+      const [yi,mi,di] = f.inicio.split('-');
+      const [yf,mf,df] = f.fim.split('-');
+      return `<span class="tag manual">${di}/${mi}/${yi} a ${df}/${mf}/${yf} — ${escapeHtml(f.tipo||f.descricao)}
+        <button onclick="removeFeriado('${f.data}','${f.periodoId}')" title="Remover período">×</button>
+      </span>`;
+    }
     const [y,m,d] = f.data.split('-');
     return `<span class="tag ${f.origem==='manual'?'manual':''}">${d}/${m}/${y} — ${escapeHtml(f.descricao)}
       ${f.origem==='manual' ? `<button onclick="removeFeriado('${f.data}')" title="Remover">×</button>` : ''}
@@ -2354,9 +2403,15 @@ function celula(servidor, date, turno){
     if(wd===7) return {text:'Domingo', tipo:'fimdesemana'};
   }
 
-  // Nos demais dias, só são exibidos feriados, recessos e férias cadastrados.
+  // Nos demais dias, a folha mostra somente a categoria da data,
+  // sem repetir a descrição específica cadastrada.
   const feriado = findFeriado(iso);
-  if(feriado) return {text:feriado.descricao, tipo:'feriado'};
+  if(feriado){
+    const descricaoNormalizada = normalize(feriado.descricao || '');
+    if(descricaoNormalizada.includes('ferias')) return {text:'Férias', tipo:'feriado'};
+    if(descricaoNormalizada.includes('recesso')) return {text:'Recesso', tipo:'feriado'};
+    return {text:'Feriado', tipo:'feriado'};
+  }
 
   return {text:'', tipo:'normal'};
 }
