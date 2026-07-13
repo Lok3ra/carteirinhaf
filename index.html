@@ -808,11 +808,6 @@
       </div>
 
       <div class="card-block">
-        <h3>Bimestre configurado</h3>
-        <div id="diarioVerificadorBimestreResumo" class="helpbox">Nenhum bimestre selecionado. Acesse Configurações do Diário Escolar.</div>
-      </div>
-
-      <div class="card-block">
         <h3>Importar diário escolar</h3>
         <p style="font-size:13px;color:#6b6355;margin-top:-6px;">O padrão aceito é o PDF do Diário de Classe. Também continuam aceitos arquivos Excel e CSV.</p>
         <div class="row" style="align-items:flex-end;">
@@ -831,22 +826,7 @@
     <div class="panel" id="panel-diario-config">
       <div class="pagehead">
         <h2>Configurações do Diário Escolar</h2>
-        <p>Defina o bimestre, confira a contagem de dias letivos e registre exceções do calendário.</p>
-      </div>
-
-      <div class="card-block">
-        <h3>1. Qual bimestre?</h3>
-        <div class="field" style="max-width:420px;margin-bottom:0;">
-          <label>Bimestre</label>
-          <select id="diarioBimestreSelect">
-            <option value="">— selecione —</option>
-            <option value="1">1º bimestre — 05/02 até 24/04</option>
-            <option value="2">2º bimestre — 27/04 até 09/07</option>
-            <option value="3">3º bimestre — 27/07 até 01/10</option>
-            <option value="4">4º bimestre — 02/10 até 22/12</option>
-          </select>
-        </div>
-        <div id="diarioPeriodoResumo" class="helpbox" style="display:none;margin-top:14px;margin-bottom:0;"></div>
+        <p>Confira a contagem de dias letivos e registre exceções do calendário. O bimestre é identificado automaticamente pelo arquivo importado.</p>
       </div>
 
       <details class="card-block diario-contagem-geral">
@@ -859,7 +839,7 @@
       </details>
 
       <div class="card-block">
-        <h3>2. Existe alguma exceção?</h3>
+        <h3>Existe alguma exceção?</h3>
         <p style="font-size:13px;color:#6b6355;margin-top:-6px;">Você pode adicionar um dia que não está dentro do período ou retirar um dia que não deve ser considerado.</p>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="max-width:220px;"><label>Ação</label><select id="diarioExcecaoTipo"><option value="adicionar">Adicionar dia</option><option value="retirar">Retirar dia</option></select></div>
@@ -868,7 +848,7 @@
           <button class="btn" id="diarioAddExcecaoBtn" type="button">Adicionar exceção</button>
         </div>
         <div id="diarioExcecoesLista" class="taglist"></div>
-        <div id="diarioExcecoesVazio" class="empty" style="padding:22px;margin-top:10px;">Nenhuma exceção cadastrada para o bimestre selecionado.</div>
+        <div id="diarioExcecoesVazio" class="empty" style="padding:22px;margin-top:10px;">Nenhuma exceção cadastrada.</div>
       </div>
     </div>
 
@@ -1284,7 +1264,6 @@ async function loadDiarioExcecoes(){
     const res = await window.storage.get('diario:excecoes');
     diarioExcecoes = JSON.parse(res.value || '{}') || {};
   }catch(e){ diarioExcecoes = {}; }
-  try{ const b=await window.storage.get('diario:bimestreAtivo'); diarioBimestreAtivo=b.value||''; }catch(e){ diarioBimestreAtivo=''; }
 }
 
 async function saveDiarioExcecoes(){
@@ -1292,11 +1271,9 @@ async function saveDiarioExcecoes(){
 }
 
 function bindDiarioEscolar(){
-  loadDiarioExcecoes().then(()=>{ const sel=document.getElementById('diarioBimestreSelect'); if(sel) sel.value=diarioBimestreAtivo; renderDiarioVerificador(); });
-  const sel = document.getElementById('diarioBimestreSelect');
+  loadDiarioExcecoes().then(()=>renderDiarioVerificador());
   const add = document.getElementById('diarioAddExcecaoBtn');
   const verificar = document.getElementById('diarioVerificarArquivoBtn');
-  if(sel) sel.addEventListener('change', async ()=>{ diarioBimestreAtivo=sel.value; try{await window.storage.set('diario:bimestreAtivo',diarioBimestreAtivo);}catch(e){} renderDiarioVerificador(); limparResultadoDiarioArquivo(); });
   if(add) add.addEventListener('click', adicionarExcecaoDiario);
   if(verificar) verificar.addEventListener('click', verificarArquivoDiario);
 }
@@ -1370,34 +1347,25 @@ function renderDiarioContagens(){
 
 function renderDiarioVerificador(){
   renderDiarioContagens();
-  const sel = document.getElementById('diarioBimestreSelect');
-  const bim = sel ? sel.value : diarioBimestreAtivo;
-  diarioBimestreAtivo = bim || diarioBimestreAtivo;
-  const verResumo=document.getElementById('diarioVerificadorBimestreResumo');
-  if(verResumo){ const info=DIARIO_BIMESTRES[diarioBimestreAtivo]; verResumo.innerHTML=info ? `<b>${info.nome}</b>: ${info.inicio} até ${info.fim} — ${diarioDatasLetivasBimestre(diarioBimestreAtivo).length} dias letivos esperados.` : 'Nenhum bimestre selecionado. Acesse Configurações do Diário Escolar.'; }
-  if(!sel) return;
-  const resumo = document.getElementById('diarioPeriodoResumo');
   const lista = document.getElementById('diarioExcecoesLista');
   const vazio = document.getElementById('diarioExcecoesVazio');
-  if(!bim || !DIARIO_BIMESTRES[bim]){
-    resumo.style.display='none';
-    lista.innerHTML='';
-    vazio.style.display='block';
-    return;
-  }
-  const info = DIARIO_BIMESTRES[bim];
-  resumo.style.display='block';
-  resumo.innerHTML = `<b>${info.nome}</b>: ${info.inicio} até ${info.fim}.`;
-  const itens = diarioExcecoes[bim] || [];
-  lista.innerHTML = itens.map((item, idx)=>{
+  if(!lista || !vazio) return;
+  const itens = [];
+  Object.keys(DIARIO_BIMESTRES).forEach(bim=>{
+    (diarioExcecoes[bim]||[]).forEach((item,idx)=>itens.push({...item,bim,idx}));
+  });
+  itens.sort((a,b)=>a.data.localeCompare(b.data));
+  lista.innerHTML = itens.map(item=>{
     const data = item.data ? item.data.split('-').reverse().join('/') : '';
     const acao = item.tipo==='retirar' ? 'Retirar' : 'Adicionar';
     const motivo = item.motivo ? ` — ${escapeHtml(item.motivo)}` : '';
-    return `<span class="tag manual"><b>${acao}</b>: ${data}${motivo}<button type="button" data-diario-remove="${idx}" title="Remover">×</button></span>`;
+    const nomeBim = DIARIO_BIMESTRES[item.bim]?.nome || '';
+    return `<span class="tag manual"><b>${acao}</b>: ${data} — ${nomeBim}${motivo}<button type="button" data-diario-bim="${item.bim}" data-diario-remove="${item.idx}" title="Remover">×</button></span>`;
   }).join('');
   vazio.style.display = itens.length ? 'none' : 'block';
   lista.querySelectorAll('[data-diario-remove]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
+      const bim = btn.dataset.diarioBim;
       const idx = parseInt(btn.dataset.diarioRemove,10);
       diarioExcecoes[bim].splice(idx,1);
       await saveDiarioExcecoes();
@@ -1406,13 +1374,17 @@ function renderDiarioVerificador(){
   });
 }
 
+function diarioBimestreDaData(iso){
+  return Object.keys(DIARIO_BIMESTRES).find(b=>iso>=DIARIO_BIMESTRES[b].inicioISO && iso<=DIARIO_BIMESTRES[b].fimISO) || '';
+}
+
 async function adicionarExcecaoDiario(){
-  const bim = document.getElementById('diarioBimestreSelect').value;
   const tipo = document.getElementById('diarioExcecaoTipo').value;
   const data = document.getElementById('diarioExcecaoData').value;
   const motivo = document.getElementById('diarioExcecaoMotivo').value.trim();
-  if(!bim){ alert('Selecione primeiro o bimestre.'); return; }
   if(!data){ alert('Informe a data da exceção.'); return; }
+  const bim = diarioBimestreDaData(data);
+  if(!bim){ alert('A data informada não pertence a nenhum bimestre do calendário escolar.'); return; }
   diarioExcecoes[bim] = diarioExcecoes[bim] || [];
   diarioExcecoes[bim].push({tipo,data,motivo});
   diarioExcecoes[bim].sort((a,b)=>a.data.localeCompare(b.data));
@@ -1574,9 +1546,23 @@ function diarioExtrairMetadadosPDF(texto){
     ano: diarioCapturar(texto,/ANO LETIVO:\s*(\d{4})/i)
   };
 }
+function diarioInferirBimestre(encontradas, meta={}){
+  const peloCabecalho = diarioNormalizarBimestre(meta.bimestreTexto||'');
+  if(peloCabecalho) return peloCabecalho;
+  let melhor='', maior=-1;
+  Object.keys(DIARIO_BIMESTRES).forEach(b=>{
+    const i=DIARIO_BIMESTRES[b];
+    const qtd=encontradas.filter(d=>d>=i.inicioISO && d<=i.fimISO).length;
+    if(qtd>maior){ maior=qtd; melhor=b; }
+  });
+  return melhor;
+}
+
 function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[], situacaoTurma=null){
-  const bim=diarioBimestreAtivo;
+  const bim=diarioInferirBimestre(encontradas, meta);
+  diarioBimestreAtivo=bim;
   const info=DIARIO_BIMESTRES[bim];
+  if(!info){ throw new Error('Não foi possível identificar o bimestre do arquivo.'); }
   const inicio=info.inicioISO, fim=info.fimISO;
   const noPeriodo=encontradas.filter(d=>d>=inicio&&d<=fim);
   const contagens={}; noPeriodo.forEach(d=>contagens[d]=(contagens[d]||0)+1);
@@ -1616,11 +1602,9 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
 }
 
 async function verificarArquivoDiario(){
-  const bim=diarioBimestreAtivo || (document.getElementById('diarioBimestreSelect')?.value||'');
   const input=document.getElementById('diarioArquivoInput');
   const status=document.getElementById('diarioArquivoStatus');
   const resultado=document.getElementById('diarioArquivoResultado');
-  if(!bim){ alert('Selecione o bimestre em Configurações do Diário Escolar.'); return; }
   const file=input?.files?.[0]; if(!file){ alert('Selecione o arquivo do diário escolar.'); return; }
   status.textContent='Lendo e verificando o arquivo...'; resultado.style.display='none';
   try{
