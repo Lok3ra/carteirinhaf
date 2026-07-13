@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Carteirinhas Escolares</title>
+<title>Gestão Escolar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1462,13 +1462,96 @@ async function diarioExtrairTextoPDF(file){
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const buffer=await file.arrayBuffer();
   const pdf=await pdfjsLib.getDocument({data:buffer}).promise;
-  const paginas=[];
+  const paginasTexto=[];
+  const paginasDados=[];
   for(let p=1;p<=pdf.numPages;p++){
     const page=await pdf.getPage(p);
     const content=await page.getTextContent();
-    paginas.push(content.items.map(i=>i.str).join(' '));
+    const grupos=[];
+    content.items.forEach(item=>{
+      const str=(item.str||'').trim();
+      if(!str) return;
+      const x=item.transform?.[4]||0;
+      const y=item.transform?.[5]||0;
+      let grupo=grupos.find(g=>Math.abs(g.y-y)<=2.2);
+      if(!grupo){ grupo={y,itens:[]}; grupos.push(grupo); }
+      grupo.itens.push({x,str});
+    });
+    grupos.sort((a,b)=>b.y-a.y);
+    const linhas=grupos.map(g=>g.itens.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+    const textoPagina=linhas.join('\n');
+    paginasTexto.push(textoPagina);
+    paginasDados.push({numero:p, texto:textoPagina, linhas});
   }
-  return {texto:paginas.join('\n'), paginas:pdf.numPages};
+  return {texto:paginasTexto.join('\n'), paginas:pdf.numPages, paginasDados};
+}
+
+
+function diarioExtrairSituacaoTurma(paginasDados, meta){
+  const alunos=new Map();
+  (paginasDados||[]).forEach(pagina=>{
+    (pagina.linhas||[]).forEach(linha=>{
+      const statusMatch=linha.match(/(CURSANDO|TRANSFERIDO)\s*$/i);
+      if(!statusMatch) return;
+      const nums=linha.match(/\d{1,2}/g)||[];
+      if(!nums.length) return;
+      const numero=String(parseInt(nums[0],10)).padStart(2,'0');
+      alunos.set(numero,statusMatch[1].toUpperCase());
+    });
+  });
+  const ativos=Array.from(alunos.values()).filter(s=>s==='CURSANDO').length;
+  const turmaTexto=((meta&&meta.turma)||'')+' '+((meta&&meta.serie)||'');
+  const m=turmaTexto.match(/INFANTIL\s*(?:III|3|IV|4|V|5)/i);
+  if(!m) return {ativos,capacidade:0,vagas:0};
+  const token=m[0].toUpperCase();
+  let etapa=0;
+  if(/III|3/.test(token)) etapa=3;
+  else if(/IV|4/.test(token)) etapa=4;
+  else if(/V|5/.test(token)) etapa=5;
+  const capacidade=etapa===5?25:(etapa===3||etapa===4?20:0);
+  const vagas=capacidade>ativos?capacidade-ativos:0;
+  return {ativos,capacidade,vagas,etapa};
+}
+
+function diarioExtrairFaltasConsecutivas(paginasDados){
+  const alunos=new Map();
+  (paginasDados||[]).forEach(pagina=>{
+    const datas=diarioExtrairDatasTexto(pagina.texto);
+    if(!datas.length) return;
+    pagina.linhas.forEach(linha=>{
+      const m=linha.match(/^\s*(\d{1,2})\s+(.+?)\s+((?:[•F\-~]\s*){3,})/);
+      if(!m) return;
+      const numero=String(parseInt(m[1],10)).padStart(2,'0');
+      const nome=m[2].replace(/\s+/g,' ').trim();
+      const marcacoes=(m[3].match(/[•F\-~]/g)||[]).slice(0,datas.length);
+      if(!marcacoes.length) return;
+      if(!alunos.has(numero)) alunos.set(numero,{numero,nome,registros:[]});
+      const aluno=alunos.get(numero);
+      if(nome.length>aluno.nome.length) aluno.nome=nome;
+      marcacoes.forEach((marca,idx)=>aluno.registros.push({data:datas[idx],marca}));
+    });
+  });
+  const alertas=[];
+  alunos.forEach(aluno=>{
+    aluno.registros.sort((a,b)=>a.data.localeCompare(b.data));
+    let atual=[]; let maior=[];
+    aluno.registros.forEach(reg=>{
+      if(reg.marca==='F'){
+        atual.push(reg);
+        if(atual.length>maior.length) maior=[...atual];
+      }else atual=[];
+    });
+    if(maior.length>5){
+      alertas.push({
+        numero:aluno.numero,
+        nome:aluno.nome,
+        quantidade:maior.length,
+        inicio:maior[0].data,
+        fim:maior[maior.length-1].data
+      });
+    }
+  });
+  return alertas.sort((a,b)=>b.quantidade-a.quantidade||a.nome.localeCompare(b.nome,'pt-BR'));
 }
 
 function diarioCapturar(texto, regex){ const m=texto.match(regex); return m ? m[1].trim() : ''; }
@@ -1491,7 +1574,7 @@ function diarioExtrairMetadadosPDF(texto){
     ano: diarioCapturar(texto,/ANO LETIVO:\s*(\d{4})/i)
   };
 }
-function diarioMontarResultado(file, encontradas, meta, paginas){
+function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[], situacaoTurma=null){
   const bim=diarioBimestreAtivo;
   const info=DIARIO_BIMESTRES[bim];
   const inicio=info.inicioISO, fim=info.fimISO;
@@ -1527,6 +1610,8 @@ function diarioMontarResultado(file, encontradas, meta, paginas){
     ${faltantes.length?`<div class="helpbox"><b>Dias letivos não encontrados (${faltantes.length}):</b><br>${diarioFormatarListaDatas(faltantes)}</div>`:''}
     ${extras.length?`<div class="helpbox"><b>Datas extras (${extras.length}):</b><br>${diarioFormatarListaDatas(extras)}</div>`:''}
     ${duplicadas.length?`<div class="helpbox"><b>Datas repetidas (${duplicadas.length}):</b><br>${duplicadas.map(d=>d.split('-').reverse().join('/')+' ('+contagens[d]+' vezes)').join(', ')}</div>`:''}
+    ${situacaoTurma&&situacaoTurma.vagas>0?`<div class="helpbox" style="border-left-color:var(--forest);"><b>Vagas disponíveis na turma: ${situacaoTurma.vagas}</b><br>${situacaoTurma.ativos} aluno(s) ativo(s) de um máximo de ${situacaoTurma.capacidade}.</div>`:''}
+    ${alertasFaltas.length?`<div class="helpbox" style="background:#fbe9e7;border-left-color:var(--danger);"><b>Atenção: crianças com mais de 5 faltas consecutivas (${alertasFaltas.length})</b><br>${alertasFaltas.map(a=>`<div style="margin-top:7px;"><b>${escapeHtml(a.numero)} — ${escapeHtml(a.nome)}</b>: ${a.quantidade} faltas seguidas, de ${a.inicio.split('-').reverse().join('/')} a ${a.fim.split('-').reverse().join('/')}.</div>`).join('')}</div>`:''}
     ${!faltantes.length&&!extras.length&&!duplicadas.length?'<div class="helpbox">Nenhuma data faltante, extra ou repetida foi encontrada.</div>':''}`;
 }
 
@@ -1540,10 +1625,12 @@ async function verificarArquivoDiario(){
   status.textContent='Lendo e verificando o arquivo...'; resultado.style.display='none';
   try{
     if(file.name.toLowerCase().endsWith('.pdf')){
-      const {texto,paginas}=await diarioExtrairTextoPDF(file);
+      const {texto,paginas,paginasDados}=await diarioExtrairTextoPDF(file);
       const encontradas=diarioExtrairDatasTexto(texto);
       const meta=diarioExtrairMetadadosPDF(texto);
-      diarioMontarResultado(file,encontradas,meta,paginas);
+      const alertasFaltas=diarioExtrairFaltasConsecutivas(paginasDados);
+      const situacaoTurma=diarioExtrairSituacaoTurma(paginasDados,meta);
+      diarioMontarResultado(file,encontradas,meta,paginas,alertasFaltas,situacaoTurma);
       return;
     }
     const buffer=await file.arrayBuffer();
