@@ -1687,12 +1687,48 @@ function diarioExtrairDatasTexto(texto){
   return arr;
 }
 
+function diarioNormalizarNomeAluno(nome){
+  return normalize(String(nome||''))
+    .replace(/\b(?:CURSANDO|TRANSFERIDO|REMANEJADO|ABANDONO)\b/gi,'')
+    .replace(/[^a-z0-9 ]/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
 function diarioExtrairLinhasAlunos(paginasDados){
-  const alunos=new Map();
+  // Um PDF com várias páginas representa a continuação da mesma turma.
+  // Portanto, registros do mesmo aluno são unidos pelo número e, como
+  // proteção adicional, pelo nome normalizado.
+  const alunosPorNumero=new Map();
+  const numeroPorNome=new Map();
+
+  function obterOuCriarAluno(numero,nome,status){
+    const nomeNormalizado=diarioNormalizarNomeAluno(nome);
+    let chaveNumero=numero;
+
+    // Quando a leitura de uma página desloca ou perde o número, reutiliza o
+    // aluno já identificado pelo nome em outra página.
+    if(nomeNormalizado && numeroPorNome.has(nomeNormalizado)){
+      chaveNumero=numeroPorNome.get(nomeNormalizado);
+    }
+
+    let aluno=alunosPorNumero.get(chaveNumero);
+    if(!aluno){
+      aluno={numero:chaveNumero,nome,status:'',registros:new Map(),paginas:new Set()};
+      alunosPorNumero.set(chaveNumero,aluno);
+    }
+
+    if(nome && (!aluno.nome || nome.length>aluno.nome.length)) aluno.nome=nome;
+    if(status) aluno.status=status;
+    if(nomeNormalizado) numeroPorNome.set(nomeNormalizado,chaveNumero);
+    return aluno;
+  }
+
   (paginasDados||[]).forEach(pagina=>{
     const datas=diarioExtrairDatasTexto(pagina.texto);
     if(!datas.length) return;
     const linhas=pagina.linhas||[];
+
     for(let i=0;i<linhas.length;i++){
       let linha=linhas[i];
       // Alguns nomes quebram em duas linhas no PDF. Junta a linha anterior ou
@@ -1700,27 +1736,68 @@ function diarioExtrairLinhasAlunos(paginasDados){
       if(!/^\s*\d{1,2}\b/.test(linha) && i+1<linhas.length && /^\s*\d{1,2}\b/.test(linhas[i+1]) && /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ ]{5,}$/i.test(linha)){
         linha=linhas[i+1].replace(/^(\s*\d{1,2})\s+/,'$1 '+linha+' '); i++;
       }
+
       const inicio=linha.match(/^\s*(\d{1,2})\s+(.+)/);
       if(!inicio) continue;
       const numero=String(parseInt(inicio[1],10)).padStart(2,'0');
       const resto=inicio[2];
       const statusM=resto.match(/\b(CURSANDO|TRANSFERIDO|REMANEJADO|ABANDONO)\b\s*$/i);
       const status=statusM?statusM[1].toUpperCase():'';
-      const tokens=resto.match(/•|F|[-~]|\bP\b/g)||[];
+      const tokens=resto.match(/•|\bF\b|[-~]|\bP\b|\bX\b/g)||[];
       if(tokens.length<Math.min(3,datas.length)) continue;
-      const primeiraMarca=resto.search(/(?:•|\bF\b|[-~])/);
+
+      const primeiraMarca=resto.search(/(?:•|\bF\b|[-~]|\bP\b|\bX\b)/);
       const nome=diarioLimparCampo(primeiraMarca>=0?resto.slice(0,primeiraMarca):resto)
-        .replace(/\b\d+\s+\d+\s+\d+\s*(?:CURSANDO|TRANSFERIDO|REMANEJADO)?$/i,'').trim();
+        .replace(/\b\d+\s+\d+\s+\d+\s*(?:CURSANDO|TRANSFERIDO|REMANEJADO|ABANDONO)?$/i,'')
+        .trim();
       if(!nome) continue;
+
       const marcacoes=tokens.slice(0,datas.length).map(t=>t.toUpperCase());
-      if(!alunos.has(numero)) alunos.set(numero,{numero,nome,status,registros:new Map()});
-      const a=alunos.get(numero);
-      if(nome.length>a.nome.length) a.nome=nome;
-      if(status) a.status=status;
-      marcacoes.forEach((marca,idx)=>a.registros.set(datas[idx],marca));
+      const aluno=obterOuCriarAluno(numero,nome,status);
+      aluno.paginas.add(pagina.numero||0);
+
+      // A segunda página continua nas datas seguintes. Caso uma data reapareça,
+      // mantém uma marca válida em vez de criar outro aluno ou outra linha.
+      marcacoes.forEach((marca,idx)=>{
+        const data=datas[idx];
+        if(!data) return;
+        const anterior=aluno.registros.get(data);
+        if(!anterior || anterior==='-' || anterior==='~') aluno.registros.set(data,marca);
+      });
     }
   });
-  return Array.from(alunos.values()).map(a=>({...a,registros:Array.from(a.registros.entries()).map(([data,marca])=>({data,marca}))}));
+
+  // Dedupe final por nome, para cobrir PDFs em que o mesmo aluno recebeu um
+  // número ligeiramente diferente em uma página de continuação.
+  const consolidados=new Map();
+  Array.from(alunosPorNumero.values()).forEach(aluno=>{
+    const chaveNome=diarioNormalizarNomeAluno(aluno.nome);
+    const chave=chaveNome||('numero:'+aluno.numero);
+    if(!consolidados.has(chave)){
+      consolidados.set(chave,aluno);
+      return;
+    }
+    const destino=consolidados.get(chave);
+    if(aluno.nome.length>destino.nome.length) destino.nome=aluno.nome;
+    if(aluno.status) destino.status=aluno.status;
+    aluno.registros.forEach((marca,data)=>{
+      const anterior=destino.registros.get(data);
+      if(!anterior || anterior==='-' || anterior==='~') destino.registros.set(data,marca);
+    });
+    aluno.paginas.forEach(pg=>destino.paginas.add(pg));
+  });
+
+  return Array.from(consolidados.values())
+    .map(a=>({
+      numero:a.numero,
+      nome:a.nome,
+      status:a.status,
+      paginas:Array.from(a.paginas).sort((x,y)=>x-y),
+      registros:Array.from(a.registros.entries())
+        .sort((x,y)=>x[0].localeCompare(y[0]))
+        .map(([data,marca])=>({data,marca}))
+    }))
+    .sort((a,b)=>parseInt(a.numero,10)-parseInt(b.numero,10)||a.nome.localeCompare(b.nome,'pt-BR'));
 }
 
 function diarioExtrairSituacaoTurma(paginasDados,meta){
@@ -1895,7 +1972,20 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
   const bimArquivo=diarioNormalizarBimestre(meta.bimestreTexto);
   const bimestreDivergente=bimArquivo&&bimArquivo!==bim;
   const confere=!faltantes.length&&!extras.length&&!bimestreDivergente&&!naoIdentificados.length;
-  const frequencias=(alunos||[]).map(aluno=>{
+  const alunosUnicosMap=new Map();
+  (alunos||[]).forEach(aluno=>{
+    const chave=diarioNormalizarNomeAluno(aluno.nome)||('numero:'+String(aluno.numero||''));
+    if(!alunosUnicosMap.has(chave)) alunosUnicosMap.set(chave,{...aluno,registros:[...(aluno.registros||[])]});
+    else{
+      const atual=alunosUnicosMap.get(chave);
+      const regs=new Map((atual.registros||[]).map(r=>[r.data,r.marca]));
+      (aluno.registros||[]).forEach(r=>{ if(r&&r.data&&!regs.has(r.data)) regs.set(r.data,r.marca); });
+      atual.registros=Array.from(regs.entries()).map(([data,marca])=>({data,marca}));
+      if((aluno.nome||'').length>(atual.nome||'').length) atual.nome=aluno.nome;
+      if(aluno.status||aluno.situacao) atual.status=aluno.status||aluno.situacao;
+    }
+  });
+  const frequencias=Array.from(alunosUnicosMap.values()).map(aluno=>{
     const registros=(aluno.registros||[]).filter(r=>r&&r.data>=inicio&&r.data<=fim);
     let presencas=0, faltas=0, semLancamento=0;
     registros.forEach(r=>{
