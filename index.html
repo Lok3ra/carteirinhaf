@@ -602,30 +602,22 @@
         </div>
         <div class="taglist" id="feriadosTagList" style="margin-bottom:22px;"></div>
 
-        <h3>Adicionar férias ou recesso</h3>
+        <h3>Adicionar período para um servidor</h3>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">O período será aplicado somente à folha de ponto do servidor selecionado.</p>
         <div class="row" style="align-items:flex-end;">
-          <div class="field" style="max-width:200px;"><label>Data de início</label><input type="date" id="novoPeriodoInicio"></div>
-          <div class="field" style="max-width:200px;"><label>Data de fim</label><input type="date" id="novoPeriodoFim"></div>
-          <div class="field" style="max-width:180px;">
+          <div class="field" style="min-width:260px;"><label>Servidor</label><select id="novoPeriodoServidor"><option value="">— selecione —</option></select></div>
+          <div class="field" style="max-width:190px;"><label>Data de início</label><input type="date" id="novoPeriodoInicio"></div>
+          <div class="field" style="max-width:190px;"><label>Data de fim</label><input type="date" id="novoPeriodoFim"></div>
+          <div class="field" style="max-width:190px;">
             <label>Tipo</label>
             <select id="novoPeriodoTipo">
               <option value="Férias">Férias</option>
               <option value="Recesso">Recesso</option>
+              <option value="Atestado médico">Atestado médico</option>
+              <option value="Licença Prêmio">Licença Prêmio</option>
             </select>
           </div>
           <button class="btn" id="addFeriadoBtn">Adicionar período</button>
-        </div>
-      </div>
-
-      <div class="card-block">
-        <h3>Férias ou recesso (Secretário e Agente)</h3>
-        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">Use para <b>Secretário Escolar</b> e <b>Agente de educação</b>. O recesso escolar de meio de ano não será aplicado automaticamente a esses cargos.</p>
-        <div class="row" style="align-items:flex-end;">
-          <div class="field" style="min-width:260px;"><label>Servidor</label><select id="periodoServidorSelect"><option value="">— selecione —</option></select></div>
-          <div class="field" style="max-width:190px;"><label>Data de início</label><input type="date" id="periodoServidorInicio"></div>
-          <div class="field" style="max-width:190px;"><label>Data de fim</label><input type="date" id="periodoServidorFim"></div>
-          <div class="field" style="max-width:160px;"><label>Tipo</label><select id="periodoServidorTipo"><option value="Férias">Férias</option><option value="Recesso">Recesso</option></select></div>
-          <button class="btn" id="addPeriodoServidorBtn">Adicionar</button>
         </div>
         <div class="taglist" id="periodosServidorTagList"></div>
       </div>
@@ -1243,24 +1235,28 @@ function renderStudentsTable(){
   const q = normalize(document.getElementById('searchAlunos').value);
   const tbody = document.getElementById('studentsTbody');
   const filtered = state.students.filter(s=> !q || normalize(s.nome).includes(q) || normalize(s.turma).includes(q));
-  document.getElementById('studentsEmpty').style.display = state.students.length ? 'none':'block';
+  document.getElementById('studentsEmpty').style.display = filtered.length ? 'none':'block';
 
   tbody.innerHTML = filtered.map(s=>`
     <tr>
-      <td><b>${escapeHtml(s.nome)}</b><br><span style="color:#8b8471;font-size:11.5px;">${escapeHtml(s.funcao||'')}</span></td>
-      <td>${escapeHtml(s.cargo)}</td>
-      <td>${escapeHtml(s.cargaSemanal||'')}</td>
-      <td>${escapeHtml(s.cargaMensal||'')}</td>
-      <td style="font-size:11.5px;">${[s.turno1,s.turno2].filter(Boolean).join(' · ')}</td>
-      <td>${escapeHtml(s.coordenacao||'—')}</td>
-      <td>${escapeHtml(s.matricula||'')}</td>
-      <td><button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
+      <td>
+        ${s.foto
+          ? `<img class="thumb" src="${s.foto}" alt="Foto de ${escapeHtml(s.nome)}">`
+          : `<div class="noimg">Sem foto</div>`}
+      </td>
+      <td><b>${escapeHtml(s.nome)}</b></td>
+      <td>${escapeHtml(s.turma||'')}</td>
+      <td><span class="idnum">${escapeHtml(s.numero||'')}</span></td>
+      <td style="white-space:nowrap;">
+        <button class="btn small outline" onclick="openPhotoModal('${s.id}')">${s.foto ? 'Trocar foto' : 'Adicionar foto'}</button>
+        <button class="btn small" onclick="openStudentModal('${s.id}')">Editar</button>
+        <button class="btn small danger" onclick="deleteStudent('${s.id}')">Excluir</button>
+      </td>
     </tr>
   `).join('');
 
   updateCapacityBar();
 }
-
 function getCapacity(){
   return (state.config && state.config.capacidadeMaxima) || 400;
 }
@@ -1935,7 +1931,6 @@ function bindPontoTabs(){
   document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
   document.getElementById('addFeriadoBtn').addEventListener('click', addFeriado);
   document.getElementById('addDiaLetivoBtn').addEventListener('click', addDiaLetivo);
-  document.getElementById('addPeriodoServidorBtn').addEventListener('click', addPeriodoServidor);
   document.getElementById('filtroMesPonto').addEventListener('change', ()=>{
     renderFeriadosTags();
     renderDiasLetivosTags();
@@ -2263,35 +2258,30 @@ async function deleteServidorPonto(id){
 
 /* ---- feriados / dias letivos tab ---- */
 async function addFeriado(){
+  const servidorId = document.getElementById('novoPeriodoServidor').value;
   const inicio = document.getElementById('novoPeriodoInicio').value;
   const fim = document.getElementById('novoPeriodoFim').value;
   const tipo = document.getElementById('novoPeriodoTipo').value;
+  if(!servidorId){ alert('Selecione o servidor.'); return; }
   if(!inicio || !fim){ alert('Preencha a data de início e a data de fim.'); return; }
   if(fim < inicio){ alert('A data de fim não pode ser anterior à data de início.'); return; }
 
-  const periodoId = 'periodo-' + Date.now();
-  const atual = new Date(inicio + 'T12:00:00');
-  const ultima = new Date(fim + 'T12:00:00');
+  const periodoId = 'ps-' + Date.now();
   const novos = [];
-
-  while(atual <= ultima){
-    const data = atual.getFullYear() + '-' + pad2(atual.getMonth()+1) + '-' + pad2(atual.getDate());
-    const f = {data, descricao:tipo, origem:'manual', periodoId, inicio, fim, tipo};
-    await window.storage.set('feriado:'+data, JSON.stringify(f));
-    novos.push(f);
-    atual.setDate(atual.getDate()+1);
+  for(const data of datasDoIntervalo(inicio,fim)){
+    const item = {data, descricao:tipo, tipo, servidorId, periodoId, inicio, fim, origem:'manual-servidor'};
+    await window.storage.set('periodoServidor:'+servidorId+':'+data, JSON.stringify(item));
+    novos.push(item);
   }
-
-  const datasNovas = new Set(novos.map(f=>f.data));
-  pontoState.feriados = pontoState.feriados.filter(x=>!datasNovas.has(x.data));
-  pontoState.feriados.push(...novos);
-  pontoState.feriados.sort((a,b)=>a.data.localeCompare(b.data));
+  const novasChaves = new Set(novos.map(x=>x.servidorId+'|'+x.data));
+  pontoState.periodosServidor = pontoState.periodosServidor.filter(x=>!novasChaves.has(x.servidorId+'|'+x.data));
+  pontoState.periodosServidor.push(...novos);
+  pontoState.periodosServidor.sort((a,b)=>a.data.localeCompare(b.data));
   document.getElementById('novoPeriodoInicio').value='';
   document.getElementById('novoPeriodoFim').value='';
   document.getElementById('novoPeriodoTipo').value='Férias';
-  renderFeriadosTags();
+  renderPeriodosServidor();
 }
-
 async function removeFeriado(data, periodoId){
   const remover = periodoId
     ? pontoState.feriados.filter(x=>x.periodoId===periodoId)
@@ -2359,17 +2349,13 @@ function renderFeriadosTags(){
 }
 
 function refreshServidorPeriodoSelect(){
-  const sel = document.getElementById('periodoServidorSelect');
+  const sel = document.getElementById('novoPeriodoServidor');
   if(!sel) return;
   const atual = sel.value;
-  const elegiveis = pontoState.servidores.filter(s=>{
-    const c = normalize(s.cargo||'');
-    return c.includes('secretario escolar') || c.includes('agente de educacao');
-  });
-  sel.innerHTML = '<option value="">— selecione —</option>' + elegiveis.map(s=>`<option value="${s.id}">${escapeHtml(s.nome)} — ${escapeHtml(s.cargo||'')}</option>`).join('');
-  if(elegiveis.some(s=>s.id===atual)) sel.value = atual;
+  const servidores = [...pontoState.servidores].sort((a,b)=>(a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
+  sel.innerHTML = '<option value="">— selecione —</option>' + servidores.map(s=>`<option value="${s.id}">${escapeHtml(s.nome)} — ${escapeHtml(s.cargo||'')}</option>`).join('');
+  if(servidores.some(s=>s.id===atual)) sel.value = atual;
 }
-
 async function addPeriodoServidor(){
   const servidorId = document.getElementById('periodoServidorSelect').value;
   const inicio = document.getElementById('periodoServidorInicio').value;
@@ -2500,7 +2486,10 @@ function celula(servidor, date, turno){
   if(periodoIndividual){
     const tipoIndividual = normalize(periodoIndividual.descricao || periodoIndividual.tipo || '');
     if(tipoIndividual.includes('ferias')) return {text:'Férias', tipo:'feriado'};
-    return {text:'Recesso', tipo:'feriado'};
+    if(tipoIndividual.includes('recesso')) return {text:'Recesso', tipo:'feriado'};
+    if(tipoIndividual.includes('atestado')) return {text:'Atestado médico', tipo:'afastamento'};
+    if(tipoIndividual.includes('licenca premio')) return {text:'Licença Prêmio', tipo:'afastamento'};
+    return {text:periodoIndividual.tipo || periodoIndividual.descricao || '', tipo:'afastamento'};
   }
 
   const feriado = findFeriado(iso);
