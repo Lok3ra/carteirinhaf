@@ -559,13 +559,30 @@
       </div>
 
       <div class="card-block">
+        <div class="row" style="align-items:flex-end;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <h3 style="margin-bottom:4px;">Feriados / recessos / férias cadastrados</h3>
+            <p id="feriadosFiltroResumo" style="font-size:12.5px;color:#6b6355;margin:0;"></p>
+          </div>
+          <div class="field" style="max-width:230px;margin-bottom:0;">
+            <label>Mostrar datas do mês</label>
+            <select id="filtroMesPonto">
+              <option value="todos">Todos os meses</option>
+              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
+              <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
+              <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
+              <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+            </select>
+          </div>
+        </div>
+        <div class="taglist" id="feriadosTagList" style="margin-bottom:22px;"></div>
+
         <h3>Adicionar feriado / recesso / férias</h3>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="max-width:200px;"><label>Data</label><input type="date" id="novoFeriadoData"></div>
           <div class="field" style="max-width:280px;"><label>Descrição</label><input type="text" id="novoFeriadoDesc" placeholder="Ex: Recesso, Férias Escolares..."></div>
           <button class="btn" id="addFeriadoBtn">Adicionar</button>
         </div>
-        <div class="taglist" id="feriadosTagList"></div>
       </div>
 
       <div class="card-block">
@@ -886,6 +903,7 @@ async function init(){
   await loadEverythingForActiveYear();
 
   const now = new Date();
+  document.getElementById('filtroMesPonto').value = String(now.getMonth());
   document.getElementById('mesSelectPonto').value = String(now.getMonth());
   document.getElementById('anoInputPonto').value = now.getFullYear();
   await loadPontoData();
@@ -1839,6 +1857,10 @@ function bindPontoTabs(){
   document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
   document.getElementById('addFeriadoBtn').addEventListener('click', addFeriado);
   document.getElementById('addDiaLetivoBtn').addEventListener('click', addDiaLetivo);
+  document.getElementById('filtroMesPonto').addEventListener('change', ()=>{
+    renderFeriadosTags();
+    renderDiasLetivosTags();
+  });
   ['cfgOrgaoPonto','cfgEscolaPonto','cfgCidadePonto'].forEach(id=>{
     document.getElementById(id).addEventListener('change', savePontoConfig);
   });
@@ -2155,10 +2177,33 @@ async function removeFeriado(data){
   renderFeriadosTags();
 }
 
+function mesFiltroPonto(){
+  const el = document.getElementById('filtroMesPonto');
+  return !el || el.value === 'todos' ? null : parseInt(el.value, 10);
+}
+
+function pertenceAoMesPonto(dataIso, mes){
+  return mes === null || parseInt(dataIso.slice(5,7), 10) - 1 === mes;
+}
+
 function renderFeriadosTags(){
   const box = document.getElementById('feriadosTagList');
-  if(!pontoState.feriados.length){ box.innerHTML = '<p style="color:#8b8471;font-size:13px;">Nenhum feriado cadastrado ainda.</p>'; return; }
-  box.innerHTML = pontoState.feriados.map(f=>{
+  const resumo = document.getElementById('feriadosFiltroResumo');
+  const mes = mesFiltroPonto();
+  const filtrados = pontoState.feriados.filter(f=>pertenceAoMesPonto(f.data, mes));
+
+  if(resumo){
+    resumo.textContent = mes === null
+      ? pontoState.feriados.length + ' data(s) cadastrada(s) no ano.'
+      : filtrados.length + ' data(s) em ' + MESES_PT[mes] + '.';
+  }
+  if(!filtrados.length){
+    box.innerHTML = '<p style="color:#8b8471;font-size:13px;">' +
+      (mes === null ? 'Nenhum feriado cadastrado ainda.' : 'Nenhum feriado, recesso ou férias cadastrado em ' + MESES_PT[mes] + '.') +
+      '</p>';
+    return;
+  }
+  box.innerHTML = filtrados.map(f=>{
     const [y,m,d] = f.data.split('-');
     return `<span class="tag ${f.origem==='manual'?'manual':''}">${d}/${m}/${y} — ${escapeHtml(f.descricao)}
       ${f.origem==='manual' ? `<button onclick="removeFeriado('${f.data}')" title="Remover">×</button>` : ''}
@@ -2188,8 +2233,15 @@ async function removeDiaLetivo(data){
 
 function renderDiasLetivosTags(){
   const box = document.getElementById('diasLetivosTagList');
-  if(!pontoState.diasLetivos.length){ box.innerHTML = '<p style="color:#8b8471;font-size:13px;">Nenhuma exceção cadastrada.</p>'; return; }
-  box.innerHTML = pontoState.diasLetivos.map(d=>{
+  const mes = mesFiltroPonto();
+  const filtrados = pontoState.diasLetivos.filter(d=>pertenceAoMesPonto(d.data, mes));
+  if(!filtrados.length){
+    box.innerHTML = '<p style="color:#8b8471;font-size:13px;">' +
+      (mes === null ? 'Nenhuma exceção cadastrada.' : 'Nenhum dia letivo de fim de semana cadastrado em ' + MESES_PT[mes] + '.') +
+      '</p>';
+    return;
+  }
+  box.innerHTML = filtrados.map(d=>{
     const [y,m,dd] = d.data.split('-');
     return `<span class="tag manual">${dd}/${m}/${y} <button onclick="removeDiaLetivo('${d.data}')" title="Remover">×</button></span>`;
   }).join('');
