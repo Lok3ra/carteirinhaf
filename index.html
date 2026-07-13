@@ -626,7 +626,7 @@
       </div>
       <div class="card-block" style="padding:0;overflow:hidden;overflow-x:auto;">
         <table>
-          <thead><tr><th>Servidor</th><th>Cargo</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Servidor</th><th>Cargo</th><th>Função</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th>Ações</th></tr></thead>
           <tbody id="servidoresPontoTbody"></tbody>
         </table>
         <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor importado ainda. Vá em "Importar servidores".</div>
@@ -2343,48 +2343,82 @@ function atualizarStatusCalendario(){
 function renderServidoresPontoTable(){
   const q = normalize(document.getElementById('searchServidoresPonto').value);
   const tbody = document.getElementById('servidoresPontoTbody');
-  document.getElementById('servidoresPontoEmpty').style.display = pontoState.servidores.length ? 'none':'block';
-  const filtered = pontoState.servidores.filter(s=> !q || normalize(s.nome).includes(q));
+  const empty = document.getElementById('servidoresPontoEmpty');
+  const filtered = pontoState.servidores.filter(s=>
+    !q || [s.nome,s.cargo,s.funcao,s.matricula].some(v=>normalize(v).includes(q))
+  ).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
 
-  tbody.innerHTML = filtered.map(s=>`
+  empty.style.display = filtered.length ? 'none':'block';
+  empty.textContent = pontoState.servidores.length
+    ? 'Nenhum servidor encontrado para esta busca.'
+    : 'Nenhum servidor importado ainda. Vá em "Importar servidores".';
+
+  tbody.innerHTML = filtered.map(s=>{
+    const carga = parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10) || '';
+    const turnoAtual = [s.turno1,s.turno2].filter(Boolean).join(' / ');
+    const ehProfessor = normalize(s.funcao)==='professor';
+    return `
     <tr>
-      <td><b>${escapeHtml(s.nome)}</b><br><span style="color:#8b8471;font-size:11.5px;">${escapeHtml(s.funcao||s.cargo)}</span></td>
-      <td>${escapeHtml(s.cargo)}</td>
-      <td style="font-size:11.5px;">${[s.turno1,s.turno2,s.turno3].filter(Boolean).join(' · ')}</td>
+      <td><b>${escapeHtml(s.nome)}</b></td>
+      <td>${escapeHtml(s.cargo||'—')}</td>
+      <td>${escapeHtml(s.funcao||'—')}</td>
       <td>
-        ${normalize(s.funcao)==='professor' ? `
-        <select onchange="updateServidorPontoField('${s.id}','coordenacao',this.value)" style="padding:4px 6px;font-size:12.5px;">
-          <option value="" ${!s.coordenacao?'selected':''}>—</option>
-          <option value="M" ${s.coordenacao==='M'?'selected':''}>M (manhã)</option>
-          <option value="V" ${s.coordenacao==='V'?'selected':''}>V (tarde)</option>
-        </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
-      </td>
-      <td>
-        <select onchange="updateServidorPontoField('${s.id}','coordenacao4',this.value)" style="padding:4px 6px;font-size:12.5px;" ${s.coordenacao!=='N'?'disabled':''}>
-          <option value="">—</option>
-          <option value="1" ${s.coordenacao4==='1'?'selected':''}>Segunda</option>
-          <option value="2" ${s.coordenacao4==='2'?'selected':''}>Terça</option>
-          <option value="3" ${s.coordenacao4==='3'?'selected':''}>Quarta</option>
-          <option value="4" ${s.coordenacao4==='4'?'selected':''}>Quinta</option>
-          <option value="5" ${s.coordenacao4==='5'?'selected':''}>Sexta</option>
+        <select onchange="updateServidorPontoField('${s.id}','cargaSemanal',this.value)" style="padding:4px 6px;font-size:12.5px;min-width:72px;">
+          <option value="30" ${carga===30?'selected':''}>30H</option>
+          <option value="40" ${carga===40?'selected':''}>40H</option>
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(s.afastamento)}" placeholder="—" style="width:120px;padding:4px 6px;font-size:12.5px;" onchange="updateServidorPontoField('${s.id}','afastamento',this.value)"></td>
+      <td style="text-align:center;font-weight:600;">${escapeHtml(s.cargaMensal||'—')}</td>
+      <td>
+        ${carga===40
+          ? '<span>MATUTINO / VESPERTINO</span>'
+          : `<select onchange="updateServidorPontoField('${s.id}','turno',this.value)" style="padding:4px 6px;font-size:12.5px;min-width:120px;">
+              <option value="MATUTINO" ${turnoAtual.includes('MATUTINO')?'selected':''}>MATUTINO</option>
+              <option value="VESPERTINO" ${turnoAtual.includes('VESPERTINO')?'selected':''}>VESPERTINO</option>
+            </select>`}
+      </td>
+      <td>
+        ${ehProfessor ? `
+        <select onchange="updateServidorPontoField('${s.id}','coordenacao',this.value)" style="padding:4px 6px;font-size:12.5px;min-width:120px;">
+          <option value="" ${!s.coordenacao?'selected':''}>SEM COORDENAÇÃO</option>
+          <option value="M" ${s.coordenacao==='M'?'selected':''}>MATUTINO</option>
+          <option value="V" ${s.coordenacao==='V'?'selected':''}>VESPERTINO</option>
+        </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
+      </td>
+      <td>${escapeHtml(s.matricula||'—')}</td>
       <td><button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 async function updateServidorPontoField(id, field, value){
   const s = pontoState.servidores.find(x=>x.id===id);
   if(!s) return;
-  if(field==='coordenacao' && normalize(s.funcao)!=='professor'){
-    s.coordenacao = '';
+
+  if(field==='cargaSemanal'){
+    const carga = parseInt(value,10);
+    s.cargaSemanal = carga + 'H';
+    s.cargaMensal = carga===40 ? '200H' : '150H';
+    if(carga===40){
+      s.turno1 = 'MATUTINO';
+      s.turno2 = 'VESPERTINO';
+    }else{
+      const atual = [s.turno1,s.turno2].find(t=>/MATUTINO|VESPERTINO/.test(t||'')) || 'MATUTINO';
+      s.turno1 = atual.includes('VESPERTINO') ? 'VESPERTINO' : 'MATUTINO';
+      s.turno2 = '';
+    }
+  }else if(field==='turno'){
+    s.turno1 = value;
+    s.turno2 = '';
+  }else if(field==='coordenacao'){
+    s.coordenacao = normalize(s.funcao)==='professor' ? value : '';
   }else{
     s[field] = value;
   }
+
   await window.storage.set('servidor:'+id, JSON.stringify(s));
-  if(field==='coordenacao') renderServidoresPontoTable();
+  renderServidoresPontoTable();
+  refreshServidorSelectPonto();
 }
 
 async function deleteServidorPonto(id){
@@ -2681,9 +2715,9 @@ function buildFolhaHtml(servidor, mes, ano){
   const brasaoFolha = BRASAO_FOLHA_PADRAO;
   const logoFolha = LOGO_FOLHA_PADRAO;
   const turnos = [servidor.turno1, servidor.turno2, servidor.turno3].filter(Boolean).map(t=>t.toUpperCase());
-  const temMatutino = turnos.some(t=>t.includes('MATUTINO') && t.includes('X'));
-  const temVespertino = turnos.some(t=>t.includes('VESPERTINO') && t.includes('X'));
-  const temNoturno = turnos.some(t=>t.includes('NOTURNO') && t.includes('X'));
+  const temMatutino = turnos.some(t=>t.includes('MATUTINO'));
+  const temVespertino = turnos.some(t=>t.includes('VESPERTINO'));
+  const temNoturno = turnos.some(t=>t.includes('NOTURNO'));
   const turnoTexto = (nome, marcado)=> nome + ' (' + (marcado ? 'X' : ' ') + ')';
 
   let linhas = '';
