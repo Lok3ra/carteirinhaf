@@ -1,0 +1,54 @@
+{
+  "ano": 2026,
+  "legendas": [
+    {
+      "id": "feriado",
+      "nome": "Feriado",
+      "cor": "#C94C4C",
+      "tipo": "nao-letivo"
+    },
+    {
+      "id": "ferias",
+      "nome": "Férias",
+      "cor": "#7A6FC2",
+      "tipo": "nao-letivo"
+    },
+    {
+      "id": "recesso",
+      "nome": "Recesso",
+      "cor": "#E39A3B",
+      "tipo": "nao-letivo"
+    },
+    {
+      "id": "dia-sem-aula",
+      "nome": "Dia sem aula",
+      "cor": "#777777",
+      "tipo": "nao-letivo"
+    },
+    {
+      "id": "reposicao",
+      "nome": "Reposição",
+      "cor": "#2E8B57",
+      "tipo": "letivo"
+    },
+    {
+      "id": "anteposicao",
+      "nome": "Anteposição",
+      "cor": "#3182BD",
+      "tipo": "letivo"
+    },
+    {
+      "id": "dia-letivo",
+      "nome": "Dia letivo",
+      "cor": "#4FA66A",
+      "tipo": "letivo"
+    },
+    {
+      "id": "evento",
+      "nome": "Evento escolar",
+      "cor": "#B8902E",
+      "tipo": "informativo"
+    }
+  ],
+  "eventos": []
+}
