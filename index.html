@@ -1812,16 +1812,32 @@ function diarioExtrairLinhasAlunos(paginasDados){
   (paginasDados||[]).forEach(pagina=>{
     const datas=diarioExtrairDatasTexto(pagina.texto);
     if(!datas.length) return;
-    const linhas=pagina.linhas||[];
+    const linhasOriginais=pagina.linhas||[];
+    const candidatos=[];
 
-    for(let i=0;i<linhas.length;i++){
-      let linha=linhas[i];
-      // Alguns nomes quebram em duas linhas no PDF. Junta a linha anterior ou
-      // seguinte quando uma delas contém o número e a outra aparenta ser nome.
-      if(!/^\s*\d{1,2}\b/.test(linha) && i+1<linhas.length && /^\s*\d{1,2}\b/.test(linhas[i+1]) && /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ ]{5,}$/i.test(linha)){
-        linha=linhas[i+1].replace(/^(\s*\d{1,2})\s+/,'$1 '+linha+' '); i++;
+    // Primeira tentativa: linhas reconstruídas pela posição dos textos.
+    for(let i=0;i<linhasOriginais.length;i++){
+      let linha=linhasOriginais[i];
+      if(!/^\s*\d{1,2}\b/.test(linha) && i+1<linhasOriginais.length && /^\s*\d{1,2}\b/.test(linhasOriginais[i+1]) && /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ ]{5,}$/i.test(linha)){
+        linha=linhasOriginais[i+1].replace(/^(\s*\d{1,2})\s+/,'$1 '+linha+' '); i++;
       }
+      if(/^\s*\d{1,2}\s+/.test(linha)) candidatos.push(linha);
+    }
 
+    // Segunda tentativa: em páginas de continuação o PDF pode juntar ou
+    // quebrar as linhas de modo diferente. Recorta cada aluno diretamente do
+    // texto da página, entre um número de chamada e o próximo.
+    const blocoAlunos=String(pagina.texto||'').split(/SITUAÇÃO\s+DO\s+ALUNO\s+ALUNOS/i).pop();
+    const regexBlocos=/(?:^|\n)\s*(\d{1,2})\s+([\s\S]*?)(?=\n\s*\d{1,2}\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ]|\n\s*IMPRESS(?:ÃO|AO)\s*:|$)/gi;
+    let bloco;
+    while((bloco=regexBlocos.exec(blocoAlunos))!==null){
+      const linha=(bloco[1]+' '+bloco[2]).replace(/\s+/g,' ').trim();
+      if(linha) candidatos.push(linha);
+    }
+
+    const linhas=[...new Set(candidatos)];
+    for(let i=0;i<linhas.length;i++){
+      const linha=linhas[i];
       const inicio=linha.match(/^\s*(\d{1,2})\s+(.+)/);
       if(!inicio) continue;
       const numero=String(parseInt(inicio[1],10)).padStart(2,'0');
@@ -2071,10 +2087,16 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
     }
   });
   const frequencias=Array.from(alunosUnicosMap.values()).map(aluno=>{
-    const registros=(aluno.registros||[]).filter(r=>r&&r.data>=inicio&&r.data<=fim);
+    const mapaRegistros=new Map((aluno.registros||[])
+      .filter(r=>r&&r.data>=inicio&&r.data<=fim)
+      .map(r=>[r.data,String(r.marca||'').trim().toUpperCase()]));
     let presencas=0, faltas=0, semLancamento=0;
-    registros.forEach(r=>{
-      const marca=String(r.marca||'').trim().toUpperCase();
+
+    // Usa todas as datas de aula encontradas no arquivo. Assim, quando uma
+    // página de continuação não tiver uma marca legível para o aluno, a data
+    // aparece como sem lançamento em vez de reduzir o total para 38, 40 etc.
+    unicas.forEach(data=>{
+      const marca=mapaRegistros.get(data)||'';
       if(marca==='F') faltas++;
       else if(marca==='•'||marca==='P'||marca==='.'||marca==='X') presencas++;
       else semLancamento++;
@@ -2086,7 +2108,7 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
       presencas,
       faltas,
       semLancamento,
-      total:registros.length
+      total:unicas.length
     };
   }).filter(a=>a.nome).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   status.textContent=`Arquivo lido: ${file.name}. ${unicas.length} data(s) de aula única(s) identificada(s)${paginas?` em ${paginas} página(s)`:''}.`;
