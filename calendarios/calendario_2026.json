@@ -1,5 +1,7 @@
 {
   "ano": 2026,
+  "versao": 1,
+  "descricao": "Calendário Escolar Central 2026 — fonte oficial para Folha de Ponto e Diário Escolar",
   "legendas": [
     {
       "id": "feriado",
@@ -50,5 +52,435 @@
       "tipo": "informativo"
     }
   ],
-  "eventos": []
+  "bimestres": [
+    {
+      "id": "1",
+      "nome": "1º Bimestre",
+      "inicio": "2026-02-05",
+      "fim": "2026-04-24"
+    },
+    {
+      "id": "2",
+      "nome": "2º Bimestre",
+      "inicio": "2026-04-27",
+      "fim": "2026-07-09"
+    },
+    {
+      "id": "3",
+      "nome": "3º Bimestre",
+      "inicio": "2026-07-27",
+      "fim": "2026-10-01"
+    },
+    {
+      "id": "4",
+      "nome": "4º Bimestre",
+      "inicio": "2026-10-02",
+      "fim": "2026-12-22"
+    }
+  ],
+  "regras": {
+    "diasLetivosPadrao": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "fimDeSemanaNaoLetivo": true,
+    "prioridadeFolhaPonto": [
+      "fim-de-semana",
+      "evento-individual",
+      "feriado",
+      "ferias",
+      "recesso",
+      "coordenacao-livre",
+      "normal"
+    ],
+    "coordenaçãoLivre": {
+      "função": "Professor",
+      "diasSemana": [
+        1,
+        5
+      ],
+      "turnoConformeCadastro": true
+    },
+    "capacidadeTurmas": {
+      "INFANTIL 3": 20,
+      "INFANTIL 4": 20,
+      "INFANTIL 5": 25
+    },
+    "alertaFaltasConsecutivas": {
+      "maisQue": 5
+    }
+  },
+  "eventos": [
+    {
+      "id": "ferias-inicio-2026",
+      "inicio": "2026-01-02",
+      "fim": "2026-02-01",
+      "legendaId": "ferias",
+      "observacao": "Férias escolares",
+      "prioridade": 85,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "recesso-meio-2026",
+      "inicio": "2026-07-10",
+      "fim": "2026-07-26",
+      "legendaId": "recesso",
+      "observacao": "Recesso escolar de meio de ano",
+      "prioridade": 80,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true,
+        "excluirCargos": [
+          "Secretário Escolar",
+          "Agente de educação"
+        ]
+      }
+    },
+    {
+      "id": "ferias-fim-2026",
+      "inicio": "2026-12-23",
+      "fim": "2026-12-31",
+      "legendaId": "ferias",
+      "observacao": "Férias escolares de fim de ano",
+      "prioridade": 85,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0101",
+      "inicio": "2026-01-01",
+      "fim": "2026-01-01",
+      "legendaId": "feriado",
+      "observacao": "Confraternização Universal",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0217",
+      "inicio": "2026-02-17",
+      "fim": "2026-02-17",
+      "legendaId": "feriado",
+      "observacao": "Carnaval",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0403",
+      "inicio": "2026-04-03",
+      "fim": "2026-04-03",
+      "legendaId": "feriado",
+      "observacao": "Sexta-feira da Paixão",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0421",
+      "inicio": "2026-04-21",
+      "fim": "2026-04-21",
+      "legendaId": "feriado",
+      "observacao": "Tiradentes",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0501",
+      "inicio": "2026-05-01",
+      "fim": "2026-05-01",
+      "legendaId": "feriado",
+      "observacao": "Dia do Trabalhador",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0604",
+      "inicio": "2026-06-04",
+      "fim": "2026-06-04",
+      "legendaId": "feriado",
+      "observacao": "Corpus Christi",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0615",
+      "inicio": "2026-06-15",
+      "fim": "2026-06-15",
+      "legendaId": "feriado",
+      "observacao": "Aniversário de Valparaíso de Goiás",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-0907",
+      "inicio": "2026-09-07",
+      "fim": "2026-09-07",
+      "legendaId": "feriado",
+      "observacao": "Independência do Brasil",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-1012",
+      "inicio": "2026-10-12",
+      "fim": "2026-10-12",
+      "legendaId": "feriado",
+      "observacao": "Nossa Senhora Aparecida",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-1015",
+      "inicio": "2026-10-15",
+      "fim": "2026-10-15",
+      "legendaId": "feriado",
+      "observacao": "Dia do Professor",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-1028",
+      "inicio": "2026-10-28",
+      "fim": "2026-10-28",
+      "legendaId": "feriado",
+      "observacao": "Dia do Servidor Público",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-1102",
+      "inicio": "2026-11-02",
+      "fim": "2026-11-02",
+      "legendaId": "feriado",
+      "observacao": "Finados",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-1120",
+      "inicio": "2026-11-20",
+      "fim": "2026-11-20",
+      "legendaId": "feriado",
+      "observacao": "Consciência Negra",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-1130",
+      "inicio": "2026-11-30",
+      "fim": "2026-11-30",
+      "legendaId": "feriado",
+      "observacao": "Dia do Evangélico",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "feriado-1225",
+      "inicio": "2026-12-25",
+      "fim": "2026-12-25",
+      "legendaId": "feriado",
+      "observacao": "Natal",
+      "prioridade": 100,
+      "aplicaA": {
+        "alunos": true,
+        "servidores": true,
+        "diarioEscolar": true,
+        "folhaPonto": true
+      }
+    },
+    {
+      "id": "sem-aula-2004",
+      "inicio": "2026-04-20",
+      "fim": "2026-04-20",
+      "legendaId": "dia-sem-aula",
+      "observacao": "Dia substituído por reposição em 13/06",
+      "prioridade": 75,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-06-13"
+    },
+    {
+      "id": "reposicao-1306",
+      "inicio": "2026-06-13",
+      "fim": "2026-06-13",
+      "legendaId": "reposicao",
+      "observacao": "Reposição referente a 20/04",
+      "prioridade": 95,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-04-20"
+    },
+    {
+      "id": "sem-aula-1310",
+      "inicio": "2026-10-13",
+      "fim": "2026-10-13",
+      "legendaId": "dia-sem-aula",
+      "observacao": "Dia anteposto para 08/08",
+      "prioridade": 75,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-08-08"
+    },
+    {
+      "id": "anteposicao-0808",
+      "inicio": "2026-08-08",
+      "fim": "2026-08-08",
+      "legendaId": "anteposicao",
+      "observacao": "Anteposição referente a 13/10",
+      "prioridade": 95,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-10-13"
+    },
+    {
+      "id": "sem-aula-1410",
+      "inicio": "2026-10-14",
+      "fim": "2026-10-14",
+      "legendaId": "dia-sem-aula",
+      "observacao": "Dia anteposto para 12/09",
+      "prioridade": 75,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-09-12"
+    },
+    {
+      "id": "anteposicao-1209",
+      "inicio": "2026-09-12",
+      "fim": "2026-09-12",
+      "legendaId": "anteposicao",
+      "observacao": "Anteposição referente a 14/10",
+      "prioridade": 95,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-10-14"
+    },
+    {
+      "id": "sem-aula-1610",
+      "inicio": "2026-10-16",
+      "fim": "2026-10-16",
+      "legendaId": "dia-sem-aula",
+      "observacao": "Dia substituído por reposição em 24/10",
+      "prioridade": 75,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-10-24"
+    },
+    {
+      "id": "reposicao-2410",
+      "inicio": "2026-10-24",
+      "fim": "2026-10-24",
+      "legendaId": "reposicao",
+      "observacao": "Reposição referente a 16/10",
+      "prioridade": 95,
+      "aplicaA": {
+        "alunos": true,
+        "diarioEscolar": true,
+        "folhaPonto": false
+      },
+      "relacionadoA": "2026-10-16"
+    }
+  ]
 }
