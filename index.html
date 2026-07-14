@@ -426,6 +426,30 @@
   @media(max-width:700px){.kit-options{grid-template-columns:1fr;}}
 
 
+  /* ---------- Bilhetes / Manual ---------- */
+  .bilhete-preview-wrap{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:16px;overflow:auto;}
+  .bilhete-sheet{width:190mm;min-height:267mm;background:#fff;margin:0 auto;padding:8mm;display:grid;gap:5mm;align-content:start;box-sizing:border-box;}
+  .bilhete-card{border:2px solid var(--bilhete-cor,#4FB6E8);border-radius:10px;padding:8mm;font-family:Arial,sans-serif;color:#222;position:relative;break-inside:avoid;background:#fff;}
+  .bilhete-card.economico{border:1px solid #222;border-radius:0;}
+  .bilhete-card .bilhete-titulo{text-align:center;font-size:18px;font-weight:800;text-transform:uppercase;margin-bottom:5mm;color:var(--bilhete-cor,#2c6bb0);}
+  .bilhete-card.economico .bilhete-titulo{color:#000;}
+  .bilhete-card .bilhete-destinatario{font-weight:700;margin-bottom:3mm;}
+  .bilhete-card .bilhete-texto{font-size:13px;line-height:1.45;text-align:justify;white-space:pre-wrap;}
+  .bilhete-card .bilhete-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2mm 6mm;margin-top:4mm;font-size:12px;}
+  .bilhete-card .bilhete-campo{border-bottom:1px solid #777;padding-bottom:1mm;min-height:5mm;}
+  .bilhete-card .bilhete-fecho{text-align:right;margin-top:5mm;font-size:12px;white-space:pre-line;}
+  .bilhete-card .bilhete-assinatura{margin-top:5mm;text-align:center;font-size:11px;}
+  .bilhete-card .bilhete-assinatura span{display:inline-block;min-width:55mm;border-top:1px solid #555;padding-top:1mm;}
+  @media print{
+    body.print-bilhetes > *:not(#printarea){display:none!important;}
+    body.print-bilhetes{margin:0!important;background:#fff!important;}
+    body.print-bilhetes #printarea{display:block!important;position:static!important;width:auto!important;margin:0!important;padding:0!important;}
+    body.print-bilhetes #printarea,body.print-bilhetes #printarea *{visibility:visible!important;}
+    body.print-bilhetes .bilhete-sheet{width:190mm!important;min-height:277mm!important;padding:5mm!important;margin:0!important;}
+    body.print-bilhetes .bilhete-card{box-shadow:none!important;}
+    @page{size:A4 portrait;margin:10mm;}
+  }
+
   /* ---------- Declarações ---------- */
   .declaracao-preview{background:#fff;border:1px solid var(--line);padding:12mm 16mm 10mm;max-width:210mm;min-height:275mm;margin:0 auto;font-family:'Times New Roman',serif;color:#000;position:relative;}
   .declaracao-preview h1{text-align:center;font-family:'Times New Roman',serif;font-size:20px;margin:22mm 0 28mm;text-transform:uppercase;}
@@ -488,12 +512,21 @@
       </div>
     </div>
 
+    <div class="navsection" data-section="bilhetes">
+      <button class="navsection-toggle" type="button" aria-expanded="false">
+        <span>Bilhetes</span><span class="arrow">▶</span>
+      </button>
+      <div class="navsubmenu">
+        <div class="navitem" data-tab="bilhetes-manual"><span class="idx">02</span> Manual</div>
+      </div>
+    </div>
+
     <div class="navsection" data-section="declaracoes">
       <button class="navsection-toggle" type="button" aria-expanded="false">
         <span>Declarações</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="declaracao-comparecimento"><span class="idx">02</span> Declaração de Comparecimento</div>
+        <div class="navitem" data-tab="declaracao-comparecimento"><span class="idx">03</span> Declaração de Comparecimento</div>
       </div>
     </div>
 
@@ -502,8 +535,8 @@
         <span>Diário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="diario-verificador"><span class="idx">03</span> Verificador</div>
-        <div class="navitem" data-tab="diario-config"><span class="idx">04</span> Configurações</div>
+        <div class="navitem" data-tab="diario-verificador"><span class="idx">04</span> Verificador</div>
+        <div class="navitem" data-tab="diario-config"><span class="idx">05</span> Configurações</div>
       </div>
     </div>
 
@@ -512,12 +545,12 @@
         <span>Folha de Ponto</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="ponto-gerar"><span class="idx">05</span> Gerar folha</div>
-        <div class="navitem" data-tab="ponto-manual"><span class="idx">06</span> Manual</div>
-        <div class="navitem" data-tab="ponto-listas"><span class="idx">07</span> Listas</div>
-        <div class="navitem" data-tab="ponto-servidores"><span class="idx">08</span> Servidores</div>
-        <div class="navitem" data-tab="ponto-importar"><span class="idx">09</span> Importar servidores</div>
-        <div class="navitem" data-tab="ponto-feriados"><span class="idx">10</span> Feriados & dias letivos</div>
+        <div class="navitem" data-tab="ponto-gerar"><span class="idx">06</span> Gerar folha</div>
+        <div class="navitem" data-tab="ponto-manual"><span class="idx">07</span> Manual</div>
+        <div class="navitem" data-tab="ponto-listas"><span class="idx">08</span> Listas</div>
+        <div class="navitem" data-tab="ponto-servidores"><span class="idx">09</span> Servidores</div>
+        <div class="navitem" data-tab="ponto-importar"><span class="idx">10</span> Importar servidores</div>
+        <div class="navitem" data-tab="ponto-feriados"><span class="idx">11</span> Feriados & dias letivos</div>
       </div>
     </div>
 
@@ -526,10 +559,10 @@
         <span>Carteirinhas</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="carteirinhas"><span class="idx">11</span> Gerar carteirinhas</div>
-        <div class="navitem" data-tab="alunos"><span class="idx">12</span> Alunos</div>
-        <div class="navitem" data-tab="importar"><span class="idx">13</span> Importar dados</div>
-        <div class="navitem" data-tab="config"><span class="idx">14</span> Configurações</div>
+        <div class="navitem" data-tab="carteirinhas"><span class="idx">12</span> Gerar carteirinhas</div>
+        <div class="navitem" data-tab="alunos"><span class="idx">13</span> Alunos</div>
+        <div class="navitem" data-tab="importar"><span class="idx">14</span> Importar dados</div>
+        <div class="navitem" data-tab="config"><span class="idx">15</span> Configurações</div>
       </div>
     </div>
 
@@ -538,8 +571,8 @@
         <span>Calendário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="calendario-central"><span class="idx">15</span> Calendário</div>
-        <div class="navitem" data-tab="calendario-legendas"><span class="idx">16</span> Legendas</div>
+        <div class="navitem" data-tab="calendario-central"><span class="idx">16</span> Calendário</div>
+        <div class="navitem" data-tab="calendario-legendas"><span class="idx">17</span> Legendas</div>
       </div>
     </div>
 
@@ -548,8 +581,8 @@
         <span>Festa Junina</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="festa-junina"><span class="idx">17</span> Calculadora</div>
-        <div class="navitem" data-tab="festa-config"><span class="idx">18</span> Configuração</div>
+        <div class="navitem" data-tab="festa-junina"><span class="idx">18</span> Calculadora</div>
+        <div class="navitem" data-tab="festa-config"><span class="idx">19</span> Configuração</div>
       </div>
     </div>
 
@@ -1021,6 +1054,42 @@
       </div>
     </div>
 
+    <!-- ===================== TAB: BILHETES / MANUAL ===================== -->
+    <div class="panel" id="panel-bilhetes-manual">
+      <div class="pagehead"><h2>Bilhete Manual</h2><p>Monte um bilhete rapidamente, preenchendo somente o que for necessário.</p></div>
+      <div class="card-block">
+        <h3>Conteúdo do bilhete</h3>
+        <div class="row">
+          <div class="field"><label>Título</label><input type="text" id="bilheteTitulo" value="Comunicado"></div>
+          <div class="field"><label>Destinatário</label><select id="bilheteDestinatario"><option value="Senhores pais e/ou responsáveis">Senhores pais e/ou responsáveis</option><option value="Prezada família">Prezada família</option><option value="Responsável pelo(a) aluno(a)">Responsável pelo(a) aluno(a)</option><option value="">Sem saudação</option></select></div>
+        </div>
+        <div class="field"><label>Mensagem</label><textarea id="bilheteMensagem" rows="6" placeholder="Digite o texto do bilhete..."></textarea></div>
+        <div class="row">
+          <div class="field"><label>Data</label><input type="text" id="bilheteData" placeholder="Ex: 15/08/2026"></div>
+          <div class="field"><label>Horário</label><input type="text" id="bilheteHorario" placeholder="Ex: 14h"></div>
+          <div class="field"><label>Local</label><input type="text" id="bilheteLocal" placeholder="Ex: CMEI Pró Saber"></div>
+          <div class="field"><label>O que trazer</label><input type="text" id="bilheteTrazer" placeholder="Ex: Um prato de salgado"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Turma</label><input type="text" id="bilheteTurma" placeholder="Opcional"></div>
+          <div class="field"><label>Professora</label><input type="text" id="bilheteProfessora" placeholder="Opcional"></div>
+          <div class="field"><label>Encerramento</label><textarea id="bilheteFecho" rows="2">Atenciosamente,
+CMEI Pró Saber</textarea></div>
+        </div>
+      </div>
+      <div class="card-block">
+        <h3>Impressão</h3>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:200px;"><label>Bilhetes por folha</label><select id="bilhetePorFolha"><option value="2">2 por folha</option><option value="4" selected>4 por folha</option><option value="6">6 por folha</option><option value="8">8 por folha</option></select></div>
+          <div class="field" style="max-width:200px;"><label>Estilo</label><select id="bilheteEstilo"><option value="colorido">Colorido</option><option value="economico">Econômico</option></select></div>
+          <div class="field" style="max-width:130px;"><label>Cor da borda</label><input type="color" id="bilheteCor" value="#4FB6E8"></div>
+          <label style="font-size:13px;margin-bottom:12px;"><input type="checkbox" id="bilheteAssinatura"> Espaço para assinatura</label>
+        </div>
+        <div class="row"><button class="btn" id="bilheteGerarBtn" type="button">Gerar pré-visualização</button><button class="btn outline" id="bilheteImprimirBtn" type="button" disabled>Imprimir bilhetes</button><button class="btn outline" id="bilheteLimparBtn" type="button">Limpar</button></div>
+      </div>
+      <div id="bilhetePreviewArea"></div><div class="empty" id="bilhetePreviewEmpty">Digite a mensagem e clique em “Gerar pré-visualização”.</div>
+    </div>
+
     <!-- ===================== TAB: DECLARAÇÃO DE COMPARECIMENTO ===================== -->
     <div class="panel" id="panel-declaracao-comparecimento">
       <div class="pagehead">
@@ -1039,6 +1108,11 @@
           <div class="field"><label>Nome do aluno</label><input type="text" id="declAluno" placeholder="Nome completo do aluno"></div>
           <div class="field" style="max-width:220px;"><label>Turno</label><select id="declTurno"><option value="MATUTINO">Matutino</option><option value="VESPERTINO">Vespertino</option><option value="MATUTINO E VESPERTINO">Matutino e Vespertino</option></select></div>
           <div class="field" style="max-width:220px;"><label>Data</label><input type="date" id="declData"></div>
+        </div>
+        <div class="field">
+          <label>Rodapé</label>
+          <textarea id="declRodape" rows="3">Rua Tapuia A/E nº 03 Setor de Chácaras Anhanguera “A” – Vila dos Carneiros
+Valparaíso de Goiás – GO – Fone: 61 9929 3856 – prosaber.escola@gmail.com</textarea>
         </div>
         <div class="row">
           <button class="btn" id="declGerarBtn" type="button">Gerar pré-visualização</button>
@@ -1437,6 +1511,7 @@ async function init(){
   await carregarCalendarioCentral(nowYear);
   bindDiarioEscolar();
   bindProfessorKit();
+  bindBilhetes();
   bindDeclaracoes();
   bindModals();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
@@ -1539,6 +1614,7 @@ function bindNav(){
       if(item.dataset.tab==='calendario-central') renderCalendarioCentral();
       if(item.dataset.tab==='calendario-legendas') renderLegendasCalendario();
       if(item.dataset.tab==='professor-kit') renderProfessorKit();
+      if(item.dataset.tab==='bilhetes-manual') atualizarPreviewBilhete(false);
     });
   });
 }
@@ -4413,6 +4489,18 @@ function importarCalendarioCentral(ev){const f=ev.target.files[0];if(!f)return;c
 
 
 /* =========================================================================
+   BILHETES / MANUAL
+========================================================================= */
+let bilheteHtmlAtual='';
+function bindBilhetes(){const g=document.getElementById('bilheteGerarBtn');if(!g)return;g.addEventListener('click',()=>atualizarPreviewBilhete(true));document.getElementById('bilheteImprimirBtn').addEventListener('click',imprimirBilhetes);document.getElementById('bilheteLimparBtn').addEventListener('click',limparBilheteManual);}
+function dadosBilheteManual(){return {titulo:document.getElementById('bilheteTitulo').value.trim(),destinatario:document.getElementById('bilheteDestinatario').value.trim(),mensagem:document.getElementById('bilheteMensagem').value.trim(),data:document.getElementById('bilheteData').value.trim(),horario:document.getElementById('bilheteHorario').value.trim(),local:document.getElementById('bilheteLocal').value.trim(),trazer:document.getElementById('bilheteTrazer').value.trim(),turma:document.getElementById('bilheteTurma').value.trim(),professora:document.getElementById('bilheteProfessora').value.trim(),fecho:document.getElementById('bilheteFecho').value.trim(),quantidade:parseInt(document.getElementById('bilhetePorFolha').value,10)||4,estilo:document.getElementById('bilheteEstilo').value,cor:document.getElementById('bilheteCor').value||'#4FB6E8',assinatura:document.getElementById('bilheteAssinatura').checked};}
+function montarBilheteCard(d){const c=[];if(d.data)c.push(`<div class="bilhete-campo"><b>Data:</b> ${escapeHtml(d.data)}</div>`);if(d.horario)c.push(`<div class="bilhete-campo"><b>Horário:</b> ${escapeHtml(d.horario)}</div>`);if(d.local)c.push(`<div class="bilhete-campo"><b>Local:</b> ${escapeHtml(d.local)}</div>`);if(d.trazer)c.push(`<div class="bilhete-campo"><b>O que trazer:</b> ${escapeHtml(d.trazer)}</div>`);if(d.turma)c.push(`<div class="bilhete-campo"><b>Turma:</b> ${escapeHtml(d.turma)}</div>`);if(d.professora)c.push(`<div class="bilhete-campo"><b>Professora:</b> ${escapeHtml(d.professora)}</div>`);return `<article class="bilhete-card ${d.estilo==='economico'?'economico':''}" style="--bilhete-cor:${d.cor}">${d.titulo?`<div class="bilhete-titulo">${escapeHtml(d.titulo)}</div>`:''}${d.destinatario?`<div class="bilhete-destinatario">${escapeHtml(d.destinatario)},</div>`:''}<div class="bilhete-texto">${escapeHtml(d.mensagem)}</div>${c.length?`<div class="bilhete-campos">${c.join('')}</div>`:''}${d.fecho?`<div class="bilhete-fecho">${escapeHtml(d.fecho)}</div>`:''}${d.assinatura?`<div class="bilhete-assinatura"><span>Assinatura do responsável</span></div>`:''}</article>`;}
+function montarFolhaBilhetes(d){const cols=d.quantidade===2?1:2;return `<div class="bilhete-sheet" style="grid-template-columns:repeat(${cols},minmax(0,1fr));">${Array.from({length:d.quantidade},()=>montarBilheteCard(d)).join('')}</div>`;}
+function atualizarPreviewBilhete(validar=true){const a=document.getElementById('bilhetePreviewArea');if(!a)return;const v=document.getElementById('bilhetePreviewEmpty'),d=dadosBilheteManual();if(!d.mensagem){if(validar)alert('Digite a mensagem do bilhete.');a.innerHTML='';v.style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;bilheteHtmlAtual='';return;}bilheteHtmlAtual=montarFolhaBilhetes(d);a.innerHTML=`<div class="bilhete-preview-wrap">${bilheteHtmlAtual}</div>`;v.style.display='none';document.getElementById('bilheteImprimirBtn').disabled=false;}
+function imprimirBilhetes(){if(!bilheteHtmlAtual)atualizarPreviewBilhete(true);if(!bilheteHtmlAtual)return;document.getElementById('printarea').innerHTML=`<div class="print-page">${bilheteHtmlAtual}</div>`;document.body.classList.add('print-bilhetes');window.print();setTimeout(()=>document.body.classList.remove('print-bilhetes'),500);}
+function limparBilheteManual(){document.getElementById('bilheteTitulo').value='Comunicado';document.getElementById('bilheteDestinatario').value='Senhores pais e/ou responsáveis';['bilheteMensagem','bilheteData','bilheteHorario','bilheteLocal','bilheteTrazer','bilheteTurma','bilheteProfessora'].forEach(id=>document.getElementById(id).value='');document.getElementById('bilheteFecho').value='Atenciosamente,\nCMEI Pró Saber';document.getElementById('bilhetePorFolha').value='4';document.getElementById('bilheteEstilo').value='colorido';document.getElementById('bilheteCor').value='#4FB6E8';document.getElementById('bilheteAssinatura').checked=false;bilheteHtmlAtual='';document.getElementById('bilhetePreviewArea').innerHTML='';document.getElementById('bilhetePreviewEmpty').style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;}
+
+/* =========================================================================
    PROFESSOR / KIT DO PROFESSOR
 ========================================================================= */
 /* =========================================================================
@@ -4448,14 +4536,16 @@ function gerarDeclaracaoComparecimento(){
   const aluno=document.getElementById('declAluno').value.trim();
   const turno=document.getElementById('declTurno').value;
   const data=document.getElementById('declData').value;
-  if(!escola||!pessoa||!cpf||!aluno||!turno||!data){alert('Preencha o nome da escola, quem solicita, o CPF, o aluno, o turno e a data.');return;}
+  const rodape=document.getElementById('declRodape').value.trim();
+  if(!escola||!pessoa||!cpf||!aluno||!turno||!data||!rodape){alert('Preencha o nome da escola, quem solicita, o CPF, o aluno, o turno, a data e o rodapé.');return;}
+  const rodapeHtml=escapeHtml(rodape).replace(/\n/g,'<br>');
   const html=`<div class="declaracao-preview">
     <div class="decl-logo"><img src="${LOGO_FOLHA_PADRAO}" alt="Governo de Valparaíso"></div>
     <div class="decl-cab">PREFEITURA MUNICIPAL DE VALPARAÍSO DE GOIÁS<br>Secretaria Municipal de Educação<br>${escapeHtml(escola)}</div>
     <h1>Declaração de Comparecimento</h1>
     <p class="decl-texto">Declaro para os devidos fins que o(a) Sr(a) <b>${escapeHtml(pessoa.toUpperCase())}</b>, CPF Nº <b>${escapeHtml(cpf)}</b>, compareceu nesta unidade de ensino para tratar de assuntos relacionados ao(à) aluno(a) <b>${escapeHtml(aluno.toUpperCase())}</b>, nesta data, no período <b>${escapeHtml(turno)}</b>.</p>
     <div class="decl-data">Valparaíso de Goiás/GO, ${escapeHtml(dataPorExtenso(data))}.</div>
-    <div class="decl-rodape">Rua Tapuia A/E nº 03 Setor de Chácaras Anhanguera “A” – Vila dos Carneiros<br>Valparaíso de Goiás – GO – Fone: 3627-2018 – prosaber.escola@gmail.com</div>
+    <div class="decl-rodape">${rodapeHtml}</div>
   </div>`;
   document.getElementById('declPreviewArea').innerHTML=html;
   document.getElementById('declPreviewEmpty').style.display='none';
