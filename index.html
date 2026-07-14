@@ -425,6 +425,25 @@
   .kit-dotted-preview{padding:6px;background:#fff;}
   @media(max-width:700px){.kit-options{grid-template-columns:1fr;}}
 
+
+  /* ---------- Declarações ---------- */
+  .declaracao-preview{background:#fff;border:1px solid var(--line);padding:12mm 16mm 10mm;max-width:210mm;min-height:275mm;margin:0 auto;font-family:'Times New Roman',serif;color:#000;position:relative;}
+  .declaracao-preview h1{text-align:center;font-family:'Times New Roman',serif;font-size:20px;margin:22mm 0 28mm;text-transform:uppercase;}
+  .declaracao-preview .decl-logo{text-align:center;height:28mm;margin-bottom:4mm;}
+  .declaracao-preview .decl-logo img{max-height:26mm;max-width:55mm;object-fit:contain;}
+  .declaracao-preview .decl-cab{text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.35;font-weight:700;}
+  .declaracao-preview .decl-texto{font-size:16px;line-height:1.55;text-align:justify;margin:0 0 7mm;}
+  .declaracao-preview .decl-data{text-align:right;font-size:15px;margin-top:16mm;}
+  .declaracao-preview .decl-rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;text-align:center;font-family:Arial,sans-serif;font-size:9px;line-height:1.35;}
+  @media print{
+    body.print-declaracao > *:not(#printarea){display:none!important;}
+    body.print-declaracao #printarea{display:block!important;position:static!important;width:auto!important;margin:0!important;padding:0!important;}
+    body.print-declaracao #printarea,body.print-declaracao #printarea *{visibility:visible!important;}
+    body.print-declaracao #printarea .declaracao-preview{border:none!important;box-shadow:none!important;min-height:0!important;width:auto!important;max-width:none!important;margin:0!important;padding:12mm 18mm!important;}
+    body.print-declaracao #printarea .print-page{width:auto!important;margin:0!important;page-break-after:auto!important;}
+    @page{size:A4 portrait;margin:10mm;}
+  }
+
 </style>
 </head>
 <body>
@@ -445,13 +464,22 @@
       </div>
     </div>
 
+    <div class="navsection" data-section="declaracoes">
+      <button class="navsection-toggle" type="button" aria-expanded="false">
+        <span>Declarações</span><span class="arrow">▶</span>
+      </button>
+      <div class="navsubmenu">
+        <div class="navitem" data-tab="declaracao-comparecimento"><span class="idx">02</span> Declaração de Comparecimento</div>
+      </div>
+    </div>
+
     <div class="navsection" data-section="diario">
       <button class="navsection-toggle" type="button" aria-expanded="false">
         <span>Diário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="diario-verificador"><span class="idx">02</span> Verificador</div>
-        <div class="navitem" data-tab="diario-config"><span class="idx">03</span> Configurações</div>
+        <div class="navitem" data-tab="diario-verificador"><span class="idx">03</span> Verificador</div>
+        <div class="navitem" data-tab="diario-config"><span class="idx">04</span> Configurações</div>
       </div>
     </div>
 
@@ -460,12 +488,12 @@
         <span>Folha de Ponto</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="ponto-gerar"><span class="idx">04</span> Gerar folha</div>
-        <div class="navitem" data-tab="ponto-manual"><span class="idx">05</span> Manual</div>
-        <div class="navitem" data-tab="ponto-listas"><span class="idx">06</span> Listas</div>
-        <div class="navitem" data-tab="ponto-servidores"><span class="idx">07</span> Servidores</div>
-        <div class="navitem" data-tab="ponto-importar"><span class="idx">08</span> Importar servidores</div>
-        <div class="navitem" data-tab="ponto-feriados"><span class="idx">09</span> Feriados & dias letivos</div>
+        <div class="navitem" data-tab="ponto-gerar"><span class="idx">05</span> Gerar folha</div>
+        <div class="navitem" data-tab="ponto-manual"><span class="idx">06</span> Manual</div>
+        <div class="navitem" data-tab="ponto-listas"><span class="idx">07</span> Listas</div>
+        <div class="navitem" data-tab="ponto-servidores"><span class="idx">08</span> Servidores</div>
+        <div class="navitem" data-tab="ponto-importar"><span class="idx">09</span> Importar servidores</div>
+        <div class="navitem" data-tab="ponto-feriados"><span class="idx">10</span> Feriados & dias letivos</div>
       </div>
     </div>
 
@@ -474,10 +502,10 @@
         <span>Carteirinhas</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="carteirinhas"><span class="idx">10</span> Gerar carteirinhas</div>
-        <div class="navitem" data-tab="alunos"><span class="idx">11</span> Alunos</div>
-        <div class="navitem" data-tab="importar"><span class="idx">12</span> Importar dados</div>
-        <div class="navitem" data-tab="config"><span class="idx">13</span> Configurações</div>
+        <div class="navitem" data-tab="carteirinhas"><span class="idx">11</span> Gerar carteirinhas</div>
+        <div class="navitem" data-tab="alunos"><span class="idx">12</span> Alunos</div>
+        <div class="navitem" data-tab="importar"><span class="idx">13</span> Importar dados</div>
+        <div class="navitem" data-tab="config"><span class="idx">14</span> Configurações</div>
       </div>
     </div>
 
@@ -486,8 +514,8 @@
         <span>Calendário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="calendario-central"><span class="idx">14</span> Calendário</div>
-        <div class="navitem" data-tab="calendario-legendas"><span class="idx">15</span> Legendas</div>
+        <div class="navitem" data-tab="calendario-central"><span class="idx">15</span> Calendário</div>
+        <div class="navitem" data-tab="calendario-legendas"><span class="idx">16</span> Legendas</div>
       </div>
     </div>
 
@@ -496,8 +524,8 @@
         <span>Festa Junina</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="festa-junina"><span class="idx">16</span> Calculadora</div>
-        <div class="navitem" data-tab="festa-config"><span class="idx">17</span> Configuração</div>
+        <div class="navitem" data-tab="festa-junina"><span class="idx">17</span> Calculadora</div>
+        <div class="navitem" data-tab="festa-config"><span class="idx">18</span> Configuração</div>
       </div>
     </div>
 
@@ -969,6 +997,34 @@
       </div>
     </div>
 
+    <!-- ===================== TAB: DECLARAÇÃO DE COMPARECIMENTO ===================== -->
+    <div class="panel" id="panel-declaracao-comparecimento">
+      <div class="pagehead">
+        <h2>Declaração de Comparecimento</h2>
+        <p>Preencha os dados, confira a pré-visualização e imprima a declaração.</p>
+      </div>
+      <div class="card-block">
+        <h3>Dados da declaração</h3>
+        <div class="helpbox">Somente os campos abaixo podem ser alterados. O restante da declaração segue o modelo oficial.</div>
+        <div class="row">
+          <div class="field"><label>Nome da escola</label><input type="text" id="declEscola" value="CMEI PRÓ SABER"></div>
+          <div class="field"><label>Nome de quem solicita</label><input type="text" id="declPessoa" placeholder="Nome completo"></div>
+        </div>
+        <div class="row">
+          <div class="field" style="max-width:240px;"><label>CPF</label><input type="text" id="declCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric"></div>
+          <div class="field"><label>Nome do aluno</label><input type="text" id="declAluno" placeholder="Nome completo do aluno"></div>
+          <div class="field" style="max-width:220px;"><label>Turno</label><select id="declTurno"><option value="MATUTINO">Matutino</option><option value="VESPERTINO">Vespertino</option></select></div>
+          <div class="field" style="max-width:220px;"><label>Data</label><input type="date" id="declData"></div>
+        </div>
+        <div class="row">
+          <button class="btn" id="declGerarBtn" type="button">Gerar pré-visualização</button>
+          <button class="btn outline" id="declImprimirBtn" type="button" disabled>Imprimir declaração</button>
+        </div>
+      </div>
+      <div id="declPreviewArea"></div>
+      <div class="empty" id="declPreviewEmpty">Preencha os dados e clique em “Gerar pré-visualização”.</div>
+    </div>
+
     <!-- ===================== TAB: DIÁRIO ESCOLAR / VERIFICADOR ===================== -->
     <div class="panel" id="panel-diario-verificador">
       <div class="pagehead">
@@ -1357,6 +1413,7 @@ async function init(){
   await carregarCalendarioCentral(nowYear);
   bindDiarioEscolar();
   bindProfessorKit();
+  bindDeclaracoes();
   bindModals();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
   document.getElementById('cfgValidade').addEventListener('input', maskDateInput);
@@ -4334,6 +4391,61 @@ function importarCalendarioCentral(ev){const f=ev.target.files[0];if(!f)return;c
 /* =========================================================================
    PROFESSOR / KIT DO PROFESSOR
 ========================================================================= */
+/* =========================================================================
+   DECLARAÇÕES
+========================================================================= */
+function bindDeclaracoes(){
+  const gerar=document.getElementById('declGerarBtn');
+  if(!gerar)return;
+  const hoje=new Date();
+  document.getElementById('declData').value=hoje.toISOString().slice(0,10);
+  const cfg=(typeof pontoState!=='undefined'&&pontoState.config)?pontoState.config:{};
+  document.getElementById('declEscola').value=cfg.escola||'CMEI PRÓ SABER';
+  document.getElementById('declCpf').addEventListener('input',e=>{
+    let v=e.target.value.replace(/\D/g,'').slice(0,11);
+    if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+    else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+    else if(v.length>3)v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+    e.target.value=v;
+  });
+  gerar.addEventListener('click',gerarDeclaracaoComparecimento);
+  document.getElementById('declImprimirBtn').addEventListener('click',imprimirDeclaracaoComparecimento);
+}
+function dataPorExtenso(iso){
+  if(!iso)return '';
+  const [a,m,d]=iso.split('-').map(Number);
+  const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return `${d} de ${meses[m-1]} de ${a}`;
+}
+function gerarDeclaracaoComparecimento(){
+  const escola=document.getElementById('declEscola').value.trim();
+  const pessoa=document.getElementById('declPessoa').value.trim();
+  const cpf=document.getElementById('declCpf').value.trim();
+  const aluno=document.getElementById('declAluno').value.trim();
+  const turno=document.getElementById('declTurno').value;
+  const data=document.getElementById('declData').value;
+  if(!escola||!pessoa||!cpf||!aluno||!turno||!data){alert('Preencha o nome da escola, quem solicita, o CPF, o aluno, o turno e a data.');return;}
+  const html=`<div class="declaracao-preview">
+    <div class="decl-logo"><img src="${LOGO_FOLHA_PADRAO}" alt="Governo de Valparaíso"></div>
+    <div class="decl-cab">PREFEITURA MUNICIPAL DE VALPARAÍSO DE GOIÁS<br>Secretaria Municipal de Educação<br>${escapeHtml(escola)}</div>
+    <h1>Declaração de Comparecimento</h1>
+    <p class="decl-texto">Declaro para os devidos fins que o(a) Sr(a) <b>${escapeHtml(pessoa.toUpperCase())}</b><br>CPF Nº <b>${escapeHtml(cpf)}</b> compareceu nesta unidade de ensino para tratar de assuntos relacionados ao(à) aluno(a) <b>${escapeHtml(aluno.toUpperCase())}</b>, nesta data, no período <b>${escapeHtml(turno)}</b>.</p>
+    <div class="decl-data">Valparaíso de Goiás/GO, ${escapeHtml(dataPorExtenso(data))}.</div>
+    <div class="decl-rodape">Rua Tapuia A/E nº 03 Setor de Chácaras Anhanguera “A” – Vila dos Carneiros<br>Valparaíso de Goiás – GO – Fone: 3627-2018 – prosaber.escola@gmail.com</div>
+  </div>`;
+  document.getElementById('declPreviewArea').innerHTML=html;
+  document.getElementById('declPreviewEmpty').style.display='none';
+  document.getElementById('declImprimirBtn').disabled=false;
+}
+function imprimirDeclaracaoComparecimento(){
+  const conteudo=document.getElementById('declPreviewArea').innerHTML;
+  if(!conteudo)return;
+  document.getElementById('printarea').innerHTML=`<div class="print-page">${conteudo}</div>`;
+  document.body.classList.add('print-declaracao');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('print-declaracao'),500);
+}
+
 const professorKitState={alunos:[],turmas:{},turmaSelecionada:''};
 function bindProfessorKit(){
   const input=document.getElementById('kitProfessorArquivo'); if(!input)return;
