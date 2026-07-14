@@ -437,10 +437,34 @@
   .declaracao-preview .decl-rodape{position:absolute;left:16mm;right:16mm;bottom:8mm;text-align:center;font-family:Arial,sans-serif;font-size:9px;line-height:1.35;}
   @media print{
     body.print-declaracao > *:not(#printarea){display:none!important;}
-    body.print-declaracao #printarea{display:block!important;position:static!important;width:auto!important;margin:0!important;padding:0!important;}
+    body.print-declaracao{margin:0!important;background:#fff!important;}
+    body.print-declaracao #printarea{display:block!important;position:static!important;width:190mm!important;height:277mm!important;margin:0!important;padding:0!important;overflow:hidden!important;}
     body.print-declaracao #printarea,body.print-declaracao #printarea *{visibility:visible!important;}
-    body.print-declaracao #printarea .declaracao-preview{border:none!important;box-shadow:none!important;min-height:0!important;width:auto!important;max-width:none!important;margin:0!important;padding:12mm 18mm!important;}
-    body.print-declaracao #printarea .print-page{width:auto!important;margin:0!important;page-break-after:auto!important;}
+    body.print-declaracao #printarea .print-page{width:190mm!important;height:277mm!important;margin:0!important;padding:0!important;page-break-after:auto!important;overflow:hidden!important;}
+    body.print-declaracao #printarea .declaracao-preview{
+      box-sizing:border-box!important;
+      position:relative!important;
+      width:190mm!important;
+      height:277mm!important;
+      min-height:277mm!important;
+      max-width:190mm!important;
+      margin:0!important;
+      padding:12mm 18mm 22mm!important;
+      border:none!important;
+      box-shadow:none!important;
+      overflow:hidden!important;
+    }
+    body.print-declaracao #printarea .decl-rodape{
+      position:absolute!important;
+      left:18mm!important;
+      right:18mm!important;
+      bottom:7mm!important;
+      margin:0!important;
+      width:auto!important;
+      text-align:center!important;
+      line-height:1.35!important;
+      white-space:normal!important;
+    }
     @page{size:A4 portrait;margin:10mm;}
   }
 
@@ -1013,7 +1037,7 @@
         <div class="row">
           <div class="field" style="max-width:240px;"><label>CPF</label><input type="text" id="declCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric"></div>
           <div class="field"><label>Nome do aluno</label><input type="text" id="declAluno" placeholder="Nome completo do aluno"></div>
-          <div class="field" style="max-width:220px;"><label>Turno</label><select id="declTurno"><option value="MATUTINO">Matutino</option><option value="VESPERTINO">Vespertino</option></select></div>
+          <div class="field" style="max-width:220px;"><label>Turno</label><select id="declTurno"><option value="MATUTINO">Matutino</option><option value="VESPERTINO">Vespertino</option><option value="MATUTINO E VESPERTINO">Matutino e Vespertino</option></select></div>
           <div class="field" style="max-width:220px;"><label>Data</label><input type="date" id="declData"></div>
         </div>
         <div class="row">
@@ -4429,7 +4453,7 @@ function gerarDeclaracaoComparecimento(){
     <div class="decl-logo"><img src="${LOGO_FOLHA_PADRAO}" alt="Governo de Valparaíso"></div>
     <div class="decl-cab">PREFEITURA MUNICIPAL DE VALPARAÍSO DE GOIÁS<br>Secretaria Municipal de Educação<br>${escapeHtml(escola)}</div>
     <h1>Declaração de Comparecimento</h1>
-    <p class="decl-texto">Declaro para os devidos fins que o(a) Sr(a) <b>${escapeHtml(pessoa.toUpperCase())}</b><br>CPF Nº <b>${escapeHtml(cpf)}</b> compareceu nesta unidade de ensino para tratar de assuntos relacionados ao(à) aluno(a) <b>${escapeHtml(aluno.toUpperCase())}</b>, nesta data, no período <b>${escapeHtml(turno)}</b>.</p>
+    <p class="decl-texto">Declaro para os devidos fins que o(a) Sr(a) <b>${escapeHtml(pessoa.toUpperCase())}</b>, CPF Nº <b>${escapeHtml(cpf)}</b>, compareceu nesta unidade de ensino para tratar de assuntos relacionados ao(à) aluno(a) <b>${escapeHtml(aluno.toUpperCase())}</b>, nesta data, no período <b>${escapeHtml(turno)}</b>.</p>
     <div class="decl-data">Valparaíso de Goiás/GO, ${escapeHtml(dataPorExtenso(data))}.</div>
     <div class="decl-rodape">Rua Tapuia A/E nº 03 Setor de Chácaras Anhanguera “A” – Vila dos Carneiros<br>Valparaíso de Goiás – GO – Fone: 3627-2018 – prosaber.escola@gmail.com</div>
   </div>`;
