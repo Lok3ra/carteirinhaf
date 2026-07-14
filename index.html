@@ -294,6 +294,11 @@
     @page folha-ponto{size:A4 portrait;margin:5mm 5mm 5mm 20mm;}
     @page lista-servidores{size:A4 portrait;margin:10mm;}
   }
+
+    body.print-kit-professor > *:not(#printarea){display:none!important;}
+    body.print-kit-professor #printarea{display:block!important;position:static!important;width:auto!important;margin:0!important;padding:0!important;}
+    body.print-kit-professor #printarea,body.print-kit-professor #printarea *{visibility:visible!important;}
+    body.print-kit-professor #printarea .print-page{width:190mm!important;margin:0 auto!important;page-break-after:auto;}
   @media screen{ #printarea{ display:none; } }
 
   /* ---- Folha de Ponto (modelo oficial da planilha) ---- */
@@ -396,6 +401,27 @@
   @media(max-width:980px){.cal-year-grid{grid-template-columns:repeat(2,minmax(240px,1fr));}}
   @media(max-width:650px){.cal-year-grid{grid-template-columns:1fr;}}
 
+  /* ---------- Professor / Kit do Professor ---------- */
+  .kit-options{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;}
+  .kit-option{display:flex;align-items:flex-start;gap:10px;padding:14px;border:1px solid var(--line);border-radius:8px;background:#fff;}
+  .kit-option input{margin-top:3px;}
+  .kit-preview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .kit-preview-card{border:1px solid var(--line);border-radius:8px;padding:14px;background:#fff;}
+  .kit-preview-card h4{margin:0 0 8px;color:var(--forest-dark);}
+  .kit-name-sample{font-size:28px;font-weight:700;text-align:center;padding:10px;}
+  .kit-name-sample .initial{color:#c62828;}
+  .kit-simple-card{width:8.6cm;height:5.4cm;border:1px solid #222;padding:8mm;display:flex;gap:6mm;align-items:center;background:#fff;}
+  .kit-simple-card img,.kit-simple-card .kit-photo-empty{width:28mm;height:36mm;object-fit:cover;border:1px solid #555;display:flex;align-items:center;justify-content:center;font-size:9px;text-align:center;}
+  .kit-simple-card .kit-info{font-family:Arial,sans-serif;}
+  .kit-simple-card .kit-info strong{display:block;font-size:15px;margin-bottom:5px;}
+  .kit-print-title{text-align:center;font-family:Arial,sans-serif;margin:0 0 8mm;font-size:18px;}
+  .kit-print-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;}
+  .kit-print-table th,.kit-print-table td{border:1px solid #333;padding:5px;}
+  .kit-name-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;}
+  .kit-name-card{border:1px solid #444;min-height:35mm;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:28px;font-weight:700;}
+  .kit-name-card .initial{color:#c62828;}
+  @media(max-width:700px){.kit-options{grid-template-columns:1fr;}}
+
 </style>
 </head>
 <body>
@@ -420,6 +446,16 @@
       </div>
     </div>
 
+
+
+    <div class="navsection" data-section="professor">
+      <button class="navsection-toggle" type="button" aria-expanded="false">
+        <span>Professor</span><span class="arrow">▶</span>
+      </button>
+      <div class="navsubmenu">
+        <div class="navitem" data-tab="professor-kit"><span class="idx">05</span> Kit do Professor</div>
+      </div>
+    </div>
 
     <div class="navsection" data-section="calendario">
       <button class="navsection-toggle" type="button" aria-expanded="false">
@@ -464,9 +500,8 @@
       </div>
     </div>
 
-    <div class="yearbox">
-      <label>Ano ativo (numeração e layout)</label>
-      <select id="yearSelect"></select>
+    <div style="display:none" aria-hidden="true">
+      <select id="yearSelect" tabindex="-1"></select>
     </div>
   </div>
 
@@ -923,6 +958,54 @@
       </div>
     </div>
 
+
+    <!-- ===================== TAB: PROFESSOR / KIT ===================== -->
+    <div class="panel" id="panel-professor-kit">
+      <div class="pagehead">
+        <h2>Kit do Professor</h2>
+        <p>Importe uma lista da turma uma única vez e gere materiais prontos para impressão.</p>
+      </div>
+
+      <div class="card-block">
+        <h3>1. Importar lista da turma</h3>
+        <div class="helpbox">Aceita o relatório <b>Alunos da Turma</b> em CSV, mesmo quando ele contém várias turmas e continua em várias páginas. O sistema separa as turmas automaticamente. Também aceita planilhas comuns com <b>Nome</b>, <b>Data de nascimento</b>, <b>Turma</b> e <b>Foto</b>.</div>
+        <input type="file" id="kitProfessorArquivo" accept=".xlsx,.xls,.csv">
+        <div class="row" id="kitProfessorEscolhaTurmaWrap" style="display:none;margin-top:14px;align-items:flex-end;">
+          <div class="field" style="max-width:280px;margin-bottom:0;"><label>Turma encontrada</label><select id="kitProfessorTurmaSelect"></select></div>
+          <label style="font-size:13px;margin-bottom:10px;"><input type="checkbox" id="kitProfessorSomenteAtivos" checked> Usar somente alunos ativos</label>
+        </div>
+        <p id="kitProfessorStatus" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
+      </div>
+
+      <div class="card-block">
+        <h3>2. Conferir a turma</h3>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:260px;"><label>Nome da turma</label><input type="text" id="kitProfessorTurma" placeholder="Ex: Infantil 5 A"></div>
+          <div class="field" style="max-width:160px;"><label>Ano letivo</label><input type="number" id="kitProfessorAno" min="2020" max="2100"></div>
+        </div>
+        <div style="overflow-x:auto;max-height:300px;overflow-y:auto;">
+          <table><thead><tr><th>Nº</th><th>Nome</th><th>Nascimento</th><th>Turma</th></tr></thead><tbody id="kitProfessorTbody"></tbody></table>
+        </div>
+        <div class="empty" id="kitProfessorEmpty">Nenhuma turma importada.</div>
+      </div>
+
+      <div class="card-block">
+        <h3>3. Escolher materiais</h3>
+        <div class="kit-options">
+          <label class="kit-option"><input type="checkbox" value="carteirinhas" checked><span><b>Carteirinhas simples</b><br><small>Nome, turma, ano e foto quando houver.</small></span></label>
+          <label class="kit-option"><input type="checkbox" value="lista" checked><span><b>Lista de alunos</b><br><small>Numeração e nomes em ordem alfabética.</small></span></label>
+          <label class="kit-option"><input type="checkbox" value="aniversariantes" checked><span><b>Lista de aniversariantes</b><br><small>Organizada por mês e dia.</small></span></label>
+          <label class="kit-option"><input type="checkbox" value="primeiros-nomes" checked><span><b>Primeiros nomes</b><br><small>Primeira letra vermelha e maiúscula.</small></span></label>
+        </div>
+      </div>
+
+      <div class="row" style="margin-bottom:20px;">
+        <button class="btn" id="kitProfessorGerar" type="button">Gerar materiais selecionados</button>
+        <button class="btn outline" id="kitProfessorLimpar" type="button">Limpar turma</button>
+      </div>
+      <div id="kitProfessorResultado"></div>
+    </div>
+
     <!-- ===================== TAB: FESTA JUNINA ===================== -->
     <div class="panel" id="panel-festa-junina">
       <div class="pagehead">
@@ -1209,6 +1292,7 @@ async function init(){
   bindFestaJunina();
   bindDiarioEscolar();
   bindCalendarioCentral();
+  bindProfessorKit();
   bindModals();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
   document.getElementById('cfgValidade').addEventListener('input', maskDateInput);
@@ -1309,6 +1393,7 @@ function bindNav(){
       if(item.dataset.tab==='diario-config') renderDiarioVerificador();
       if(item.dataset.tab==='calendario-central') renderCalendarioCentral();
       if(item.dataset.tab==='calendario-legendas') renderLegendasCalendario();
+      if(item.dataset.tab==='professor-kit') renderProfessorKit();
     });
   });
 }
@@ -4064,6 +4149,127 @@ async function adicionarLegendaCalendario(){const nome=document.getElementById('
 async function removerLegendaCalendario(id){if(calendarioCentral.eventos.some(e=>e.legendaId===id)){alert('Essa legenda está sendo usada. Remova primeiro as datas relacionadas.');return;}calendarioCentral.legendas=calendarioCentral.legendas.filter(l=>l.id!==id);await salvarCalendarioCentral();renderLegendasCalendario();renderCalendarioCentral();}
 function exportarCalendarioCentral(){const blob=new Blob([JSON.stringify(calendarioCentral,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='calendario_'+calendarioCentral.ano+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
 function importarCalendarioCentral(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const j=JSON.parse(r.result);if(!j.ano||!Array.isArray(j.legendas)||!Array.isArray(j.eventos))throw new Error();calendarioCentral=j;document.getElementById('calCentralAno').value=j.ano;await salvarCalendarioCentral();renderCalendarioCentral();renderLegendasCalendario();alert('Calendário importado com sucesso.');}catch(e){alert('Arquivo de calendário inválido.');}};r.readAsText(f);ev.target.value='';}
+
+
+/* =========================================================================
+   PROFESSOR / KIT DO PROFESSOR
+========================================================================= */
+const professorKitState={alunos:[],turmas:{},turmaSelecionada:''};
+function bindProfessorKit(){
+  const input=document.getElementById('kitProfessorArquivo'); if(!input)return;
+  document.getElementById('kitProfessorAno').value=new Date().getFullYear();
+  input.addEventListener('change',lerArquivoProfessorKit);
+  document.getElementById('kitProfessorTurmaSelect').addEventListener('change',e=>{professorKitState.turmaSelecionada=e.target.value;aplicarTurmaProfessorKit();});
+  document.getElementById('kitProfessorSomenteAtivos').addEventListener('change',aplicarTurmaProfessorKit);
+  document.getElementById('kitProfessorGerar').addEventListener('click',gerarKitProfessor);
+  document.getElementById('kitProfessorLimpar').addEventListener('click',()=>{
+    professorKitState.alunos=[];professorKitState.turmas={};professorKitState.turmaSelecionada='';input.value='';
+    document.getElementById('kitProfessorTurma').value='';document.getElementById('kitProfessorResultado').innerHTML='';
+    document.getElementById('kitProfessorEscolhaTurmaWrap').style.display='none';renderProfessorKit();
+  });
+}
+function renderProfessorKit(){
+  const tb=document.getElementById('kitProfessorTbody'),empty=document.getElementById('kitProfessorEmpty'); if(!tb)return;
+  const alunos=[...professorKitState.alunos].sort((a,b)=>(a.numero||999)-(b.numero||999)||a.nome.localeCompare(b.nome,'pt-BR'));
+  empty.style.display=alunos.length?'none':'block';
+  tb.innerHTML=alunos.map((a,i)=>`<tr><td>${escapeHtml(a.numero||String(i+1))}</td><td>${escapeHtml(a.nome)}</td><td>${escapeHtml(a.nascimento||'')}</td><td>${escapeHtml(a.turma||'')}</td></tr>`).join('');
+  const totalTurmas=Object.keys(professorKitState.turmas).length;
+  document.getElementById('kitProfessorStatus').textContent=alunos.length?`${alunos.length} aluno(s) carregado(s)${totalTurmas>1?` em ${totalTurmas} turma(s) encontradas`:''}.`:'';
+}
+function parseCsvTurmasProfessor(texto){
+  const linhas=texto.replace(/^\uFEFF/,'').split(/\r?\n/);
+  const turmas={}; let turmaAtual='',ano='';
+  for(const linha of linhas){
+    const c=linha.split(';').map(v=>v.trim());
+    const joined=c.join(' ');
+    const anoM=joined.match(/Ano letivo:\s*(\d{4})/i); if(anoM)ano=anoM[1];
+    const turmaM=joined.match(/Turma:\s*([A-ZÀ-Ü0-9 ]+?)(?=\s+Turno:|$)/i);
+    if(turmaM){turmaAtual=turmaM[1].trim().replace(/\s+/g,' ');if(!turmas[turmaAtual])turmas[turmaAtual]=[];continue;}
+    if(!turmaAtual)continue;
+    const numero=(c[0]||'').match(/^\d{1,3}$/)?.[0];
+    const matricula=c[3]||'';
+    const nome=c[6]||'';
+    const serie=c[10]||'';
+    const nascimento=c[11]||'';
+    const situacao=(c[18]||'').toUpperCase();
+    if(numero && nome && /^\d{2}\/\d{2}\/\d{4}$/.test(nascimento)){
+      turmas[turmaAtual].push({numero,nome,nascimento,turma:turmaAtual,matricula,serie,situacao,foto:''});
+    }
+  }
+  return {turmas,ano};
+}
+function aplicarTurmaProfessorKit(){
+  const nome=professorKitState.turmaSelecionada;
+  const somenteAtivos=document.getElementById('kitProfessorSomenteAtivos').checked;
+  let alunos=[...(professorKitState.turmas[nome]||[])];
+  if(somenteAtivos)alunos=alunos.filter(a=>!a.situacao||a.situacao==='CURSANDO');
+  professorKitState.alunos=alunos;
+  document.getElementById('kitProfessorTurma').value=nome||'';
+  renderProfessorKit();
+}
+function configurarTurmasProfessorKit(turmas,ano){
+  professorKitState.turmas=turmas;
+  const nomes=Object.keys(turmas).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  if(!nomes.length)throw new Error('Nenhuma turma encontrada');
+  const sel=document.getElementById('kitProfessorTurmaSelect');
+  sel.innerHTML=nomes.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)} — ${turmas[n].filter(a=>a.situacao==='CURSANDO').length} ativo(s)</option>`).join('');
+  professorKitState.turmaSelecionada=nomes[0];sel.value=nomes[0];
+  document.getElementById('kitProfessorEscolhaTurmaWrap').style.display='flex';
+  if(ano)document.getElementById('kitProfessorAno').value=ano;
+  aplicarTurmaProfessorKit();
+}
+function lerArquivoProfessorKit(ev){
+  const file=ev.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{try{
+    if(file.name.toLowerCase().endsWith('.csv')){
+      const bytes=new Uint8Array(e.target.result);
+      let texto;
+      try{texto=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(_){texto=new TextDecoder('windows-1252').decode(bytes);}
+      const parsed=parseCsvTurmasProfessor(texto);
+      if(Object.keys(parsed.turmas).length){configurarTurmasProfessorKit(parsed.turmas,parsed.ano);return;}
+    }
+    const data=new Uint8Array(e.target.result),wb=XLSX.read(data,{type:'array',cellDates:true}),sheet=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:''});
+    const parsed=rows.map((r,i)=>{
+      const nome=extractField(r,FIELD_PATTERNS.nome),nasc=formatDateBR(extractRawField(r,FIELD_PATTERNS.dataNascimento)),turma=extractField(r,FIELD_PATTERNS.turma),foto=extractField(r,FIELD_PATTERNS.fotoBase64);
+      return {numero:String(i+1),nome,nascimento:nasc,turma:turma||'Turma importada',foto,situacao:'CURSANDO'};
+    }).filter(a=>a.nome);
+    if(!parsed.length)throw new Error('Nenhum aluno encontrado');
+    const turmas={};parsed.forEach(a=>{if(!turmas[a.turma])turmas[a.turma]=[];turmas[a.turma].push(a);});configurarTurmasProfessorKit(turmas,'');
+  }catch(err){alert('Não foi possível identificar as turmas e os alunos desse arquivo.');console.error(err);}};
+  reader.readAsArrayBuffer(file);
+}
+function primeiroNome(nome){return (nome||'').trim().split(/\s+/)[0]||'';}
+function nomeComInicialVermelha(nome){const p=primeiroNome(nome);return p?`<span class="initial">${escapeHtml(p.charAt(0).toUpperCase())}</span>${escapeHtml(p.slice(1).toLowerCase())}`:'';}
+function gerarKitProfessor(){
+  if(!professorKitState.alunos.length){alert('Importe uma lista da turma primeiro.');return;}
+  const tipos=[...document.querySelectorAll('#panel-professor-kit .kit-option input:checked')].map(x=>x.value); if(!tipos.length){alert('Selecione pelo menos um material.');return;}
+  const turma=document.getElementById('kitProfessorTurma').value.trim()||professorKitState.alunos[0].turma||'Turma';
+  const ano=document.getElementById('kitProfessorAno').value||new Date().getFullYear();
+  const alunos=[...professorKitState.alunos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  let html='';
+  if(tipos.includes('carteirinhas'))html+=`<div class="card-block"><h3>Carteirinhas simples</h3><button class="btn small" onclick="imprimirMaterialProfessor('carteirinhas')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card"><b>${escapeHtml(a.nome)}</b><br><small>${escapeHtml(turma)} — ${ano}</small></div>`).join('')}</div></div>`;
+  if(tipos.includes('lista'))html+=`<div class="card-block"><h3>Lista de alunos</h3><button class="btn small" onclick="imprimirMaterialProfessor('lista')">Imprimir</button><p>${alunos.length} aluno(s), em ordem alfabética.</p></div>`;
+  if(tipos.includes('aniversariantes'))html+=`<div class="card-block"><h3>Lista de aniversariantes</h3><button class="btn small" onclick="imprimirMaterialProfessor('aniversariantes')">Imprimir</button><p>Organizada por mês e dia de nascimento.</p></div>`;
+  if(tipos.includes('primeiros-nomes'))html+=`<div class="card-block"><h3>Primeiros nomes</h3><button class="btn small" onclick="imprimirMaterialProfessor('primeiros-nomes')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,8).map(a=>`<div class="kit-preview-card kit-name-sample">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div></div>`;
+  document.getElementById('kitProfessorResultado').innerHTML=html;
+}
+function imprimirMaterialProfessor(tipo){
+  const turma=document.getElementById('kitProfessorTurma').value.trim()||'Turma',ano=document.getElementById('kitProfessorAno').value||new Date().getFullYear();
+  const alunos=[...professorKitState.alunos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  let html='';
+  if(tipo==='carteirinhas')html=`<h1 class="kit-print-title">Carteirinhas — ${escapeHtml(turma)}</h1><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8mm;">${alunos.map(a=>`<div class="kit-simple-card">${a.foto?`<img src="${a.foto}" alt="Foto">`:`<div class="kit-photo-empty">SEM FOTO</div>`}<div class="kit-info"><strong>${escapeHtml(a.nome)}</strong><div>Turma: ${escapeHtml(turma)}</div><div>Ano letivo: ${ano}</div></div></div>`).join('')}</div>`;
+  if(tipo==='lista')html=`<h1 class="kit-print-title">Lista de alunos — ${escapeHtml(turma)}</h1><table class="kit-print-table"><thead><tr><th style="width:12%">Nº</th><th>Nome</th></tr></thead><tbody>${alunos.map((a,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(a.nome)}</td></tr>`).join('')}</tbody></table>`;
+  if(tipo==='aniversariantes'){
+    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const lista=alunos.map(a=>{const m=(a.nascimento||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return {...a,dia:m?+m[1]:99,mes:m?+m[2]:99};}).filter(a=>a.mes<=12).sort((a,b)=>a.mes-b.mes||a.dia-b.dia||a.nome.localeCompare(b.nome,'pt-BR'));
+    html=`<h1 class="kit-print-title">Aniversariantes — ${escapeHtml(turma)}</h1>${meses.map((m,idx)=>{const itens=lista.filter(a=>a.mes===idx+1);return itens.length?`<h2 style="font-family:Arial;font-size:15px;margin:6mm 0 2mm">${m}</h2><table class="kit-print-table"><tbody>${itens.map(a=>`<tr><td style="width:18%">${pad2(a.dia)}/${pad2(a.mes)}</td><td>${escapeHtml(a.nome)}</td></tr>`).join('')}</tbody></table>`:'';}).join('')}`;
+  }
+  if(tipo==='primeiros-nomes')html=`<h1 class="kit-print-title">Primeiros nomes — ${escapeHtml(turma)}</h1><div class="kit-name-grid">${alunos.map(a=>`<div class="kit-name-card">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div>`;
+  const printarea=document.getElementById('printarea');printarea.innerHTML=`<div class="print-page">${html}</div>`;
+  document.body.classList.add('print-kit-professor');
+  window.print();setTimeout(()=>document.body.classList.remove('print-kit-professor'),500);
+}
 
 </script>
 </body>
