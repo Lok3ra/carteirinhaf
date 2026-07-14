@@ -3538,7 +3538,10 @@ function renderDiasLetivosTags(){
 /* ---- rule engine ---- */
 function findFeriado(iso){
   const central=calendarioEventoNaData(iso);
-  if(central){ const leg=calendarioLegendaPorId(central.legendaId); if(leg && leg.tipo==='nao-letivo') return {data:iso,descricao:leg.nome,origem:'calendario-central'}; }
+  if(central){
+    const leg=calendarioLegendaPorId(central.legendaId);
+    if(leg && leg.tipo==='nao-letivo') return {data:iso,descricao:leg.nome,origem:'calendario-central',evento:central};
+  }
   return pontoState.feriados.find(f=>f.data===iso) || null;
 }
 function isDiaLetivoOverride(iso){
@@ -3583,8 +3586,13 @@ function celula(servidor, date, turno){
   const feriado = findFeriado(iso);
   if(feriado){
     const descricaoNormalizada = normalize(feriado.descricao || '');
-    const ehRecessoMeioAno = descricaoNormalizada.includes('recesso') && iso >= '2026-07-10' && iso <= '2026-07-26' && (feriado.origem||'').startsWith('calendario-');
-    if(ehRecessoMeioAno && isCargoSemRecessoEscolarMeioAno(servidor)) return {text:'', tipo:'normal'};
+    const eventoCentral = feriado.evento || null;
+    const excluidos = eventoCentral && eventoCentral.aplicaA && Array.isArray(eventoCentral.aplicaA.excluirCargos)
+      ? eventoCentral.aplicaA.excluirCargos.map(normalize) : [];
+    const cargoServidor = normalize(servidor.cargo || '');
+    const excluidoPeloCalendario = excluidos.includes(cargoServidor);
+    const ehRecessoMeioAnoLegado = descricaoNormalizada.includes('recesso') && iso >= '2026-07-10' && iso <= '2026-07-26' && (feriado.origem||'').startsWith('calendario-');
+    if(excluidoPeloCalendario || (ehRecessoMeioAnoLegado && isCargoSemRecessoEscolarMeioAno(servidor))) return {text:'', tipo:'normal'};
     if(descricaoNormalizada.includes('ferias')) return {text:'FÉRIAS', tipo:'feriado'};
     if(descricaoNormalizada.includes('recesso')) return {text:'RECESSO', tipo:'feriado'};
     return {text:'FERIADO', tipo:'feriado'};
@@ -3983,7 +3991,7 @@ function bindFestaJunina(){
 ========================================================================= */
 const CAL_MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const CAL_DIAS=['D','S','T','Q','Q','S','S'];
-let calendarioCentral={ano:new Date().getFullYear(),legendas:[],eventos:[]};
+let calendarioCentral={ano:new Date().getFullYear(),versao:0,legendas:[],eventos:[],bimestres:[],regras:{}};
 const CAL_LEGENDAS_PADRAO=[
   {id:'feriado',nome:'Feriado',cor:'#C94C4C',tipo:'nao-letivo'},
   {id:'ferias',nome:'Férias',cor:'#7A6FC2',tipo:'nao-letivo'},
@@ -3997,19 +4005,33 @@ const CAL_LEGENDAS_PADRAO=[
 function calKey(ano){return 'calendario-central:'+ano;}
 async function carregarCalendarioCentral(ano){
   ano=parseInt(ano,10)||new Date().getFullYear();
-  try{const r=await window.storage.get(calKey(ano));calendarioCentral=JSON.parse(r.value);}
-  catch(e){
-    calendarioCentral={ano,legendas:JSON.parse(JSON.stringify(CAL_LEGENDAS_PADRAO)),eventos:[]};
-    try{const resp=await fetch('calendarios/calendario_'+ano+'.json',{cache:'no-store'});if(resp.ok){const j=await resp.json();if(j&&j.ano)calendarioCentral=j;}}catch(err){}
-  }
+  let local=null, publicado=null;
+  try{const r=await window.storage.get(calKey(ano));local=JSON.parse(r.value);}catch(e){}
+  try{const resp=await fetch('calendarios/calendario_'+ano+'.json',{cache:'no-store'});if(resp.ok){const j=await resp.json();if(j&&j.ano)publicado=j;}}catch(err){}
+  // O calendário publicado no GitHub substitui uma cópia local somente quando tem versão maior.
+  if(publicado && (!local || Number(publicado.versao||0)>Number(local.versao||0))) calendarioCentral=publicado;
+  else if(local) calendarioCentral=local;
+  else calendarioCentral={ano,versao:0,legendas:JSON.parse(JSON.stringify(CAL_LEGENDAS_PADRAO)),eventos:[],bimestres:[],regras:{}};
   if(!Array.isArray(calendarioCentral.legendas)||!calendarioCentral.legendas.length) calendarioCentral.legendas=JSON.parse(JSON.stringify(CAL_LEGENDAS_PADRAO));
   if(!Array.isArray(calendarioCentral.eventos)) calendarioCentral.eventos=[];
+  if(!Array.isArray(calendarioCentral.bimestres)) calendarioCentral.bimestres=[];
+  if(!calendarioCentral.regras||typeof calendarioCentral.regras!=='object') calendarioCentral.regras={};
   calendarioCentral.ano=ano;
+  try{await window.storage.set(calKey(ano),JSON.stringify(calendarioCentral));}catch(e){}
   renderCalendarioCentral();renderLegendasCalendario();
 }
-async function salvarCalendarioCentral(){try{await window.storage.set(calKey(calendarioCentral.ano),JSON.stringify(calendarioCentral));}catch(e){alert('Não foi possível salvar o calendário.');}}
+async function salvarCalendarioCentral(){try{calendarioCentral.versao=Number(calendarioCentral.versao||0)+1;await window.storage.set(calKey(calendarioCentral.ano),JSON.stringify(calendarioCentral));}catch(e){alert('Não foi possível salvar o calendário.');}}
 function calendarioLegendaPorId(id){return (calendarioCentral.legendas||[]).find(l=>l.id===id)||null;}
-function calendarioEventoNaData(iso){return (calendarioCentral.eventos||[]).find(e=>iso>=e.inicio&&iso<=e.fim)||null;}
+function calendarioPrioridadeEvento(e){
+  if(Number.isFinite(Number(e.prioridade))) return Number(e.prioridade);
+  const prioridades={feriado:100,reposicao:95,anteposicao:95,ferias:85,recesso:80,'dia-sem-aula':75,'dia-letivo':70,evento:10};
+  return prioridades[e.legendaId]||0;
+}
+function calendarioEventoNaData(iso){
+  return (calendarioCentral.eventos||[])
+    .filter(e=>iso>=e.inicio&&iso<=e.fim)
+    .sort((a,b)=>calendarioPrioridadeEvento(b)-calendarioPrioridadeEvento(a))[0]||null;
+}
 function calSlug(s){return normalize(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Date.now().toString(36);}
 function bindCalendarioCentral(){
   const ano=document.getElementById('calCentralAno'); if(!ano)return; ano.value=new Date().getFullYear();

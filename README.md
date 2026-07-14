@@ -1,17 +1,15 @@
 # Gestão Escolar
 
-## Arquivos
+## Estrutura
 
-- `index.html`: sistema principal.
-- `modelos/modelo_importacao_alunos.xlsx`: modelo para importar alunos.
-- `modelos/modelo_importacao_servidores.xlsx`: modelo para importar servidores.
+- `index.html` — sistema principal
+- `calendarios/calendario_2026.json` — calendário central oficial de 2026
+- `modelos/` — modelos de importação Excel
 
-## Publicação no GitHub Pages
+## Atualização do calendário
 
-1. Envie o conteúdo desta pasta para a raiz do repositório, mantendo a pasta `modelos`.
-2. No GitHub, abra **Settings > Pages**.
-3. Em **Build and deployment**, escolha **Deploy from a branch**.
-4. Selecione a branch principal e a pasta `/ (root)`.
-5. Salve e aguarde a publicação.
+Edite o calendário no sistema e use **Exportar calendário**. Depois substitua o arquivo `calendarios/calendario_2026.json` no GitHub.
 
-Não altere os nomes nem os caminhos dos arquivos da pasta `modelos`, pois os botões do sistema usam esses endereços.
+O calendário central contém feriados, férias, recesso, dias substituídos, reposições, anteposições, períodos dos bimestres e regras usadas pelos módulos.
+
+Para forçar os computadores a adotarem uma nova versão publicada, aumente o campo `versao` do JSON.
