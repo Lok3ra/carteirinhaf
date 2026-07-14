@@ -915,7 +915,7 @@
 
       <div class="card-block">
         <h3>Importar diário escolar</h3>
-        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">O padrão aceito é o PDF do Diário de Classe. Também continuam aceitos arquivos Excel e CSV.</p>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">Utilizar preferencialmente arquivo CSV.</p>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="min-width:300px;margin-bottom:0;">
             <label>Arquivo do diário escolar</label>
@@ -968,7 +968,7 @@
 
       <div class="card-block">
         <h3>1. Importar lista da turma</h3>
-        <div class="helpbox">Aceita o relatório <b>Alunos da Turma</b> em CSV, mesmo quando ele contém várias turmas e continua em várias páginas. O sistema separa as turmas automaticamente. Também aceita planilhas comuns com <b>Nome</b>, <b>Data de nascimento</b>, <b>Turma</b> e <b>Foto</b>.</div>
+        <div class="helpbox"><b>Dica:</b> você também pode utilizar a mesma planilha usada na importação das carteirinhas. O Kit do Professor aproveita os campos <b>Nome</b>, <b>Data de nascimento</b>, <b>Turma</b> e <b>Foto</b> e ignora as demais colunas. Também aceita o relatório <b>Alunos da Turma</b> em CSV, mesmo quando ele contém várias turmas ou continua em várias páginas.</div>
         <input type="file" id="kitProfessorArquivo" accept=".xlsx,.xls,.csv">
         <div class="row" id="kitProfessorEscolhaTurmaWrap" style="display:none;margin-top:14px;align-items:flex-end;">
           <div class="field" style="max-width:280px;margin-bottom:0;"><label>Turma encontrada</label><select id="kitProfessorTurmaSelect"></select></div>
@@ -981,7 +981,6 @@
         <h3>2. Conferir a turma</h3>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="max-width:260px;"><label>Nome da turma</label><input type="text" id="kitProfessorTurma" placeholder="Ex: Infantil 5 A"></div>
-          <div class="field" style="max-width:160px;"><label>Ano letivo</label><input type="number" id="kitProfessorAno" min="2020" max="2100"></div>
         </div>
         <div style="overflow-x:auto;max-height:300px;overflow-y:auto;">
           <table><thead><tr><th>Nº</th><th>Nome</th><th>Nascimento</th><th>Turma</th></tr></thead><tbody id="kitProfessorTbody"></tbody></table>
@@ -992,7 +991,7 @@
       <div class="card-block">
         <h3>3. Escolher materiais</h3>
         <div class="kit-options">
-          <label class="kit-option"><input type="checkbox" value="carteirinhas" checked><span><b>Carteirinhas simples</b><br><small>Nome, turma, ano e foto quando houver.</small></span></label>
+          <label class="kit-option"><input type="checkbox" value="carteirinhas" checked><span><b>Carteirinhas simples</b><br><small>Nome, turma e foto quando houver.</small></span></label>
           <label class="kit-option"><input type="checkbox" value="lista" checked><span><b>Lista de alunos</b><br><small>Numeração e nomes em ordem alfabética.</small></span></label>
           <label class="kit-option"><input type="checkbox" value="aniversariantes" checked><span><b>Lista de aniversariantes</b><br><small>Organizada por mês e dia.</small></span></label>
           <label class="kit-option"><input type="checkbox" value="primeiros-nomes" checked><span><b>Primeiros nomes</b><br><small>Primeira letra vermelha e maiúscula.</small></span></label>
@@ -1290,8 +1289,9 @@ async function init(){
   bindCardsTab();
   bindPontoTabs();
   bindFestaJunina();
-  bindDiarioEscolar();
   bindCalendarioCentral();
+  await carregarCalendarioCentral(nowYear);
+  bindDiarioEscolar();
   bindProfessorKit();
   bindModals();
   document.getElementById('stuNasc').addEventListener('input', maskDateInput);
@@ -1401,33 +1401,48 @@ function bindNav(){
 /* =========================================================================
    DIÁRIO ESCOLAR / VERIFICADOR
 ========================================================================= */
-const DIARIO_BIMESTRES = {
-  '1': {nome:'1º bimestre', inicio:'05/02', fim:'24/04', inicioISO:'2026-02-05', fimISO:'2026-04-24'},
-  '2': {nome:'2º bimestre', inicio:'27/04', fim:'09/07', inicioISO:'2026-04-27', fimISO:'2026-07-09'},
-  '3': {nome:'3º bimestre', inicio:'27/07', fim:'01/10', inicioISO:'2026-07-27', fimISO:'2026-10-01'},
-  '4': {nome:'4º bimestre', inicio:'02/10', fim:'22/12', inicioISO:'2026-10-02', fimISO:'2026-12-22'}
-};
-const DIARIO_DATAS_SEM_AULA = new Set([
-  '2026-01-01','2026-02-17','2026-04-03','2026-04-21','2026-05-01',
-  '2026-06-04','2026-06-15','2026-09-07','2026-10-12','2026-10-15',
-  '2026-10-28','2026-11-02','2026-11-20','2026-11-30','2026-12-25'
-]);
-const DIARIO_DIAS_RETIRADOS = new Set(['2026-04-20','2026-10-13','2026-10-14','2026-10-16']);
-const DIARIO_DIAS_ADICIONADOS = new Set(['2026-06-13','2026-08-08','2026-09-12','2026-10-24']);
+let DIARIO_BIMESTRES = {};
 const DIARIO_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function sincronizarBimestresDiario(){
+  DIARIO_BIMESTRES = {};
+  (calendarioCentral.bimestres || []).forEach((b, indice)=>{
+    const id = String(b.id || indice + 1);
+    const fmt = iso => iso ? iso.slice(8,10) + '/' + iso.slice(5,7) : '';
+    DIARIO_BIMESTRES[id] = {
+      nome: b.nome || (id + 'º bimestre'),
+      inicio: fmt(b.inicio),
+      fim: fmt(b.fim),
+      inicioISO: b.inicio,
+      fimISO: b.fim
+    };
+  });
+}
 let diarioExcecoes = {};
 let diarioBimestreAtivo = '';
 
 async function loadDiarioExcecoes(){
+  // Migra uma única vez as exceções antigas do Diário para o calendário central.
   try{
     const res = await window.storage.get('diario:excecoes');
-    diarioExcecoes = JSON.parse(res.value || '{}') || {};
-  }catch(e){ diarioExcecoes = {}; }
+    const antigas = JSON.parse(res.value || '{}') || {};
+    let alterou=false;
+    Object.values(antigas).flat().forEach(item=>{
+      if(!item || !item.data) return;
+      const legendaId=item.tipo==='adicionar'?'dia-letivo':'dia-sem-aula';
+      const id='migrado-diario-'+item.data+'-'+legendaId;
+      if(!(calendarioCentral.eventos||[]).some(e=>e.id===id)){
+        calendarioCentral.eventos.push({id,inicio:item.data,fim:item.data,legendaId,observacao:item.motivo||'Exceção do Diário Escolar',origem:'diario-excecao',prioridade:legendaId==='dia-letivo'?96:76,aplicaA:{diarioEscolar:true,folhaPonto:true}});
+        alterou=true;
+      }
+    });
+    if(alterou) await salvarCalendarioCentral();
+    await window.storage.delete('diario:excecoes');
+  }catch(e){}
+  diarioExcecoes={};
 }
 
-async function saveDiarioExcecoes(){
-  try{ await window.storage.set('diario:excecoes', JSON.stringify(diarioExcecoes)); }catch(e){}
-}
+async function saveDiarioExcecoes(){ /* mantido apenas para compatibilidade */ }
 
 function bindDiarioEscolar(){
   loadDiarioExcecoes().then(()=>renderDiarioVerificador());
@@ -1448,18 +1463,19 @@ function diarioExcecoesDoBimestre(bim){
   return diarioExcecoes[bim] || [];
 }
 function diarioEhLetivoBase(iso){
-  const central = calendarioEventoNaData(iso);
-  if(central){
-    const leg = calendarioLegendaPorId(central.legendaId);
-    if(leg && leg.tipo==='letivo') return true;
-    if(leg && leg.tipo==='nao-letivo') return false;
+  const eventos = calendarioEventosNaData(iso, {contexto:'diarioEscolar'});
+  const decisivo = eventos.find(e=>{
+    const leg = calendarioLegendaPorId(e.legendaId);
+    return leg && (leg.tipo==='letivo' || leg.tipo==='nao-letivo');
+  });
+  if(decisivo){
+    const leg = calendarioLegendaPorId(decisivo.legendaId);
+    return leg.tipo === 'letivo';
   }
   const data = diarioDataLocal(iso);
-  const semana = data.getDay();
-  if(DIARIO_DIAS_ADICIONADOS.has(iso)) return true;
-  if(semana===0 || semana===6) return false;
-  if(DIARIO_DATAS_SEM_AULA.has(iso) || DIARIO_DIAS_RETIRADOS.has(iso)) return false;
-  return true;
+  const diasPadrao = calendarioCentral.regras?.diasLetivosPadrao || [1,2,3,4,5];
+  const diaISO = data.getDay() === 0 ? 7 : data.getDay();
+  return diasPadrao.includes(diaISO);
 }
 function diarioDatasLetivasBimestre(bim){
   const info = DIARIO_BIMESTRES[bim];
@@ -1471,10 +1487,6 @@ function diarioDatasLetivasBimestre(bim){
     const iso = diarioISO(d);
     if(diarioEhLetivoBase(iso)) datas.add(iso);
   }
-  diarioExcecoesDoBimestre(bim).forEach(item=>{
-    if(item.tipo==='adicionar') datas.add(item.data);
-    else if(item.tipo==='retirar') datas.delete(item.data);
-  });
   return Array.from(datas).sort();
 }
 function renderDiarioContagens(){
@@ -1515,26 +1527,23 @@ function renderDiarioVerificador(){
   const lista = document.getElementById('diarioExcecoesLista');
   const vazio = document.getElementById('diarioExcecoesVazio');
   if(!lista || !vazio) return;
-  const itens = [];
-  Object.keys(DIARIO_BIMESTRES).forEach(bim=>{
-    (diarioExcecoes[bim]||[]).forEach((item,idx)=>itens.push({...item,bim,idx}));
-  });
-  itens.sort((a,b)=>a.data.localeCompare(b.data));
+  const itens = (calendarioCentral.eventos||[])
+    .filter(e=>e.origem==='diario-excecao')
+    .sort((a,b)=>a.inicio.localeCompare(b.inicio));
   lista.innerHTML = itens.map(item=>{
-    const data = item.data ? item.data.split('-').reverse().join('/') : '';
-    const acao = item.tipo==='retirar' ? 'Retirar' : 'Adicionar';
-    const motivo = item.motivo ? ` — ${escapeHtml(item.motivo)}` : '';
-    const nomeBim = DIARIO_BIMESTRES[item.bim]?.nome || '';
-    return `<span class="tag manual"><b>${acao}</b>: ${data} — ${nomeBim}${motivo}<button type="button" data-diario-bim="${item.bim}" data-diario-remove="${item.idx}" title="Remover">×</button></span>`;
+    const data = item.inicio.split('-').reverse().join('/');
+    const acao = item.legendaId==='dia-sem-aula' ? 'Retirar' : 'Adicionar';
+    const motivo = item.observacao ? ` — ${escapeHtml(item.observacao)}` : '';
+    const bim = diarioBimestreDaData(item.inicio);
+    const nomeBim = DIARIO_BIMESTRES[bim]?.nome || '';
+    return `<span class="tag manual"><b>${acao}</b>: ${data} — ${escapeHtml(nomeBim)}${motivo}<button type="button" data-diario-evento="${item.id}" title="Remover">×</button></span>`;
   }).join('');
   vazio.style.display = itens.length ? 'none' : 'block';
-  lista.querySelectorAll('[data-diario-remove]').forEach(btn=>{
+  lista.querySelectorAll('[data-diario-evento]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      const bim = btn.dataset.diarioBim;
-      const idx = parseInt(btn.dataset.diarioRemove,10);
-      diarioExcecoes[bim].splice(idx,1);
-      await saveDiarioExcecoes();
-      renderDiarioVerificador();
+      calendarioCentral.eventos=calendarioCentral.eventos.filter(e=>e.id!==btn.dataset.diarioEvento);
+      await salvarCalendarioCentral();
+      sincronizarDadosCalendarioNosModulos();
     });
   });
 }
@@ -1550,13 +1559,17 @@ async function adicionarExcecaoDiario(){
   if(!data){ alert('Informe a data da exceção.'); return; }
   const bim = diarioBimestreDaData(data);
   if(!bim){ alert('A data informada não pertence a nenhum bimestre do calendário escolar.'); return; }
-  diarioExcecoes[bim] = diarioExcecoes[bim] || [];
-  diarioExcecoes[bim].push({tipo,data,motivo});
-  diarioExcecoes[bim].sort((a,b)=>a.data.localeCompare(b.data));
-  await saveDiarioExcecoes();
+  const legendaId=tipo==='adicionar'?'dia-letivo':'dia-sem-aula';
+  calendarioCentral.eventos.push({
+    id:'diario-excecao-'+Date.now().toString(36), inicio:data, fim:data, legendaId,
+    observacao:motivo||'Exceção do Diário Escolar', origem:'diario-excecao',
+    prioridade:legendaId==='dia-letivo'?96:76,
+    aplicaA:{diarioEscolar:true,folhaPonto:true}
+  });
+  await salvarCalendarioCentral();
   document.getElementById('diarioExcecaoData').value='';
   document.getElementById('diarioExcecaoMotivo').value='';
-  renderDiarioVerificador();
+  sincronizarDadosCalendarioNosModulos();
 }
 
 
@@ -3108,14 +3121,6 @@ async function loadPontoData(){
     if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.servidores.push(JSON.parse(r.value)); }catch(e){} }
   }catch(e){}
   try{
-    const list = await window.storage.list('feriado:');
-    if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.feriados.push(JSON.parse(r.value)); }catch(e){} }
-  }catch(e){}
-  try{
-    const list = await window.storage.list('diaLetivo:');
-    if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.diasLetivos.push(JSON.parse(r.value)); }catch(e){} }
-  }catch(e){}
-  try{
     const list = await window.storage.list('periodoServidor:');
     if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.periodosServidor.push(JSON.parse(r.value)); }catch(e){} }
   }catch(e){}
@@ -3129,8 +3134,6 @@ async function loadPontoData(){
   }catch(e){}
 
   pontoState.servidores.sort((a,b)=>a.nome.localeCompare(b.nome));
-  pontoState.feriados.sort((a,b)=>a.data.localeCompare(b.data));
-  pontoState.diasLetivos.sort((a,b)=>a.data.localeCompare(b.data));
   pontoState.periodosServidor.sort((a,b)=>a.data.localeCompare(b.data));
 
   document.getElementById('cfgOrgaoPonto').value = pontoState.config.orgao || '';
@@ -3138,6 +3141,7 @@ async function loadPontoData(){
   document.getElementById('cfgCidadePonto').value = pontoState.config.cidade || '';
   const calendarioSelect = document.getElementById('calendarioAnoSelect');
   if(calendarioSelect) calendarioSelect.value = pontoState.calendarioAno ? String(pontoState.calendarioAno) : '';
+  if(calendarioCentral && calendarioCentral.ano) sincronizarDadosCalendarioNosModulos();
   atualizarStatusCalendario();
 }
 
@@ -3246,33 +3250,6 @@ function handleFileServidores(e){
   reader.readAsArrayBuffer(file);
 }
 
-const CALENDARIOS_PONTO = {
-  2026: {
-    feriados: [
-      ['2026-01-01','Confraternização Universal'],
-      ['2026-02-17','Carnaval'],
-      ['2026-04-03','Sexta-feira da Paixão'],
-      ['2026-04-21','Tiradentes'],
-      ['2026-05-01','Dia do Trabalhador'],
-      ['2026-06-04','Corpus Christi'],
-      ['2026-06-15','Aniversário de Valparaíso de Goiás'],
-      ['2026-09-07','Independência do Brasil'],
-      ['2026-10-12','Nossa Senhora Aparecida'],
-      ['2026-10-15','Dia do Professor'],
-      ['2026-10-28','Dia do Servidor Público'],
-      ['2026-11-02','Finados'],
-      ['2026-11-20','Dia da Consciência Negra'],
-      ['2026-11-30','Dia do Evangélico'],
-      ['2026-12-25','Natal']
-    ],
-    ferias: [
-      ['2026-01-02','2026-02-01','Férias'],
-      ['2026-07-10','2026-07-26','Recesso'],
-      ['2026-12-23','2026-12-31','Férias']
-    ]
-  }
-};
-
 function datasDoIntervalo(inicio, fim){
   const datas = [];
   const atual = new Date(inicio + 'T12:00:00');
@@ -3286,7 +3263,7 @@ function datasDoIntervalo(inicio, fim){
 
 async function handleCalendarioAnoChange(e){
   const ano = parseInt(e.target.value, 10);
-  if(!ano || !CALENDARIOS_PONTO[ano]){
+  if(!ano){
     pontoState.calendarioAno = null;
     try{ await window.storage.delete('pontoCalendarioAno'); }catch(err){}
     atualizarStatusCalendario();
@@ -3297,59 +3274,36 @@ async function handleCalendarioAnoChange(e){
 
 async function carregarCalendarioPonto(ano){
   const status = document.getElementById('calendarioAnoStatus');
-  status.textContent = 'Carregando calendário de ' + ano + '...';
+  if(status) status.textContent = 'Carregando calendário central de ' + ano + '...';
   try{
-    const calendario = CALENDARIOS_PONTO[ano];
-    const porData = new Map();
-
-    calendario.ferias.forEach(([inicio,fim,descricao])=>{
-      datasDoIntervalo(inicio,fim).forEach(data=>{
-        porData.set(data, {data, descricao, origem:'calendario-'+ano});
-      });
-    });
-    calendario.feriados.forEach(([data,descricao])=>{
-      porData.set(data, {data, descricao, origem:'calendario-'+ano});
-    });
-
-    const lista = await window.storage.list('feriado:');
-    if(lista && lista.keys){
-      for(const chave of lista.keys){
-        try{
-          const r = await window.storage.get(chave);
-          const f = JSON.parse(r.value);
-          if((f.origem||'').startsWith('calendario-') || f.origem === 'importado'){
-            await window.storage.delete(chave);
-          }
-        }catch(err){}
-      }
+    await carregarCalendarioCentral(ano);
+    if(!calendarioCentral.eventos.length || !calendarioCentral.bimestres.length){
+      throw new Error('Calendário central incompleto');
     }
-
-    for(const f of porData.values()){
-      await window.storage.set('feriado:'+f.data, JSON.stringify(f));
-    }
-    await window.storage.set('pontoCalendarioAno', String(ano));
     pontoState.calendarioAno = ano;
-
+    await window.storage.set('pontoCalendarioAno', String(ano));
     const anoInput = document.getElementById('anoInputPonto');
     if(anoInput) anoInput.value = ano;
-
-    await loadPontoData();
+    sincronizarDadosCalendarioNosModulos();
     renderPontoAll();
-    status.textContent = 'Calendário de ' + ano + ' carregado: ' + calendario.feriados.length + ' feriados e ' + calendario.ferias.length + ' períodos de férias/recesso. Sábados e domingos são identificados automaticamente.';
+    atualizarStatusCalendario();
   }catch(err){
     console.error(err);
-    status.textContent = 'Não foi possível carregar o calendário selecionado.';
+    if(status) status.textContent = 'Não foi possível carregar o calendário central de ' + ano + '. Verifique o arquivo calendarios/calendario_' + ano + '.json.';
   }
 }
 
 function atualizarStatusCalendario(){
   const status = document.getElementById('calendarioAnoStatus');
   if(!status) return;
-  if(pontoState.calendarioAno && CALENDARIOS_PONTO[pontoState.calendarioAno]){
-    const c = CALENDARIOS_PONTO[pontoState.calendarioAno];
-    status.textContent = 'Calendário de ' + pontoState.calendarioAno + ' ativo: ' + c.feriados.length + ' feriados e ' + c.ferias.length + ' períodos de férias/recesso. Sábados e domingos são identificados automaticamente.';
+  if(pontoState.calendarioAno && calendarioCentral.ano === pontoState.calendarioAno){
+    const gerais = (calendarioCentral.eventos||[]).filter(e=>{
+      const l=calendarioLegendaPorId(e.legendaId);
+      return l && (l.tipo==='letivo'||l.tipo==='nao-letivo');
+    });
+    status.textContent = 'Calendário central de ' + pontoState.calendarioAno + ' ativo: ' + gerais.length + ' evento(s) e ' + (calendarioCentral.bimestres||[]).length + ' bimestre(s).';
   }else{
-    status.textContent = 'Nenhum calendário anual selecionado.';
+    status.textContent = 'Nenhum calendário central selecionado.';
   }
 }
 
@@ -3643,18 +3597,19 @@ function renderDiasLetivosTags(){
 }
 
 /* ---- rule engine ---- */
-function findFeriado(iso){
-  const central=calendarioEventoNaData(iso);
-  if(central){
-    const leg=calendarioLegendaPorId(central.legendaId);
-    if(leg && leg.tipo==='nao-letivo') return {data:iso,descricao:leg.nome,origem:'calendario-central',evento:central};
-  }
-  return pontoState.feriados.find(f=>f.data===iso) || null;
+function findFeriado(iso, servidor=null){
+  const eventos = calendarioEventosNaData(iso, {contexto:'folhaPonto', servidor});
+  const evento = eventos.find(e=>{
+    const leg=calendarioLegendaPorId(e.legendaId);
+    return leg && leg.tipo==='nao-letivo';
+  });
+  if(!evento) return null;
+  const leg=calendarioLegendaPorId(evento.legendaId);
+  return {data:iso,descricao:leg.nome,origem:'calendario-central',evento};
 }
 function isDiaLetivoOverride(iso){
-  const central=calendarioEventoNaData(iso);
-  if(central){ const leg=calendarioLegendaPorId(central.legendaId); if(leg && leg.tipo==='letivo') return true; }
-  return pontoState.diasLetivos.some(d=>d.data===iso);
+  const eventos = calendarioEventosNaData(iso, {contexto:'folhaPonto'});
+  return eventos.some(e=>{ const leg=calendarioLegendaPorId(e.legendaId); return leg && leg.tipo==='letivo'; });
 }
 
 function celula(servidor, date, turno){
@@ -3690,7 +3645,7 @@ function celula(servidor, date, turno){
     return {text:periodoIndividual.tipo || periodoIndividual.descricao || '', tipo:'afastamento'};
   }
 
-  const feriado = findFeriado(iso);
+  const feriado = findFeriado(iso, servidor);
   if(feriado){
     const descricaoNormalizada = normalize(feriado.descricao || '');
     const eventoCentral = feriado.evento || null;
@@ -3698,8 +3653,7 @@ function celula(servidor, date, turno){
       ? eventoCentral.aplicaA.excluirCargos.map(normalize) : [];
     const cargoServidor = normalize(servidor.cargo || '');
     const excluidoPeloCalendario = excluidos.includes(cargoServidor);
-    const ehRecessoMeioAnoLegado = descricaoNormalizada.includes('recesso') && iso >= '2026-07-10' && iso <= '2026-07-26' && (feriado.origem||'').startsWith('calendario-');
-    if(excluidoPeloCalendario || (ehRecessoMeioAnoLegado && isCargoSemRecessoEscolarMeioAno(servidor))) return {text:'', tipo:'normal'};
+    if(excluidoPeloCalendario) return {text:'', tipo:'normal'};
     if(descricaoNormalizada.includes('ferias')) return {text:'FÉRIAS', tipo:'feriado'};
     if(descricaoNormalizada.includes('recesso')) return {text:'RECESSO', tipo:'feriado'};
     return {text:'FERIADO', tipo:'feriado'};
@@ -4124,7 +4078,12 @@ async function carregarCalendarioCentral(ano){
   if(!Array.isArray(calendarioCentral.bimestres)) calendarioCentral.bimestres=[];
   if(!calendarioCentral.regras||typeof calendarioCentral.regras!=='object') calendarioCentral.regras={};
   calendarioCentral.ano=ano;
+  const problemas=[];
+  if(!calendarioCentral.eventos.length) problemas.push('eventos');
+  if(!calendarioCentral.bimestres.length) problemas.push('bimestres');
+  if(problemas.length) console.warn('Calendário central incompleto:', problemas.join(', '));
   try{await window.storage.set(calKey(ano),JSON.stringify(calendarioCentral));}catch(e){}
+  sincronizarDadosCalendarioNosModulos();
   renderCalendarioCentral();renderLegendasCalendario();
 }
 async function salvarCalendarioCentral(){try{calendarioCentral.versao=Number(calendarioCentral.versao||0)+1;await window.storage.set(calKey(calendarioCentral.ano),JSON.stringify(calendarioCentral));}catch(e){alert('Não foi possível salvar o calendário.');}}
@@ -4134,10 +4093,42 @@ function calendarioPrioridadeEvento(e){
   const prioridades={feriado:100,reposicao:95,anteposicao:95,ferias:85,recesso:80,'dia-sem-aula':75,'dia-letivo':70,evento:10};
   return prioridades[e.legendaId]||0;
 }
-function calendarioEventoNaData(iso){
+function calendarioEventoAplica(e, contexto={}){
+  const aplica=e.aplicaA||{};
+  const nomeContexto=contexto.contexto||'';
+  if(nomeContexto && Object.prototype.hasOwnProperty.call(aplica,nomeContexto) && aplica[nomeContexto]===false) return false;
+  const servidor=contexto.servidor||null;
+  if(servidor){
+    const excluidos=(aplica.excluirCargos||[]).map(normalize);
+    if(excluidos.includes(normalize(servidor.cargo||''))) return false;
+    const incluidos=(aplica.incluirCargos||[]).map(normalize);
+    if(incluidos.length && !incluidos.includes(normalize(servidor.cargo||''))) return false;
+  }
+  return true;
+}
+function calendarioEventosNaData(iso, contexto={}){
   return (calendarioCentral.eventos||[])
-    .filter(e=>iso>=e.inicio&&iso<=e.fim)
-    .sort((a,b)=>calendarioPrioridadeEvento(b)-calendarioPrioridadeEvento(a))[0]||null;
+    .filter(e=>iso>=e.inicio&&iso<=e.fim&&calendarioEventoAplica(e,contexto))
+    .sort((a,b)=>calendarioPrioridadeEvento(b)-calendarioPrioridadeEvento(a));
+}
+function calendarioEventoNaData(iso, contexto={}){
+  return calendarioEventosNaData(iso,contexto)[0]||null;
+}
+function sincronizarDadosCalendarioNosModulos(){
+  sincronizarBimestresDiario();
+  pontoState.feriados=[];
+  pontoState.diasLetivos=[];
+  (calendarioCentral.eventos||[]).forEach(e=>{
+    const leg=calendarioLegendaPorId(e.legendaId);
+    if(!leg || (leg.tipo!=='letivo'&&leg.tipo!=='nao-letivo')) return;
+    for(const data of datasDoIntervalo(e.inicio,e.fim)){
+      if(leg.tipo==='nao-letivo') pontoState.feriados.push({data,descricao:leg.nome,origem:'calendario-central',evento:e});
+      else pontoState.diasLetivos.push({data,descricao:leg.nome,origem:'calendario-central',evento:e});
+    }
+  });
+  pontoState.feriados.sort((a,b)=>a.data.localeCompare(b.data));
+  pontoState.diasLetivos.sort((a,b)=>a.data.localeCompare(b.data));
+  renderDiarioVerificador();
 }
 function calSlug(s){return normalize(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Date.now().toString(36);}
 function bindCalendarioCentral(){
@@ -4148,8 +4139,8 @@ function bindCalendarioCentral(){
   document.getElementById('calCentralExportar').addEventListener('click',exportarCalendarioCentral);
   document.getElementById('calCentralImportar').addEventListener('change',importarCalendarioCentral);
   document.getElementById('calCentralLimpar').addEventListener('click',async()=>{if(confirm('Apagar todas as datas deste ano?')){calendarioCentral.eventos=[];await salvarCalendarioCentral();renderCalendarioCentral();}});
-  carregarCalendarioCentral(ano.value);
 }
+
 function renderCalendarioCentral(){
   const grade=document.getElementById('calCentralGrade');if(!grade)return;
   const ano=calendarioCentral.ano; const anoInput=document.getElementById('calCentralAno');if(anoInput)anoInput.value=ano;
@@ -4179,7 +4170,6 @@ function importarCalendarioCentral(ev){const f=ev.target.files[0];if(!f)return;c
 const professorKitState={alunos:[],turmas:{},turmaSelecionada:''};
 function bindProfessorKit(){
   const input=document.getElementById('kitProfessorArquivo'); if(!input)return;
-  document.getElementById('kitProfessorAno').value=new Date().getFullYear();
   input.addEventListener('change',lerArquivoProfessorKit);
   document.getElementById('kitProfessorTurmaSelect').addEventListener('change',e=>{professorKitState.turmaSelecionada=e.target.value;aplicarTurmaProfessorKit();});
   document.getElementById('kitProfessorSomenteAtivos').addEventListener('change',aplicarTurmaProfessorKit);
@@ -4237,7 +4227,6 @@ function configurarTurmasProfessorKit(turmas,ano){
   sel.innerHTML=nomes.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)} — ${turmas[n].filter(a=>a.situacao==='CURSANDO').length} ativo(s)</option>`).join('');
   professorKitState.turmaSelecionada=nomes[0];sel.value=nomes[0];
   document.getElementById('kitProfessorEscolhaTurmaWrap').style.display='flex';
-  if(ano)document.getElementById('kitProfessorAno').value=ano;
   aplicarTurmaProfessorKit();
 }
 function lerArquivoProfessorKit(ev){
@@ -4267,20 +4256,19 @@ function gerarKitProfessor(){
   if(!professorKitState.alunos.length){alert('Importe uma lista da turma primeiro.');return;}
   const tipos=[...document.querySelectorAll('#panel-professor-kit .kit-option input:checked')].map(x=>x.value); if(!tipos.length){alert('Selecione pelo menos um material.');return;}
   const turma=document.getElementById('kitProfessorTurma').value.trim()||professorKitState.alunos[0].turma||'Turma';
-  const ano=document.getElementById('kitProfessorAno').value||new Date().getFullYear();
   const alunos=[...professorKitState.alunos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   let html='';
-  if(tipos.includes('carteirinhas'))html+=`<div class="card-block"><h3>Carteirinhas simples</h3><button class="btn small" onclick="imprimirMaterialProfessor('carteirinhas')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card"><b>${escapeHtml(a.nome)}</b><br><small>${escapeHtml(turma)} — ${ano}</small></div>`).join('')}</div></div>`;
+  if(tipos.includes('carteirinhas'))html+=`<div class="card-block"><h3>Carteirinhas simples</h3><button class="btn small" onclick="imprimirMaterialProfessor('carteirinhas')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card"><b>${escapeHtml(a.nome)}</b><br><small>${escapeHtml(turma)}</small></div>`).join('')}</div></div>`;
   if(tipos.includes('lista'))html+=`<div class="card-block"><h3>Lista de alunos</h3><button class="btn small" onclick="imprimirMaterialProfessor('lista')">Imprimir</button><p>${alunos.length} aluno(s), em ordem alfabética.</p></div>`;
   if(tipos.includes('aniversariantes'))html+=`<div class="card-block"><h3>Lista de aniversariantes</h3><button class="btn small" onclick="imprimirMaterialProfessor('aniversariantes')">Imprimir</button><p>Organizada por mês e dia de nascimento.</p></div>`;
   if(tipos.includes('primeiros-nomes'))html+=`<div class="card-block"><h3>Primeiros nomes</h3><button class="btn small" onclick="imprimirMaterialProfessor('primeiros-nomes')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,8).map(a=>`<div class="kit-preview-card kit-name-sample">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div></div>`;
   document.getElementById('kitProfessorResultado').innerHTML=html;
 }
 function imprimirMaterialProfessor(tipo){
-  const turma=document.getElementById('kitProfessorTurma').value.trim()||'Turma',ano=document.getElementById('kitProfessorAno').value||new Date().getFullYear();
+  const turma=document.getElementById('kitProfessorTurma').value.trim()||'Turma';
   const alunos=[...professorKitState.alunos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   let html='';
-  if(tipo==='carteirinhas')html=`<h1 class="kit-print-title">Carteirinhas — ${escapeHtml(turma)}</h1><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8mm;">${alunos.map(a=>`<div class="kit-simple-card">${a.foto?`<img src="${a.foto}" alt="Foto">`:`<div class="kit-photo-empty">SEM FOTO</div>`}<div class="kit-info"><strong>${escapeHtml(a.nome)}</strong><div>Turma: ${escapeHtml(turma)}</div><div>Ano letivo: ${ano}</div></div></div>`).join('')}</div>`;
+  if(tipo==='carteirinhas')html=`<h1 class="kit-print-title">Carteirinhas — ${escapeHtml(turma)}</h1><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8mm;">${alunos.map(a=>`<div class="kit-simple-card">${a.foto?`<img src="${a.foto}" alt="Foto">`:`<div class="kit-photo-empty">SEM FOTO</div>`}<div class="kit-info"><strong>${escapeHtml(a.nome)}</strong><div>Turma: ${escapeHtml(turma)}</div></div></div>`).join('')}</div>`;
   if(tipo==='lista')html=`<h1 class="kit-print-title">Lista de alunos — ${escapeHtml(turma)}</h1><table class="kit-print-table"><thead><tr><th style="width:12%">Nº</th><th>Nome</th></tr></thead><tbody>${alunos.map((a,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(a.nome)}</td></tr>`).join('')}</tbody></table>`;
   if(tipo==='aniversariantes'){
     const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];

@@ -1,15 +1,12 @@
 # Gestão Escolar
 
+Versão migrada para o Calendário Escolar Central.
+
 ## Estrutura
 
-- `index.html` — sistema principal
-- `calendarios/calendario_2026.json` — calendário central oficial de 2026
-- `modelos/` — modelos de importação Excel
+- `index.html`
+- `calendarios/calendario_2026.json`
+- `modelos/modelo_importacao_alunos.xlsx`
+- `modelos/modelo_importacao_servidores.xlsx`
 
-## Atualização do calendário
-
-Edite o calendário no sistema e use **Exportar calendário**. Depois substitua o arquivo `calendarios/calendario_2026.json` no GitHub.
-
-O calendário central contém feriados, férias, recesso, dias substituídos, reposições, anteposições, períodos dos bimestres e regras usadas pelos módulos.
-
-Para forçar os computadores a adotarem uma nova versão publicada, aumente o campo `versao` do JSON.
+A Folha de Ponto e o Diário Escolar consultam o arquivo do calendário central. As datas fixas antigas de 2026 foram removidas do HTML.
