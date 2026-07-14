@@ -420,6 +420,9 @@
   .kit-name-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;}
   .kit-name-card{border:1px solid #444;min-height:35mm;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:28px;font-weight:700;}
   .kit-name-card .initial{color:#c62828;}
+  .kit-name-dotted-card{border:1px dashed #777;min-height:35mm;display:flex;align-items:center;justify-content:center;padding:4mm;background:#fff;}
+  .kit-name-dotted-card svg{width:100%;height:24mm;display:block;}
+  .kit-dotted-preview{padding:6px;background:#fff;}
   @media(max-width:700px){.kit-options{grid-template-columns:1fr;}}
 
 </style>
@@ -995,6 +998,7 @@
           <label class="kit-option"><input type="checkbox" value="lista" checked><span><b>Lista de alunos</b><br><small>Numeração e nomes em ordem alfabética.</small></span></label>
           <label class="kit-option"><input type="checkbox" value="aniversariantes" checked><span><b>Lista de aniversariantes</b><br><small>Organizada por mês e dia.</small></span></label>
           <label class="kit-option"><input type="checkbox" value="primeiros-nomes" checked><span><b>Primeiros nomes</b><br><small>Primeira letra vermelha e maiúscula.</small></span></label>
+          <label class="kit-option"><input type="checkbox" value="primeiro-nome-pontilhado"><span><b>Primeiro nome pontilhado</b><br><small>Nome em traçado pontilhado para cobrir.</small></span></label>
         </div>
       </div>
 
@@ -4252,6 +4256,13 @@ function lerArquivoProfessorKit(ev){
 }
 function primeiroNome(nome){return (nome||'').trim().split(/\s+/)[0]||'';}
 function nomeComInicialVermelha(nome){const p=primeiroNome(nome);return p?`<span class="initial">${escapeHtml(p.charAt(0).toUpperCase())}</span>${escapeHtml(p.slice(1).toLowerCase())}`:'';}
+function nomePontilhadoSvg(nome){
+  const p=primeiroNome(nome);
+  if(!p)return '';
+  const txt=escapeHtml(p.charAt(0).toUpperCase()+p.slice(1).toLowerCase());
+  const largura=Math.max(420, txt.length*38);
+  return `<svg viewBox="0 0 ${largura} 120" xmlns="http://www.w3.org/2000/svg" aria-label="${txt}"><text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="64" font-weight="700" fill="none" stroke="#444" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round">${txt}</text></svg>`;
+}
 function gerarKitProfessor(){
   if(!professorKitState.alunos.length){alert('Importe uma lista da turma primeiro.');return;}
   const tipos=[...document.querySelectorAll('#panel-professor-kit .kit-option input:checked')].map(x=>x.value); if(!tipos.length){alert('Selecione pelo menos um material.');return;}
@@ -4262,6 +4273,7 @@ function gerarKitProfessor(){
   if(tipos.includes('lista'))html+=`<div class="card-block"><h3>Lista de alunos</h3><button class="btn small" onclick="imprimirMaterialProfessor('lista')">Imprimir</button><p>${alunos.length} aluno(s), em ordem alfabética.</p></div>`;
   if(tipos.includes('aniversariantes'))html+=`<div class="card-block"><h3>Lista de aniversariantes</h3><button class="btn small" onclick="imprimirMaterialProfessor('aniversariantes')">Imprimir</button><p>Organizada por mês e dia de nascimento.</p></div>`;
   if(tipos.includes('primeiros-nomes'))html+=`<div class="card-block"><h3>Primeiros nomes</h3><button class="btn small" onclick="imprimirMaterialProfessor('primeiros-nomes')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,8).map(a=>`<div class="kit-preview-card kit-name-sample">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div></div>`;
+  if(tipos.includes('primeiro-nome-pontilhado'))html+=`<div class="card-block"><h3>Primeiro nome pontilhado</h3><button class="btn small" onclick="imprimirMaterialProfessor('primeiro-nome-pontilhado')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card kit-dotted-preview">${nomePontilhadoSvg(a.nome)}</div>`).join('')}</div></div>`;
   document.getElementById('kitProfessorResultado').innerHTML=html;
 }
 function imprimirMaterialProfessor(tipo){
@@ -4276,6 +4288,7 @@ function imprimirMaterialProfessor(tipo){
     html=`<h1 class="kit-print-title">Aniversariantes — ${escapeHtml(turma)}</h1>${meses.map((m,idx)=>{const itens=lista.filter(a=>a.mes===idx+1);return itens.length?`<h2 style="font-family:Arial;font-size:15px;margin:6mm 0 2mm">${m}</h2><table class="kit-print-table"><tbody>${itens.map(a=>`<tr><td style="width:18%">${pad2(a.dia)}/${pad2(a.mes)}</td><td>${escapeHtml(a.nome)}</td></tr>`).join('')}</tbody></table>`:'';}).join('')}`;
   }
   if(tipo==='primeiros-nomes')html=`<h1 class="kit-print-title">Primeiros nomes — ${escapeHtml(turma)}</h1><div class="kit-name-grid">${alunos.map(a=>`<div class="kit-name-card">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div>`;
+  if(tipo==='primeiro-nome-pontilhado')html=`<h1 class="kit-print-title">Primeiro nome pontilhado — ${escapeHtml(turma)}</h1><div class="kit-name-grid">${alunos.map(a=>`<div class="kit-name-dotted-card">${nomePontilhadoSvg(a.nome)}</div>`).join('')}</div>`;
   const printarea=document.getElementById('printarea');printarea.innerHTML=`<div class="print-page">${html}</div>`;
   document.body.classList.add('print-kit-professor');
   window.print();setTimeout(()=>document.body.classList.remove('print-kit-professor'),500);
