@@ -432,13 +432,57 @@
   .kit-print-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;}
   .kit-print-table th,.kit-print-table td{border:1px solid #333;padding:5px;}
   .kit-name-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;}
-  .kit-name-card{border:1px solid #444;min-height:35mm;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:28px;font-weight:700;}
+  .kit-name-list{display:grid;grid-template-columns:1fr;gap:6mm;}
+  .kit-name-card{border:1px solid #444;min-height:20mm;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:20pt;font-weight:700;padding:2mm 4mm;text-align:center;}
   .kit-name-card .initial{color:#c62828;}
   .kit-name-dotted-card{border:1px dashed #777;min-height:35mm;display:flex;align-items:center;justify-content:center;padding:4mm;background:#fff;}
   .kit-name-dotted-card svg{width:100%;height:24mm;display:block;}
   .kit-dotted-preview{padding:6px;background:#fff;}
   @media(max-width:700px){.kit-options{grid-template-columns:1fr;}}
 
+
+  /* ---------- Professor / Atividade ampliada ---------- */
+  .atividade-upload-preview{max-width:520px;margin:16px auto 0;text-align:center;}
+  .atividade-upload-preview img{display:block;max-width:100%;max-height:620px;margin:auto;border:1px solid var(--line);background:#fff;object-fit:contain;}
+  .atividade-pages-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:16px;}
+  .atividade-page-mini{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+  .atividade-page-mini b{display:block;font-size:12px;margin-bottom:6px;text-align:center;}
+  .atividade-page-crop{position:relative;overflow:hidden;background:#fff;border:1px dashed #aaa;aspect-ratio:210/297;}
+  .atividade-page-crop.landscape{aspect-ratio:297/210;}
+  .atividade-page-crop img{position:absolute;max-width:none;max-height:none;user-select:none;pointer-events:none;}
+  .atividade-print-page{position:relative;overflow:hidden;background:#fff;page-break-after:always;break-after:page;}
+  .atividade-print-page:last-child{page-break-after:auto;break-after:auto;}
+  .atividade-print-page img{position:absolute;max-width:none!important;max-height:none!important;}
+  .atividade-print-label{position:absolute;right:5mm;bottom:3mm;font:10px Arial,sans-serif;background:rgba(255,255,255,.85);padding:1mm 2mm;border-radius:2mm;z-index:2;}
+  .atividade-subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .atividade-subtab{border:1px solid var(--line);background:#fff;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;}
+  .atividade-subtab.active{background:var(--forest);color:#fff;border-color:var(--forest);}
+  .atividade-subpanel{display:none;}
+  .atividade-subpanel.active{display:block;}
+  .montar-atividade-preview{width:210mm;min-height:297mm;background:#fff;margin:16px auto 0;padding:12mm 12mm 10mm;box-sizing:border-box;border:1px solid var(--line);font-family:Arial,sans-serif;color:#000;}
+  .montar-atividade-cabecalho{text-align:center;margin-bottom:8mm;}
+  .montar-atividade-logo{height:24mm;display:flex;align-items:center;justify-content:center;margin-bottom:2mm;}
+  .montar-atividade-logo img{max-height:22mm;max-width:32mm;object-fit:contain;}
+  .montar-atividade-escola{font-size:16px;font-weight:700;text-transform:uppercase;line-height:1.25;}
+  .montar-atividade-identificacao{display:grid;grid-template-columns:1fr auto;gap:6mm;align-items:end;margin:7mm 0 5mm;font-size:14px;font-weight:700;}
+  .montar-atividade-linha{border-bottom:1px solid #000;min-height:7mm;display:flex;align-items:flex-end;padding-bottom:1mm;}
+  .montar-atividade-conteudo{display:flex;align-items:flex-start;justify-content:center;min-height:205mm;overflow:hidden;}
+  .montar-atividade-conteudo img{display:block;max-width:100%;max-height:205mm;object-fit:contain;}
+  @media(max-width:760px){.montar-atividade-preview{transform-origin:top left;width:210mm;}.atividade-subtabs{position:sticky;top:0;z-index:2;background:var(--cream);padding:4px 0;}.montar-atividade-identificacao{grid-template-columns:1fr;}}
+  @media print{
+    body.print-montar-atividade > *:not(#printarea){display:none!important;}
+    body.print-montar-atividade{margin:0!important;background:#fff!important;}
+    body.print-montar-atividade #printarea{display:block!important;position:static!important;margin:0!important;padding:0!important;}
+    body.print-montar-atividade .montar-atividade-preview{width:210mm!important;height:297mm!important;min-height:297mm!important;margin:0!important;border:none!important;padding:12mm 12mm 10mm!important;overflow:hidden!important;}
+    @page{size:A4 portrait;margin:0;}
+  }
+  @media print{
+    body.print-atividade > *:not(#printarea){display:none!important;}
+    body.print-atividade{margin:0!important;background:#fff!important;}
+    body.print-atividade #printarea{display:block!important;position:static!important;margin:0!important;padding:0!important;}
+    body.print-atividade #printarea,body.print-atividade #printarea *{visibility:visible!important;}
+    body.print-atividade .atividade-print-page{margin:0!important;}
+  }
 
   /* ---------- Bilhetes / Manual ---------- */
   .bilhete-preview-wrap{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:16px;overflow:auto;}
@@ -637,6 +681,7 @@
       </button>
       <div class="navsubmenu">
         <div class="navitem active" data-tab="professor-kit"><span class="idx">01</span> Kit do Professor</div>
+        <div class="navitem" data-tab="professor-atividade"><span class="idx">02</span> Atividade</div>
       </div>
     </div>
 
@@ -1439,6 +1484,25 @@ Valparaíso de Goiás – GO – Fone: 61 9929 3856 – prosaber.escola@gmail.co
       <div id="kitProfessorResultado"></div>
     </div>
 
+    <!-- ===================== TAB: PROFESSOR / ATIVIDADE ===================== -->
+    <div class="panel" id="panel-professor-atividade">
+      <div class="pagehead"><h2>Atividade</h2><p>Amplie atividades para baixa visão ou monte uma nova folha A4 com o cabeçalho da escola.</p></div>
+      <div class="atividade-subtabs">
+        <button class="atividade-subtab active" type="button" data-atividade-subtab="ampliar">Ampliar atividade</button>
+        <button class="atividade-subtab" type="button" data-atividade-subtab="montar">Montar atividade A4</button>
+      </div>
+      <div class="atividade-subpanel active" id="atividade-subpanel-ampliar">
+        <div class="card-block"><h3>1. Enviar atividade</h3><input type="file" id="atividadeArquivo" accept="image/png,image/jpeg,image/webp"><div class="helpbox" style="margin-top:12px;">Use uma foto ou imagem nítida da atividade. Para preservar a leitura, o sistema mantém a proporção e divide a ampliação em partes.</div><div id="atividadeImagemPreview" class="atividade-upload-preview" style="display:none;"><img id="atividadeImagem" alt="Pré-visualização da atividade"></div></div>
+        <div class="card-block"><h3>2. Escolher ampliação</h3><div class="row" style="align-items:flex-end;"><div class="field" style="max-width:260px;"><label>Quantidade de folhas</label><select id="atividadeFolhas"><option value="2">2 folhas A4</option><option value="3">3 folhas A4</option><option value="4" selected>4 folhas A4 (2 × 2)</option></select></div><div class="field" style="max-width:260px;"><label>Margem de montagem</label><select id="atividadeSobreposicao"><option value="0">Sem sobreposição</option><option value="5" selected>5 mm</option><option value="10">10 mm</option></select></div><label style="font-size:13px;margin-bottom:14px;"><input type="checkbox" id="atividadeAltoContraste"> Preto e branco com alto contraste</label></div><div class="row"><button class="btn" id="atividadeGerar" type="button">Gerar divisão</button><button class="btn outline" id="atividadeImprimir" type="button" disabled>Imprimir atividade</button><button class="btn outline" id="atividadeLimpar" type="button">Limpar</button></div></div>
+        <div class="card-block"><h3>3. Conferir as folhas</h3><div id="atividadePagesPreview" class="atividade-pages-preview"></div><div id="atividadeEmpty" class="empty">Envie uma imagem e clique em “Gerar divisão”.</div></div>
+      </div>
+      <div class="atividade-subpanel" id="atividade-subpanel-montar">
+        <div class="card-block"><h3>1. Cabeçalho</h3><div class="row"><div class="field" style="flex:2 1 420px;"><label>Nome da escola</label><input id="montarAtividadeEscola" type="text" value="CENTRO MUNICIPAL DE EDUCAÇÃO INFANTIL PRÓ-SABER"></div><label style="font-size:13px;margin-top:30px;"><input type="checkbox" id="montarAtividadeLogo" checked> Mostrar logo</label></div><div class="helpbox">O cabeçalho segue o modelo da atividade enviada: logo centralizado, nome da escola em destaque e campos para nome e data.</div></div>
+        <div class="card-block"><h3>2. Enviar o conteúdo da atividade</h3><input type="file" id="montarAtividadeArquivo" accept="image/png,image/jpeg,image/webp"><div class="row" style="margin-top:12px;align-items:flex-end;"><div class="field" style="max-width:260px;"><label>Data</label><input id="montarAtividadeData" type="text" placeholder="Ex.: 29/06/2026"></div><div class="field" style="max-width:260px;"><label>Ajuste da imagem</label><select id="montarAtividadeAjuste"><option value="conter" selected>Mostrar atividade inteira</option><option value="preencher">Preencher a área disponível</option></select></div></div><div class="row"><button class="btn" id="montarAtividadeGerar" type="button">Gerar folha A4</button><button class="btn outline" id="montarAtividadeImprimir" type="button" disabled>Imprimir atividade</button><button class="btn outline" id="montarAtividadeLimpar" type="button">Limpar</button></div></div>
+        <div class="card-block"><h3>3. Pré-visualização</h3><div id="montarAtividadePreviewArea"></div><div id="montarAtividadeEmpty" class="empty">Envie a imagem da atividade e clique em “Gerar folha A4”.</div></div>
+      </div>
+    </div>
+
     <!-- ===================== TAB: FESTA JUNINA ===================== -->
     <div class="panel" id="panel-festa-junina">
       <div class="pagehead">
@@ -1730,6 +1794,7 @@ async function init(){
   await carregarCalendarioCentral(nowYear);
   bindDiarioEscolar();
   bindProfessorKit();
+  bindProfessorAtividade();
   bindBilhetes();
   bindDeclaracoes();
   bindModals();
@@ -1863,6 +1928,7 @@ function bindNav(){
       if(item.dataset.tab==='calendario-central') renderCalendarioCentral();
       if(item.dataset.tab==='calendario-legendas') renderLegendasCalendario();
       if(item.dataset.tab==='professor-kit') renderProfessorKit();
+      if(item.dataset.tab==='professor-atividade') renderProfessorAtividade();
       if(item.dataset.tab==='bilhetes-manual') atualizarPreviewBilhete(false);
     });
   });
@@ -5218,7 +5284,7 @@ function gerarKitProfessor(){
   if(tipos.includes('carteirinhas'))html+=`<div class="card-block"><h3>Carteirinhas simples</h3><button class="btn small" onclick="imprimirMaterialProfessor('carteirinhas')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card"><b>${escapeHtml(a.nome)}</b><br><small>${escapeHtml(turma)}</small></div>`).join('')}</div></div>`;
   if(tipos.includes('lista'))html+=`<div class="card-block"><h3>Lista de alunos</h3><button class="btn small" onclick="imprimirMaterialProfessor('lista')">Imprimir</button><p>${alunos.length} aluno(s), em ordem alfabética.</p></div>`;
   if(tipos.includes('aniversariantes'))html+=`<div class="card-block"><h3>Lista de aniversariantes</h3><button class="btn small" onclick="imprimirMaterialProfessor('aniversariantes')">Imprimir</button><p>Organizada por mês e dia de nascimento.</p></div>`;
-  if(tipos.includes('primeiros-nomes'))html+=`<div class="card-block"><h3>Primeiros nomes</h3><button class="btn small" onclick="imprimirMaterialProfessor('primeiros-nomes')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,8).map(a=>`<div class="kit-preview-card kit-name-sample">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div></div>`;
+  if(tipos.includes('primeiros-nomes'))html+=`<div class="card-block"><h3>Primeiros nomes</h3><button class="btn small" onclick="imprimirMaterialProfessor('primeiros-nomes')">Imprimir</button><div class="kit-name-list" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card kit-name-card">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div></div>`;
   if(tipos.includes('primeiro-nome-pontilhado'))html+=`<div class="card-block"><h3>Primeiro nome pontilhado</h3><button class="btn small" onclick="imprimirMaterialProfessor('primeiro-nome-pontilhado')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card kit-dotted-preview">${nomePontilhadoSvg(a.nome)}</div>`).join('')}</div></div>`;
   document.getElementById('kitProfessorResultado').innerHTML=html;
 }
@@ -5233,7 +5299,7 @@ function imprimirMaterialProfessor(tipo){
     const lista=alunos.map(a=>{const m=(a.nascimento||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return {...a,dia:m?+m[1]:99,mes:m?+m[2]:99};}).filter(a=>a.mes<=12).sort((a,b)=>a.mes-b.mes||a.dia-b.dia||a.nome.localeCompare(b.nome,'pt-BR'));
     html=`<h1 class="kit-print-title">Aniversariantes — ${escapeHtml(turma)}</h1>${meses.map((m,idx)=>{const itens=lista.filter(a=>a.mes===idx+1);return itens.length?`<h2 style="font-family:Arial;font-size:15px;margin:6mm 0 2mm">${m}</h2><table class="kit-print-table"><tbody>${itens.map(a=>`<tr><td style="width:18%">${pad2(a.dia)}/${pad2(a.mes)}</td><td>${escapeHtml(a.nome)}</td></tr>`).join('')}</tbody></table>`:'';}).join('')}`;
   }
-  if(tipo==='primeiros-nomes')html=`<h1 class="kit-print-title">Primeiros nomes — ${escapeHtml(turma)}</h1><div class="kit-name-grid">${alunos.map(a=>`<div class="kit-name-card">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div>`;
+  if(tipo==='primeiros-nomes')html=`<h1 class="kit-print-title">Primeiros nomes — ${escapeHtml(turma)}</h1><div class="kit-name-list">${alunos.map(a=>`<div class="kit-name-card">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div>`;
   if(tipo==='primeiro-nome-pontilhado'){
     const paginas=[];
     for(let i=0;i<alunos.length;i+=2){
@@ -5246,6 +5312,85 @@ function imprimirMaterialProfessor(tipo){
   document.body.classList.add('print-kit-professor');
   window.print();setTimeout(()=>document.body.classList.remove('print-kit-professor'),500);
 }
+
+/* =========================================================================
+   PROFESSOR / ATIVIDADE AMPLIADA
+========================================================================= */
+const LOGO_PRO_SABER_ATIVIDADE = 'data:image/jpeg;base64,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';
+let professorAtividadeState={src:'',html:'',config:null};
+let montarAtividadeState={src:'',html:''};
+function bindProfessorAtividade(){
+  const input=document.getElementById('atividadeArquivo'); if(!input)return;
+  input.addEventListener('change',e=>{
+    const f=e.target.files&&e.target.files[0]; if(!f)return;
+    if(!/^image\//.test(f.type)){alert('Selecione uma imagem PNG, JPG ou WEBP.');return;}
+    const r=new FileReader();r.onload=()=>{professorAtividadeState.src=r.result;const img=document.getElementById('atividadeImagem');img.src=r.result;document.getElementById('atividadeImagemPreview').style.display='block';renderProfessorAtividade();};r.readAsDataURL(f);
+  });
+  document.getElementById('atividadeGerar').addEventListener('click',()=>gerarAtividadeAmpliada(true));
+  document.getElementById('atividadeImprimir').addEventListener('click',imprimirAtividadeAmpliada);
+  document.getElementById('atividadeLimpar').addEventListener('click',limparAtividadeAmpliada);
+  ['atividadeFolhas','atividadeSobreposicao','atividadeAltoContraste'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(professorAtividadeState.src)gerarAtividadeAmpliada(false);}));
+  document.querySelectorAll('[data-atividade-subtab]').forEach(btn=>btn.addEventListener('click',()=>abrirSubabaAtividade(btn.dataset.atividadeSubtab)));
+  const montarInput=document.getElementById('montarAtividadeArquivo');
+  montarInput.addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;if(!/^image\//.test(f.type)){alert('Selecione uma imagem PNG, JPG ou WEBP.');return;}const r=new FileReader();r.onload=()=>{montarAtividadeState.src=r.result;gerarMontagemAtividade(false);};r.readAsDataURL(f);});
+  document.getElementById('montarAtividadeGerar').addEventListener('click',()=>gerarMontagemAtividade(true));
+  document.getElementById('montarAtividadeImprimir').addEventListener('click',imprimirMontagemAtividade);
+  document.getElementById('montarAtividadeLimpar').addEventListener('click',limparMontagemAtividade);
+  ['montarAtividadeEscola','montarAtividadeData'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{if(montarAtividadeState.src)gerarMontagemAtividade(false);}));
+  ['montarAtividadeLogo','montarAtividadeAjuste'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(montarAtividadeState.src)gerarMontagemAtividade(false);}));
+}
+function renderProfessorAtividade(){
+  if(professorAtividadeState.src)gerarAtividadeAmpliada(false);
+}
+function configAtividade(){
+  const n=parseInt(document.getElementById('atividadeFolhas').value,10)||4;
+  if(n===4)return {n,cols:2,rows:2,landscape:false};
+  return {n,cols:1,rows:n,landscape:true};
+}
+function montarPartesAtividade(preview=false){
+  const cfg=configAtividade(),src=professorAtividadeState.src,contraste=document.getElementById('atividadeAltoContraste').checked;
+  if(!src)return '';
+  const partes=[];
+  for(let i=0;i<cfg.n;i++){
+    const col=i%cfg.cols,row=Math.floor(i/cfg.cols);
+    const w=cfg.landscape?297:210,h=cfg.landscape?210:297;
+    const totalW=w*cfg.cols,totalH=h*cfg.rows;
+    const cls=preview?`atividade-page-crop ${cfg.landscape?'landscape':''}`:'atividade-print-page';
+    const style=preview?'':`width:${w}mm;height:${h}mm;`;
+    const imgStyle=preview?`width:${cfg.cols*100}%;height:${cfg.rows*100}%;left:-${col*100}%;top:-${row*100}%;object-fit:fill;${contraste?'filter:grayscale(1) contrast(1.35);':''}`:`width:${totalW}mm;height:${totalH}mm;left:-${col*w}mm;top:-${row*h}mm;object-fit:fill;${contraste?'filter:grayscale(1) contrast(1.35);':''}`;
+    const corpo=`<div class="${cls}" style="${style}"><img src="${src}" style="${imgStyle}"><span class="atividade-print-label">Parte ${i+1} de ${cfg.n}</span></div>`;
+    partes.push(preview?`<div class="atividade-page-mini"><b>Parte ${i+1} de ${cfg.n}</b>${corpo}</div>`:corpo);
+  }
+  return partes.join('');
+}
+function gerarAtividadeAmpliada(validar=true){
+  if(!professorAtividadeState.src){if(validar)alert('Envie uma imagem da atividade.');return;}
+  professorAtividadeState.config=configAtividade();
+  professorAtividadeState.html=montarPartesAtividade(false);
+  document.getElementById('atividadePagesPreview').innerHTML=montarPartesAtividade(true);
+  document.getElementById('atividadeEmpty').style.display='none';
+  document.getElementById('atividadeImprimir').disabled=false;
+}
+function imprimirAtividadeAmpliada(){
+  if(!professorAtividadeState.html)gerarAtividadeAmpliada(true);
+  if(!professorAtividadeState.html)return;
+  const cfg=professorAtividadeState.config||configAtividade();
+  const orient=cfg.landscape?'landscape':'portrait';
+  const style=document.createElement('style');style.id='atividadePrintStyle';style.textContent=`@page{size:A4 ${orient};margin:0;}`;document.head.appendChild(style);
+  document.getElementById('printarea').innerHTML=professorAtividadeState.html;
+  document.body.classList.add('print-atividade');window.print();
+  setTimeout(()=>{document.body.classList.remove('print-atividade');document.getElementById('atividadePrintStyle')?.remove();},500);
+}
+function limparAtividadeAmpliada(){
+  professorAtividadeState={src:'',html:'',config:null};
+  document.getElementById('atividadeArquivo').value='';document.getElementById('atividadeImagem').removeAttribute('src');document.getElementById('atividadeImagemPreview').style.display='none';document.getElementById('atividadePagesPreview').innerHTML='';document.getElementById('atividadeEmpty').style.display='block';document.getElementById('atividadeImprimir').disabled=true;document.getElementById('atividadeFolhas').value='4';document.getElementById('atividadeSobreposicao').value='5';document.getElementById('atividadeAltoContraste').checked=false;
+}
+
+function abrirSubabaAtividade(nome){document.querySelectorAll('[data-atividade-subtab]').forEach(b=>b.classList.toggle('active',b.dataset.atividadeSubtab===nome));document.querySelectorAll('.atividade-subpanel').forEach(p=>p.classList.toggle('active',p.id===`atividade-subpanel-${nome}`));}
+function montarHtmlAtividadeA4(){const escola=document.getElementById('montarAtividadeEscola').value.trim()||'CENTRO MUNICIPAL DE EDUCAÇÃO INFANTIL PRÓ-SABER';const data=document.getElementById('montarAtividadeData').value.trim();const mostrarLogo=document.getElementById('montarAtividadeLogo').checked;const ajuste=document.getElementById('montarAtividadeAjuste').value;const src=montarAtividadeState.src;return `<div class="montar-atividade-preview"><header class="montar-atividade-cabecalho">${mostrarLogo?`<div class="montar-atividade-logo"><img src="${LOGO_PRO_SABER_ATIVIDADE}" alt="Logo da escola"></div>`:''}<div class="montar-atividade-escola">${escapeHtml(escola)}</div></header><div class="montar-atividade-identificacao"><div><b>NOME:</b><div class="montar-atividade-linha"></div></div><div><b>DATA:</b> ${escapeHtml(data||'____/____/________')}</div></div><div class="montar-atividade-conteudo"><img src="${src}" alt="Atividade" style="object-fit:${ajuste==='preencher'?'cover':'contain'};"></div></div>`;}
+function gerarMontagemAtividade(validar=true){if(!montarAtividadeState.src){if(validar)alert('Envie a imagem da atividade.');return;}montarAtividadeState.html=montarHtmlAtividadeA4();document.getElementById('montarAtividadePreviewArea').innerHTML=montarAtividadeState.html;document.getElementById('montarAtividadeEmpty').style.display='none';document.getElementById('montarAtividadeImprimir').disabled=false;}
+function imprimirMontagemAtividade(){gerarMontagemAtividade(true);if(!montarAtividadeState.html)return;document.getElementById('printarea').innerHTML=montarAtividadeState.html;document.body.classList.add('print-montar-atividade');window.print();setTimeout(()=>document.body.classList.remove('print-montar-atividade'),500);}
+function limparMontagemAtividade(){montarAtividadeState={src:'',html:''};document.getElementById('montarAtividadeArquivo').value='';document.getElementById('montarAtividadeEscola').value='CENTRO MUNICIPAL DE EDUCAÇÃO INFANTIL PRÓ-SABER';document.getElementById('montarAtividadeData').value='';document.getElementById('montarAtividadeLogo').checked=true;document.getElementById('montarAtividadeAjuste').value='conter';document.getElementById('montarAtividadePreviewArea').innerHTML='';document.getElementById('montarAtividadeEmpty').style.display='block';document.getElementById('montarAtividadeImprimir').disabled=true;}
 
 </script>
 </body>
