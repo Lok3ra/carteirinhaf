@@ -433,24 +433,34 @@
     --bilhete-escala:1;
     --bilhete-fonte-msg:12pt;
     border:2px solid var(--bilhete-cor,#4FB6E8);border-radius:10px;
-    padding:1mm;font-family:Arial,sans-serif;color:#222;
-    position:relative;break-inside:avoid;background:#fff;min-height:0;overflow:hidden;box-sizing:border-box;
+    padding:1mm 3mm;font-family:Arial,sans-serif;color:#222;
+    position:relative;break-inside:avoid;background:#fff;min-height:0;width:100%;height:100%;overflow:hidden;box-sizing:border-box;
     display:flex;flex-direction:column;align-items:stretch;
     gap:calc(2.2mm * var(--bilhete-escala));
   }
   .bilhete-card.economico{border:1px solid #222;border-radius:0;}
   .bilhete-card.preto-branco{border-color:#000;color:#000;}
   .bilhete-card.preto-branco .bilhete-titulo{color:#000;}
-  .bilhete-card.preto-branco .bilhete-logo img{filter:grayscale(1) contrast(1.1);}
-  .bilhete-card .bilhete-cabecalho{display:grid;grid-template-columns:minmax(34mm,42%) 1fr;align-items:center;gap:calc(2mm * var(--bilhete-escala));flex:0 0 auto;min-width:0;}
-  .bilhete-card .bilhete-logo{text-align:left;margin:0;line-height:0;min-width:0;}
-  .bilhete-card .bilhete-logo img{width:100%;height:calc(17mm * var(--bilhete-escala));max-width:72mm;object-fit:contain;object-position:left center;display:block;}
+  .bilhete-card .bilhete-marca-dagua{position:absolute;inset:6mm;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden;}
+  .bilhete-card .bilhete-marca-dagua img{width:82%;height:82%;object-fit:contain;opacity:var(--bilhete-marca-opacity,.07);}
+  .bilhete-card.preto-branco .bilhete-marca-dagua img,.bilhete-card.economico .bilhete-marca-dagua img{filter:grayscale(1) contrast(1.05);}
+  .bilhete-card > *:not(.bilhete-marca-dagua){position:relative;z-index:1;}
+  .bilhete-card .bilhete-cabecalho{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:calc(1.2mm * var(--bilhete-escala));flex:0 0 auto;min-width:0;}
   .bilhete-card .bilhete-cabecalho-texto{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:calc(1.2mm * var(--bilhete-escala));min-width:0;}
   .bilhete-card .bilhete-titulo{text-align:center;font-size:calc(18px * var(--bilhete-escala));line-height:1.12;font-weight:800;text-transform:uppercase;margin:0;color:var(--bilhete-cor,#2c6bb0);overflow-wrap:anywhere;flex:0 0 auto;}
   .bilhete-card.economico .bilhete-titulo{color:#000;}
   .bilhete-card .bilhete-data{font-size:calc(13px * var(--bilhete-escala));line-height:1.2;text-align:right;margin:0;color:#555;overflow-wrap:anywhere;flex:0 0 auto;}
   .bilhete-card .bilhete-destinatario{font-size:calc(15px * var(--bilhete-escala));line-height:1.25;font-weight:700;margin:0;overflow-wrap:anywhere;flex:0 0 auto;}
   .bilhete-card .bilhete-texto{font-size:var(--bilhete-fonte-msg);line-height:1.32;text-align:justify;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;margin:0;min-height:0;max-width:100%;flex:0 1 auto;overflow:hidden;}
+  .bilhete-card .bilhete-tabela-wrap{margin-top:2.5mm;position:relative;z-index:1;overflow:hidden;}
+  .bilhete-card .bilhete-tabela{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10pt;background:rgba(255,255,255,.82);}
+  .bilhete-card .bilhete-tabela th,.bilhete-card .bilhete-tabela td{border:1px solid #555;padding:1.2mm 1.5mm;text-align:left;vertical-align:middle;overflow-wrap:anywhere;}
+  .bilhete-card .bilhete-tabela th{font-weight:700;text-align:center;background:rgba(230,230,230,.85);}
+  .bilhete-card.preto-branco .bilhete-tabela,.bilhete-card.economico .bilhete-tabela{background:#fff;}
+  .bilhete-card.preto-branco .bilhete-tabela th,.bilhete-card.economico .bilhete-tabela th{background:#eee;}
+  .bilhete-tabela-ajuda{font-size:12px;color:#6b6355;margin-top:5px;line-height:1.35;}
+  .bilhete-tabela-box{display:none;margin-top:10px;padding:12px;border:1px dashed var(--line);border-radius:7px;background:#fbfaf6;}
+  .bilhete-tabela-box.ativo{display:block;}
   .bilhete-card .bilhete-fecho{text-align:right;margin:0;font-size:calc(14px * var(--bilhete-escala));line-height:1.25;white-space:pre-line;overflow-wrap:anywhere;flex:0 0 auto;}
   .bilhete-card .bilhete-assinatura{margin:calc(1.5mm * var(--bilhete-escala)) 0 0;text-align:center;font-size:calc(13px * var(--bilhete-escala));line-height:1.2;flex:0 0 auto;}
   .bilhete-card .bilhete-assinatura span{display:inline-block;max-width:100%;min-width:min(55mm,90%);border-top:1px solid #555;padding-top:calc(1mm * var(--bilhete-escala));}
@@ -473,6 +483,15 @@
     body.print-bilhetes .bilhete-card{box-shadow:none!important;}
     @page{size:A4 portrait;margin:10mm;}
   }
+
+  #bilheteCorField.oculto{display:none!important;}
+  /* ---------- Bilhetes / Modelos ---------- */
+  .bilhete-modelos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+  .bilhete-modelo-card{border:1px solid var(--line);border-radius:10px;background:#fff;padding:16px;display:flex;flex-direction:column;gap:12px;}
+  .bilhete-modelo-card h3{margin:0;font-size:18px;}
+  .bilhete-modelo-card .modelo-categoria{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#7a6b55;}
+  .bilhete-modelo-card .modelo-resumo{font-size:13px;line-height:1.5;color:#4f4a42;background:#faf8f3;border-radius:7px;padding:12px;max-height:150px;overflow:auto;}
+  .bilhete-modelo-card .modelo-acoes{margin-top:auto;display:flex;gap:8px;flex-wrap:wrap;}
 
   /* ---------- Declarações ---------- */
   .declaracao-preview{background:#fff;border:1px solid var(--line);padding:12mm 16mm 10mm;max-width:210mm;min-height:275mm;margin:0 auto;font-family:'Times New Roman',serif;color:#000;position:relative;}
@@ -516,9 +535,80 @@
     @page{size:A4 portrait;margin:10mm;}
   }
 
+
+  /* ---------- Responsividade geral ---------- */
+  .mobile-topbar{display:none;}
+  .sidebar-backdrop{display:none;}
+  .table-responsive{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  img,canvas,video,svg{max-width:100%;}
+  textarea{resize:vertical;}
+  button,input,select,textarea{max-width:100%;}
+
+  @media(max-width:900px){
+    body.mobile-menu-open{overflow:hidden;}
+    .shell{display:block;min-height:100vh;}
+    .mobile-topbar{display:flex;position:sticky;top:0;z-index:92;height:58px;align-items:center;justify-content:space-between;padding:0 14px;background:var(--forest);color:#fff;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+    .mobile-topbar strong{font-family:'Fraunces',serif;font-size:17px;}
+    .mobile-menu-btn{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.28);border-radius:8px;background:transparent;color:#fff;font-size:24px;cursor:pointer;}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;width:min(84vw,310px);height:100dvh;padding-top:18px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:8px 0 24px rgba(0,0,0,.24);}
+    body.mobile-menu-open .sidebar{transform:translateX(0);}
+    .sidebar-backdrop{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.45);}
+    body.mobile-menu-open .sidebar-backdrop{display:block;}
+    .brand{padding:0 18px 18px;margin-bottom:8px;}
+    .navsection-toggle{padding:15px 18px;min-height:48px;}
+    .navitem{padding:14px 18px;min-height:48px;font-size:14px;}
+    .navsubmenu .navitem{padding-left:26px;}
+    .main{width:100%;max-width:none;padding:20px 16px 40px;overflow:hidden;}
+    .pagehead{margin-bottom:18px;}
+    .pagehead h2{font-size:23px;line-height:1.2;}
+    .pagehead p{font-size:13px;line-height:1.45;}
+    .card-block{padding:18px;margin-bottom:16px;border-radius:9px;overflow:hidden;}
+    .row{gap:10px;}
+    .field{min-width:calc(50% - 8px);margin-bottom:10px;}
+    .btn{min-height:42px;justify-content:center;}
+    .modal{max-height:92dvh;padding:20px 18px;}
+    .subtabs{overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
+    .subtab{flex:0 0 auto;}
+    table{min-width:680px;}
+    .bilhete-preview-wrap,.cal-preview-wrap{overflow:auto;-webkit-overflow-scrolling:touch;}
+    .bilhete-sheet{transform-origin:top left;}
+  }
+
+  @media(max-width:560px){
+    .mobile-topbar{height:54px;padding:0 10px;}
+    .mobile-topbar strong{font-size:16px;}
+    .main{padding:16px 10px 30px;}
+    .pagehead h2{font-size:21px;}
+    .card-block{padding:14px 12px;border-radius:8px;}
+    .card-block h3{font-size:15px;}
+    .row{display:block;}
+    .field{min-width:0;width:100%;}
+    .field input[type=text],.field input[type=date],.field input[type=tel],.field input[type=number],.field select,.field textarea{font-size:16px;min-height:43px;width:100%;}
+    .field textarea{min-height:100px;}
+    .btn{width:100%;margin:0 0 8px;padding:11px 12px;}
+    .btn.small{width:auto;min-height:38px;}
+    .modal-actions{flex-direction:column-reverse;}
+    .modal-actions .btn{width:100%;}
+    .overlay{padding:8px;align-items:flex-end;}
+    .modal{width:100%;max-height:94dvh;border-radius:14px 14px 0 0;padding:18px 14px;}
+    .empty{padding:28px 12px;}
+    .cardgrid{gap:12px;justify-content:center;}
+    .festa-total-bar{align-items:stretch;}
+    .festa-total-bar .btn{width:100%;}
+    .kit-preview-grid,.modelo-grid,.cal-year-grid{grid-template-columns:1fr!important;}
+    .bilhete-preview-wrap{padding:8px;margin-left:-4px;margin-right:-4px;}
+    .bilhete-sheet{zoom:.48;}
+  }
+
+  @media print{
+    .mobile-topbar,.sidebar-backdrop{display:none!important;}
+  }
+
 </style>
 </head>
 <body>
+<div class="mobile-topbar"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button><strong>Gestão Escolar</strong><span style="width:42px" aria-hidden="true"></span></div>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <div class="shell">
 
   <div class="sidebar">
@@ -542,6 +632,8 @@
       </button>
       <div class="navsubmenu">
         <div class="navitem" data-tab="bilhetes-manual"><span class="idx">02</span> Manual</div>
+        <div class="navitem" data-tab="bilhetes-modelos"><span class="idx">03</span> Modelos</div>
+        <div class="navitem" data-tab="bilhetes-arquivos"><span class="idx">04</span> Arquivos</div>
       </div>
     </div>
 
@@ -1087,7 +1179,13 @@
           <div class="field"><label>Título</label><input type="text" id="bilheteTitulo" value="Comunicado"></div>
           <div class="field"><label>Destinatário</label><select id="bilheteDestinatario"><option value="Senhores pais e/ou responsáveis">Senhores pais e/ou responsáveis</option><option value="Prezada família">Prezada família</option><option value="Responsável pelo(a) aluno(a)">Responsável pelo(a) aluno(a)</option><option value="">Sem saudação</option></select></div>
         </div>
-        <div class="field"><label>Mensagem</label><textarea id="bilheteMensagem" rows="6" placeholder="Digite o texto do bilhete..."></textarea><div class="bilhete-contagem"><span><strong id="bilheteCaracteres">0</strong> caracteres</span><span>Leitura ideal: fonte entre 10 e 12 pt</span></div><div id="bilheteRecomendacao" class="bilhete-recomendacao"><strong>Recomendação:</strong> digite a mensagem para calcular a melhor quantidade por folha.</div></div>
+        <div class="field"><label>Mensagem</label><textarea id="bilheteMensagem" rows="6" placeholder="Digite o texto do bilhete..."></textarea><div class="bilhete-contagem"><span><strong id="bilheteCaracteres">0</strong> caracteres</span><span>Leitura ideal: fonte entre 10 e 12 pt</span></div><div id="bilheteRecomendacao" class="bilhete-recomendacao"><strong>Recomendação:</strong> digite a mensagem para calcular a melhor quantidade por folha.</div><div id="bilhetePendencias" class="bilhete-recomendacao alerta" style="display:none;"></div></div>
+        <label style="font-size:13px;display:inline-flex;align-items:center;gap:7px;margin-top:4px;"><input type="checkbox" id="bilheteUsarTabela"> Adicionar tabela ao bilhete</label>
+        <div id="bilheteTabelaBox" class="bilhete-tabela-box">
+          <div class="field" style="margin-bottom:0;"><label>Conteúdo da tabela</label><textarea id="bilheteTabelaDados" rows="4" placeholder="Item / Quantidade
+Caderno / 1
+Lápis / 2"></textarea><div class="bilhete-tabela-ajuda">Digite uma linha por linha e separe as colunas com o símbolo <strong>/</strong>. A primeira linha será usada como cabeçalho.</div></div>
+        </div>
         <div class="row">
           <div class="field"><label>Data</label><input type="text" id="bilheteData" placeholder="Ex: 15/08/2026"></div>
           
@@ -1102,21 +1200,84 @@ CMEI Pró Saber</textarea></div>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="max-width:200px;"><label>Bilhetes por folha</label><select id="bilhetePorFolha"><option value="2">2 por folha</option><option value="4" selected>4 por folha</option><option value="6">6 por folha</option><option value="8">8 por folha</option></select></div>
           <div class="field" style="max-width:200px;"><label>Estilo</label><select id="bilheteEstilo"><option value="colorido">Colorido</option><option value="preto-branco">Preto e branco</option><option value="economico">Econômico</option></select></div>
-          <div class="field" style="max-width:130px;"><label>Cor da borda</label><input type="color" id="bilheteCor" value="#4FB6E8"></div>
+          <div class="field" id="bilheteCorField" style="max-width:130px;"><label>Cor da borda</label><input type="color" id="bilheteCor" value="#4FB6E8"></div>
+          <div class="field" style="min-width:210px;max-width:260px;"><label>Transparência da marca-d’água: <span id="bilheteTransparenciaValor">7%</span></label><input type="range" id="bilheteTransparencia" min="0" max="20" step="1" value="7"></div>
           <label style="font-size:13px;margin-bottom:12px;"><input type="checkbox" id="bilheteAssinatura"> Espaço para assinatura</label>
         </div>
-        <div class="row"><button class="btn" id="bilheteGerarBtn" type="button">Gerar pré-visualização</button><button class="btn gold" id="bilheteExportarBtn" type="button">Exportar para o computador</button><button class="btn outline" id="bilheteSalvarNavegadorBtn" type="button">Salvar no navegador</button><button class="btn outline" id="bilheteImprimirBtn" type="button" disabled>Imprimir bilhetes</button><button class="btn outline" id="bilheteLimparBtn" type="button">Limpar</button></div>
-      </div>
-      <div class="card-block">
-        <h3>Bilhetes salvos no navegador</h3>
-        <div class="row" style="align-items:flex-end;">
-          <div class="field" style="min-width:320px;"><label>Selecionar bilhete</label><select id="bilheteSalvoSelect"><option value="">Nenhum bilhete salvo</option></select></div>
-          <button class="btn outline" id="bilheteCarregarBtn" type="button" disabled>Carregar</button>
-          <button class="btn outline" id="bilheteExcluirBtn" type="button" disabled>Excluir</button>
-        </div>
-        <p style="font-size:12px;color:#6b6355;margin:8px 0 0;">Os bilhetes desta lista ficam somente neste navegador. Para guardar em uma pasta segura, use “Exportar para o computador”.</p>
+        <div class="row"><button class="btn" id="bilheteGerarBtn" type="button">Gerar pré-visualização</button><button class="btn outline" id="bilheteImprimirBtn" type="button" disabled>Imprimir bilhetes</button><button class="btn outline" id="bilheteLimparBtn" type="button">Limpar</button></div>
       </div>
       <div id="bilhetePreviewArea"></div><div class="empty" id="bilhetePreviewEmpty">Digite a mensagem e clique em “Gerar pré-visualização”.</div>
+    </div>
+
+    <!-- ===================== TAB: BILHETES / MODELOS ===================== -->
+    <div class="panel" id="panel-bilhetes-modelos">
+      <div class="pagehead">
+        <h2>Modelos de Bilhetes</h2>
+        <p>Escolha um bilhete pronto e abra no Manual para editar apenas o que for necessário.</p>
+      </div>
+      <div class="bilhete-modelos-grid">
+        <article class="bilhete-modelo-card">
+          <div class="modelo-categoria">Saúde e cuidados</div>
+          <h3>Aviso sobre piolho</h3>
+          <div class="modelo-resumo">Senhores pais e/ou responsáveis, informamos que foram identificados casos de piolho entre as crianças. Pedimos que verifiquem cuidadosamente o couro cabeludo e os cabelos da criança e, caso necessário, realizem o tratamento adequado. Também é importante higienizar roupas de cama, toalhas, bonés, pentes e objetos de uso pessoal. A colaboração de todas as famílias é essencial para evitar novos casos.</div>
+          <div class="modelo-acoes">
+            <button class="btn" id="usarModeloPiolhoBtn" type="button">Abrir e editar</button>
+          </div>
+        </article>
+        <article class="bilhete-modelo-card">
+          <div class="modelo-categoria">Reuniões</div>
+          <h3>Reunião de pais e responsáveis</h3>
+          <div class="modelo-resumo">Senhores pais e/ou responsáveis, convidamos todos para uma reunião na escola. Na ocasião, serão tratados assuntos importantes sobre o desenvolvimento das crianças, a rotina da turma e as atividades escolares. A presença da família é muito importante.</div>
+          <div class="modelo-acoes">
+            <button class="btn" id="usarModeloReuniaoPaisBtn" type="button">Abrir e editar</button>
+          </div>
+        </article>
+        <article class="bilhete-modelo-card">
+          <div class="modelo-categoria">Calendário escolar</div>
+          <h3>Aviso de feriado</h3>
+          <div class="modelo-resumo">Senhores pais e/ou responsáveis, informamos que não haverá aula na data indicada em razão do feriado. As atividades escolares retornarão normalmente no próximo dia letivo.</div>
+          <div class="modelo-acoes">
+            <button class="btn" id="usarModeloFeriadoBtn" type="button">Abrir e editar</button>
+          </div>
+        </article>
+        <article class="bilhete-modelo-card">
+          <div class="modelo-categoria">Comunicados da turma</div>
+          <h3>Atestado ou abono da professora</h3>
+          <div class="modelo-resumo">Senhores pais e/ou responsáveis, informamos que, em razão de atestado médico ou abono da professora, excepcionalmente não haverá aula para esta turma na data indicada. As atividades retornarão normalmente no próximo dia letivo.</div>
+          <div class="modelo-acoes">
+            <button class="btn" id="usarModeloAtestadoProfessorBtn" type="button">Abrir e editar</button>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: BILHETES / ARQUIVOS ===================== -->
+    <div class="panel" id="panel-bilhetes-arquivos">
+      <div class="pagehead">
+        <h2>Arquivos de Bilhetes</h2>
+        <p>Exporte o bilhete atual em Word ou importe novamente um arquivo criado por este sistema.</p>
+      </div>
+      <div class="card-block">
+        <h3>Exportar para o computador</h3>
+        <p style="font-size:13px;color:#6b6355;">O arquivo será salvo no formato <strong>.doc</strong>, compatível com Microsoft Word e LibreOffice. Ele pode ser guardado em uma pasta segura, editado no Word e impresso.</p>
+        <button class="btn gold" id="bilheteExportarWordBtn" type="button">Exportar bilhete atual em Word</button>
+      </div>
+      <div class="card-block">
+        <h3>Importar arquivo do computador</h3>
+        <p style="font-size:13px;color:#6b6355;">Selecione um arquivo Word exportado anteriormente pelo módulo de Bilhetes. O conteúdo será carregado na aba Manual para edição.</p>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="min-width:320px;margin-bottom:0;">
+            <label>Arquivo do bilhete</label>
+            <input type="file" id="bilheteImportarWordInput" accept=".doc,application/msword">
+          </div>
+          <button class="btn" id="bilheteImportarWordBtn" type="button">Importar e abrir no Manual</button>
+        </div>
+        <div id="bilheteArquivoStatus" class="helpbox" style="display:none;margin-top:12px;"></div>
+      </div>
+      <div class="card-block">
+        <h3>Como organizar os arquivos</h3>
+        <p style="font-size:13px;color:#6b6355;margin:0;">Crie uma pasta chamada <strong>Bilhetes da Escola</strong> e, dentro dela, separe os documentos por ano ou categoria. Exemplo: <strong>Bilhetes da Escola / 2026 / Reuniões</strong>.</p>
+      </div>
     </div>
 
     <!-- ===================== TAB: DECLARAÇÃO DE COMPARECIMENTO ===================== -->
@@ -1529,6 +1690,9 @@ async function init(){
   document.getElementById('yearSelect').value = String(yr);
 
   bindNav();
+  bindMobileNavigation();
+  tornarTabelasResponsivas();
+  window.addEventListener('resize',ajustarPreviewMobile);
   bindYearSelect();
   bindImportTab();
   bindStudentsTab();
@@ -1602,6 +1766,35 @@ function updateYearLabels(){
 /* =========================================================================
    NAV
 ========================================================================= */
+function bindMobileNavigation(){
+  const btn=document.getElementById('mobileMenuBtn');
+  const backdrop=document.getElementById('sidebarBackdrop');
+  if(!btn||!backdrop)return;
+  const close=()=>{document.body.classList.remove('mobile-menu-open');btn.setAttribute('aria-expanded','false');btn.textContent='☰';};
+  const open=()=>{document.body.classList.add('mobile-menu-open');btn.setAttribute('aria-expanded','true');btn.textContent='✕';};
+  btn.addEventListener('click',()=>document.body.classList.contains('mobile-menu-open')?close():open());
+  backdrop.addEventListener('click',close);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+  window.addEventListener('resize',()=>{if(window.innerWidth>900)close();});
+  document.querySelectorAll('.sidebar .navitem').forEach(item=>item.addEventListener('click',()=>{if(window.innerWidth<=900)close();}));
+}
+function tornarTabelasResponsivas(){
+  document.querySelectorAll('.main table').forEach(table=>{
+    if(table.parentElement&&table.parentElement.classList.contains('table-responsive'))return;
+    const wrap=document.createElement('div');
+    wrap.className='table-responsive';
+    table.parentNode.insertBefore(wrap,table);
+    wrap.appendChild(table);
+  });
+}
+function ajustarPreviewMobile(){
+  document.querySelectorAll('.bilhete-preview-wrap').forEach(wrap=>{
+    const sheet=wrap.querySelector('.bilhete-sheet');
+    if(!sheet)return;
+    if(window.innerWidth<=560){sheet.style.zoom='';}
+  });
+}
+
 function bindNav(){
   document.querySelectorAll('.navsection-toggle').forEach(toggle=>{
     toggle.addEventListener('click', ()=>{
@@ -1633,6 +1826,7 @@ function bindNav(){
         });
       }
       document.getElementById('panel-'+item.dataset.tab).classList.add('active');
+      requestAnimationFrame(()=>{tornarTabelasResponsivas();ajustarPreviewMobile();});
       if(item.dataset.tab==='carteirinhas') renderCardsTab();
       if(item.dataset.tab==='ponto-servidores') renderServidoresPontoTable();
       if(item.dataset.tab==='ponto-feriados'){ renderFeriadosTags(); renderDiasLetivosTags(); refreshServidorPeriodoSelect(); renderPeriodosServidor(); }
@@ -4521,30 +4715,110 @@ function importarCalendarioCentral(ev){const f=ev.target.files[0];if(!f)return;c
    BILHETES / MANUAL
 ========================================================================= */
 let bilheteHtmlAtual='';
-let bilheteSalvoAtual=false;
 let bilheteExportadoAtual=false;
-const BILHETES_STORAGE_KEY='gestao_escolar_bilhetes_salvos';
 function bindBilhetes(){
   const g=document.getElementById('bilheteGerarBtn');if(!g)return;
   g.addEventListener('click',()=>atualizarPreviewBilhete(true));
-  document.getElementById('bilheteExportarBtn').addEventListener('click',exportarBilheteManual);
-  document.getElementById('bilheteSalvarNavegadorBtn').addEventListener('click',salvarBilheteNoNavegador);
   document.getElementById('bilheteImprimirBtn').addEventListener('click',imprimirBilhetes);
   document.getElementById('bilheteLimparBtn').addEventListener('click',limparBilheteManual);
-  document.getElementById('bilheteCarregarBtn').addEventListener('click',carregarBilheteSelecionado);
-  document.getElementById('bilheteExcluirBtn').addEventListener('click',excluirBilheteSelecionado);
-  document.getElementById('bilheteSalvoSelect').addEventListener('change',atualizarBotoesBilhetesSalvos);
+  document.getElementById('bilheteExportarWordBtn')?.addEventListener('click',exportarBilheteWord);
+  document.getElementById('bilheteImportarWordBtn')?.addEventListener('click',importarBilheteWord);
   document.getElementById('bilheteMensagem').addEventListener('input',atualizarAnaliseBilhete);
   document.getElementById('bilhetePorFolha').addEventListener('change',atualizarAnaliseBilhete);
   document.getElementById('bilheteAssinatura').addEventListener('change',atualizarAnaliseBilhete);
-  document.querySelectorAll('#panel-bilhetes-manual input,#panel-bilhetes-manual textarea,#panel-bilhetes-manual select').forEach(el=>{
-    if(el.id==='bilheteSalvoSelect')return;
-    el.addEventListener('input',()=>{bilheteSalvoAtual=false;bilheteExportadoAtual=false;});
-    el.addEventListener('change',()=>{bilheteSalvoAtual=false;bilheteExportadoAtual=false;});
+  document.getElementById('bilheteEstilo').addEventListener('change',()=>{atualizarVisibilidadeCorBilhete();if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);});
+  document.getElementById('bilheteUsarTabela').addEventListener('change',e=>{document.getElementById('bilheteTabelaBox').classList.toggle('ativo',e.target.checked);atualizarAnaliseBilhete();if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);});
+  document.getElementById('bilheteTabelaDados').addEventListener('input',()=>{atualizarAnaliseBilhete();if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);});
+  document.getElementById('bilheteTransparencia').addEventListener('input',e=>{
+    document.getElementById('bilheteTransparenciaValor').textContent=e.target.value+'%';
+    if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);
   });
-  atualizarListaBilhetesSalvos();
+  document.querySelectorAll('#panel-bilhetes-manual input,#panel-bilhetes-manual textarea,#panel-bilhetes-manual select').forEach(el=>{
+    el.addEventListener('input',()=>{bilheteExportadoAtual=false;});
+    el.addEventListener('change',()=>{bilheteExportadoAtual=false;});
+  });
+  document.getElementById('usarModeloPiolhoBtn')?.addEventListener('click',usarModeloBilhetePiolho);
+  document.getElementById('usarModeloReuniaoPaisBtn')?.addEventListener('click',usarModeloBilheteReuniaoPais);
+  document.getElementById('usarModeloFeriadoBtn')?.addEventListener('click',usarModeloBilheteFeriado);
+  document.getElementById('usarModeloAtestadoProfessorBtn')?.addEventListener('click',usarModeloBilheteAtestadoProfessor);
+  atualizarVisibilidadeCorBilhete();
   atualizarAnaliseBilhete();
 }
+function atualizarVisibilidadeCorBilhete(){
+  const colorido=document.getElementById('bilheteEstilo')?.value==='colorido';
+  document.getElementById('bilheteCorField')?.classList.toggle('oculto',!colorido);
+}
+function camposPendentesBilhete(d){
+  const texto=[d.titulo,d.mensagem,d.data,d.fecho,d.tabelaDados].filter(Boolean).join(' ');
+  return [...new Set(texto.match(/\[(?:PREENCHER|INFORMAR)[^\]]*\]/gi)||[])];
+}
+function validarPendenciasBilhete(d,acao='continuar'){
+  const pendentes=camposPendentesBilhete(d);
+  if(!pendentes.length)return true;
+  alert(`Antes de ${acao}, substitua os campos pendentes:\n\n${pendentes.join('\n')}`);
+  return false;
+}
+function usarModeloBilhetePiolho(){
+  const modelo={
+    titulo:'Comunicado importante',
+    destinatario:'Senhores pais e/ou responsáveis',
+    mensagem:'Informamos que foram identificados casos de piolho entre as crianças. Pedimos que verifiquem cuidadosamente o couro cabeludo e os cabelos da criança e, caso necessário, realizem o tratamento adequado. Também é importante higienizar roupas de cama, toalhas, bonés, pentes e objetos de uso pessoal. A colaboração de todas as famílias é essencial para evitar novos casos.',
+    data:'',
+    fecho:'Atenciosamente,\nCMEI Pró Saber',
+    quantidade:4,
+    estilo:'colorido',
+    cor:'#4FB6E8',
+    transparencia:7,
+    assinatura:false
+  };
+  aplicarDadosBilhete(modelo);
+  bilheteExportadoAtual=false;
+  const aba=document.querySelector('.navitem[data-tab="bilhetes-manual"]');
+  if(aba)aba.click();
+  setTimeout(()=>document.getElementById('bilheteMensagem')?.focus(),50);
+}
+function abrirModeloBilhete(modelo){
+  aplicarDadosBilhete({
+    titulo:modelo.titulo||'Comunicado',
+    destinatario:'Senhores pais e/ou responsáveis',
+    mensagem:modelo.mensagem||'',
+    data:'',
+    fecho:'Atenciosamente,\nCMEI Pró Saber',
+    quantidade:modelo.quantidade||4,
+    estilo:'colorido',
+    cor:'#4FB6E8',
+    transparencia:7,
+    assinatura:false,
+    usarTabela:false,
+    tabelaDados:''
+  });
+  bilheteExportadoAtual=false;
+  const aba=document.querySelector('.navitem[data-tab="bilhetes-manual"]');
+  if(aba)aba.click();
+  setTimeout(()=>document.getElementById('bilheteMensagem')?.focus(),50);
+}
+function usarModeloBilheteReuniaoPais(){
+  abrirModeloBilhete({
+    titulo:'Reunião de pais e responsáveis',
+    mensagem:'Convidamos todos para uma reunião de pais e responsáveis no dia [PREENCHER DATA], às [PREENCHER HORÁRIO], em [PREENCHER LOCAL]. Na ocasião, serão tratados assuntos importantes sobre o desenvolvimento das crianças, a rotina da turma e as atividades escolares. A presença da família é muito importante.',
+    quantidade:6
+  });
+}
+function usarModeloBilheteFeriado(){
+  abrirModeloBilhete({
+    titulo:'Aviso de feriado',
+    mensagem:'Informamos que não haverá aula no dia [PREENCHER DATA], em razão do feriado de [PREENCHER NOME DO FERIADO]. As atividades escolares retornarão normalmente no dia [PREENCHER DATA DE RETORNO].',
+    quantidade:8
+  });
+}
+function usarModeloBilheteAtestadoProfessor(){
+  abrirModeloBilhete({
+    titulo:'Comunicado',
+    mensagem:'Informamos que, em razão de [PREENCHER ATESTADO OU ABONO] da professora [PREENCHER NOME], excepcionalmente não haverá aula para esta turma no dia [PREENCHER DATA]. As atividades retornarão normalmente no próximo dia letivo.',
+    quantidade:6
+  });
+}
+
 function recomendarQuantidadeBilhetes(caracteres,comAssinatura=false){
   const ajuste=comAssinatura?70:0;
   const total=caracteres+ajuste;
@@ -4556,59 +4830,113 @@ function recomendarQuantidadeBilhetes(caracteres,comAssinatura=false){
 function atualizarAnaliseBilhete(){
   const campo=document.getElementById('bilheteMensagem'),contador=document.getElementById('bilheteCaracteres'),box=document.getElementById('bilheteRecomendacao');
   if(!campo||!contador||!box)return;
-  const caracteres=campo.value.length;
+  const tabelaAtiva=document.getElementById('bilheteUsarTabela')?.checked;
+  const tabelaChars=tabelaAtiva?(document.getElementById('bilheteTabelaDados')?.value.length||0):0;
+  const caracteres=campo.value.length+tabelaChars;
   const selecionada=parseInt(document.getElementById('bilhetePorFolha').value,10)||4;
   const recomendada=recomendarQuantidadeBilhetes(caracteres,document.getElementById('bilheteAssinatura').checked);
   contador.textContent=String(caracteres);
+  const pendBox=document.getElementById('bilhetePendencias');
+  const pendentes=camposPendentesBilhete(dadosBilheteManual());
+  if(pendBox){pendBox.style.display=pendentes.length?'block':'none';pendBox.innerHTML=pendentes.length?`<strong>Informações pendentes:</strong> ${pendentes.map(escapeHtml).join(', ')}`:'';}
   if(!caracteres){box.className='bilhete-recomendacao';box.innerHTML='<strong>Recomendação:</strong> digite a mensagem para calcular a melhor quantidade por folha.';return;}
   const fontePrevista=recomendada===8?'aproximadamente 10 pt':recomendada===6?'entre 10 e 11 pt':recomendada===4?'entre 11 e 12 pt':'aproximadamente 12 pt';
   const adequada=selecionada<=recomendada;
   box.className='bilhete-recomendacao'+(adequada?'':' alerta');
   box.innerHTML=`<strong>Melhor opção: ${recomendada} bilhete${recomendada>1?'s':''} por folha.</strong> Com ${caracteres} caracteres, a mensagem tende a ficar em ${fontePrevista}. ${adequada?'A quantidade selecionada mantém boa leitura.':`A opção de ${selecionada} por folha pode deixar a fonte menor que 10 pt; escolha ${recomendada} ou menos.`}`;
 }
-function dadosBilheteManual(){return {titulo:document.getElementById('bilheteTitulo').value.trim(),destinatario:document.getElementById('bilheteDestinatario').value.trim(),mensagem:document.getElementById('bilheteMensagem').value.trim(),data:document.getElementById('bilheteData').value.trim(),fecho:document.getElementById('bilheteFecho').value.trim(),quantidade:parseInt(document.getElementById('bilhetePorFolha').value,10)||4,estilo:document.getElementById('bilheteEstilo').value,cor:document.getElementById('bilheteCor').value||'#4FB6E8',assinatura:document.getElementById('bilheteAssinatura').checked};}
-function obterBilhetesSalvos(){try{return JSON.parse(localStorage.getItem(BILHETES_STORAGE_KEY)||'[]');}catch(e){return [];}}
-function nomeBilhete(d){const titulo=(d.titulo||'Bilhete').trim();const data=(d.data||'sem data').trim();return `${titulo} — ${data}`;}
-function atualizarListaBilhetesSalvos(selecionarId=''){
-  const select=document.getElementById('bilheteSalvoSelect');if(!select)return;
-  const salvos=obterBilhetesSalvos();
-  select.innerHTML=salvos.length?'<option value="">Selecione um bilhete...</option>':'<option value="">Nenhum bilhete salvo</option>';
-  salvos.forEach(item=>{const opt=document.createElement('option');opt.value=item.id;opt.textContent=nomeBilhete(item);select.appendChild(opt);});
-  if(selecionarId)select.value=selecionarId;
-  atualizarBotoesBilhetesSalvos();
-}
-function atualizarBotoesBilhetesSalvos(){const ativo=!!document.getElementById('bilheteSalvoSelect').value;document.getElementById('bilheteCarregarBtn').disabled=!ativo;document.getElementById('bilheteExcluirBtn').disabled=!ativo;}
-function salvarBilheteNoNavegador(){
-  const d=dadosBilheteManual();if(!d.mensagem){alert('Digite a mensagem do bilhete antes de salvar.');return;}
-  try{
-    const salvos=obterBilhetesSalvos();
-    const item={...d,id:'bilhete-'+Date.now(),salvoEm:new Date().toISOString()};
-    salvos.unshift(item);localStorage.setItem(BILHETES_STORAGE_KEY,JSON.stringify(salvos.slice(0,100)));
-    bilheteSalvoAtual=true;atualizarListaBilhetesSalvos(item.id);alert('Bilhete salvo na lista deste navegador.');
-  }catch(e){console.error(e);alert('Não foi possível salvar o bilhete neste navegador.');}
-}
+function dadosBilheteManual(){return {titulo:document.getElementById('bilheteTitulo').value.trim(),destinatario:document.getElementById('bilheteDestinatario').value.trim(),mensagem:document.getElementById('bilheteMensagem').value.trim(),data:document.getElementById('bilheteData').value.trim(),fecho:document.getElementById('bilheteFecho').value.trim(),quantidade:parseInt(document.getElementById('bilhetePorFolha').value,10)||4,estilo:document.getElementById('bilheteEstilo').value,cor:document.getElementById('bilheteCor').value||'#4FB6E8',transparencia:parseInt(document.getElementById('bilheteTransparencia').value,10)||0,assinatura:document.getElementById('bilheteAssinatura').checked,usarTabela:document.getElementById('bilheteUsarTabela').checked,tabelaDados:document.getElementById('bilheteTabelaDados').value.trim()};}
 function aplicarDadosBilhete(d){
-  document.getElementById('bilheteTitulo').value=d.titulo||'Comunicado';document.getElementById('bilheteDestinatario').value=d.destinatario||'';document.getElementById('bilheteMensagem').value=d.mensagem||'';document.getElementById('bilheteData').value=d.data||'';document.getElementById('bilheteFecho').value=d.fecho||'';document.getElementById('bilhetePorFolha').value=String(d.quantidade||4);document.getElementById('bilheteEstilo').value=d.estilo||'colorido';document.getElementById('bilheteCor').value=d.cor||'#4FB6E8';document.getElementById('bilheteAssinatura').checked=!!d.assinatura;
-  bilheteSalvoAtual=true;bilheteExportadoAtual=false;atualizarAnaliseBilhete();atualizarPreviewBilhete(false);
+  document.getElementById('bilheteTitulo').value=d.titulo||'Comunicado';
+  document.getElementById('bilheteDestinatario').value=d.destinatario||'';
+  document.getElementById('bilheteMensagem').value=d.mensagem||'';
+  document.getElementById('bilheteData').value=d.data||'';
+  document.getElementById('bilheteFecho').value=d.fecho||'';
+  document.getElementById('bilhetePorFolha').value=String(d.quantidade||4);
+  document.getElementById('bilheteEstilo').value=d.estilo||'colorido';
+  document.getElementById('bilheteCor').value=d.cor||'#4FB6E8';
+  document.getElementById('bilheteTransparencia').value=String(d.transparencia??7);
+  document.getElementById('bilheteTransparenciaValor').textContent=String(d.transparencia??7)+'%';
+  document.getElementById('bilheteAssinatura').checked=!!d.assinatura;
+  document.getElementById('bilheteUsarTabela').checked=!!d.usarTabela;
+  document.getElementById('bilheteTabelaDados').value=d.tabelaDados||'';
+  document.getElementById('bilheteTabelaBox').classList.toggle('ativo',!!d.usarTabela);
+  bilheteExportadoAtual=false;
+  atualizarVisibilidadeCorBilhete();
+  atualizarAnaliseBilhete();
+  atualizarPreviewBilhete(false);
 }
-function carregarBilheteSelecionado(){const id=document.getElementById('bilheteSalvoSelect').value;if(!id)return;const item=obterBilhetesSalvos().find(x=>x.id===id);if(item)aplicarDadosBilhete(item);}
-function excluirBilheteSelecionado(){const select=document.getElementById('bilheteSalvoSelect'),id=select.value;if(!id)return;if(!confirm('Excluir este bilhete salvo do navegador?'))return;const salvos=obterBilhetesSalvos().filter(x=>x.id!==id);localStorage.setItem(BILHETES_STORAGE_KEY,JSON.stringify(salvos));atualizarListaBilhetesSalvos();}
-function nomeArquivoBilhete(d){const base=(d.titulo||'bilhete').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase()||'bilhete';const data=(d.data||new Date().toISOString().slice(0,10)).replace(/\//g,'-');return `${base}-${data}.json`;}
-async function exportarBilheteManual(){
-  const d=dadosBilheteManual();if(!d.mensagem){alert('Digite a mensagem do bilhete antes de exportar.');return;}
-  const arquivo={tipo:'bilhete-gestao-escolar',versao:1,exportadoEm:new Date().toISOString(),dados:d};
-  const conteudo=JSON.stringify(arquivo,null,2),nome=nomeArquivoBilhete(d);
+function nomeArquivoBilheteWord(d){
+  const base=(d.titulo||'bilhete').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase()||'bilhete';
+  const data=(d.data||new Date().toISOString().slice(0,10)).replace(/\//g,'-');
+  return `${base}-${data}.doc`;
+}
+function codificarDadosBilhete(d){
+  const json=JSON.stringify({tipo:'bilhete-gestao-escolar-word',versao:1,dados:d});
+  return btoa(unescape(encodeURIComponent(json)));
+}
+function decodificarDadosBilhete(valor){
+  return JSON.parse(decodeURIComponent(escape(atob(valor))));
+}
+function tabelaWordBilhete(d){
+  if(!d.usarTabela||!d.tabelaDados)return '';
+  const linhas=d.tabelaDados.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.split(/\s*\/\s*/).map(c=>c.trim()));
+  if(!linhas.length)return '';
+  const colunas=Math.max(...linhas.map(l=>l.length));
+  const normalizar=l=>Array.from({length:colunas},(_,i)=>l[i]||'');
+  return `<table><thead><tr>${normalizar(linhas[0]).map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr></thead><tbody>${linhas.slice(1).map(l=>`<tr>${normalizar(l).map(c=>`<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+async function exportarBilheteWord(){
+  const d=dadosBilheteManual();
+  if(!d.mensagem){alert('Digite a mensagem do bilhete antes de exportar.');return;}
+  if(!validarPendenciasBilhete(d,'exportar'))return;
+  const meta=codificarDadosBilhete(d);
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(d.titulo||'Bilhete')}</title><style>@page{size:A4;margin:2cm}body{font-family:Arial,sans-serif;font-size:12pt;color:#000}.bilhete{border:1.5pt solid #000;padding:12pt;position:relative}.titulo{text-align:center;font-weight:bold;font-size:16pt;text-transform:uppercase;margin-bottom:10pt}.data{text-align:right;margin-bottom:8pt}.dest{font-weight:bold;margin-bottom:8pt}.texto{text-align:justify;line-height:1.35;white-space:pre-wrap}.fecho{text-align:right;white-space:pre-wrap;margin-top:16pt}table{border-collapse:collapse;width:100%;margin-top:12pt}th,td{border:1px solid #000;padding:5pt;text-align:left}th{font-weight:bold}.assinatura{text-align:center;margin-top:28pt;border-top:1px solid #000;padding-top:4pt;width:55%;margin-left:auto;margin-right:auto}</style></head><body><!--GESTAO_ESCOLAR_BILHETE:${meta}--><div class="bilhete">${d.titulo?`<div class="titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="data">${escapeHtml(d.data)}</div>`:''}${d.destinatario?`<div class="dest">${escapeHtml(d.destinatario)},</div>`:''}<div class="texto">${escapeHtml(d.mensagem).replace(/\n/g,'<br>')}</div>${tabelaWordBilhete(d)}${d.fecho?`<div class="fecho">${escapeHtml(d.fecho).replace(/\n/g,'<br>')}</div>`:''}${d.assinatura?'<div class="assinatura">Assinatura do responsável</div>':''}</div></body></html>`;
+  const nome=nomeArquivoBilheteWord(d);
   try{
+    const blob=new Blob(['\ufeff',html],{type:'application/msword'});
     if('showSaveFilePicker' in window){
-      const handle=await window.showSaveFilePicker({suggestedName:nome,types:[{description:'Bilhete do Gestão Escolar',accept:{'application/json':['.json']}}]});
-      const writable=await handle.createWritable();await writable.write(conteudo);await writable.close();
+      const handle=await window.showSaveFilePicker({suggestedName:nome,types:[{description:'Documento do Microsoft Word',accept:{'application/msword':['.doc']}}]});
+      const writable=await handle.createWritable();await writable.write(blob);await writable.close();
     }else{
-      const blob=new Blob([conteudo],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }
-    bilheteExportadoAtual=true;alert('Bilhete exportado. Guarde o arquivo em uma pasta segura do computador.');
-  }catch(e){if(e&&e.name==='AbortError')return;console.error(e);alert('Não foi possível exportar o bilhete.');}
+    bilheteExportadoAtual=true;
+    alert('Bilhete exportado em Word. Guarde o arquivo em uma pasta segura do computador.');
+  }catch(e){if(e&&e.name==='AbortError')return;console.error(e);alert('Não foi possível exportar o bilhete em Word.');}
 }
-function montarBilheteCard(d){const classeEstilo=d.estilo==='economico'?'economico':(d.estilo==='preto-branco'?'preto-branco':'');return `<article class="bilhete-card ${classeEstilo}" style="--bilhete-cor:${d.cor}"><div class="bilhete-cabecalho"><div class="bilhete-logo"><img src="${LOGO_FOLHA_PADRAO}" alt="Governo de Valparaíso"></div><div class="bilhete-cabecalho-texto">${d.titulo?`<div class="bilhete-titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="bilhete-data">${escapeHtml(d.data)}</div>`:''}</div></div>${d.destinatario?`<div class="bilhete-destinatario">${escapeHtml(d.destinatario)},</div>`:''}<div class="bilhete-texto">${escapeHtml(d.mensagem)}</div>${d.fecho?`<div class="bilhete-fecho">${escapeHtml(d.fecho)}</div>`:''}${d.assinatura?`<div class="bilhete-assinatura"><span>Assinatura do responsável</span></div>`:''}</article>`;}
+function importarBilheteWord(){
+  const input=document.getElementById('bilheteImportarWordInput');
+  const arquivo=input?.files?.[0];
+  const status=document.getElementById('bilheteArquivoStatus');
+  if(!arquivo){alert('Selecione um arquivo .doc exportado pelo módulo de Bilhetes.');return;}
+  const leitor=new FileReader();
+  leitor.onload=()=>{
+    try{
+      const conteudo=String(leitor.result||'');
+      const achado=conteudo.match(/GESTAO_ESCOLAR_BILHETE:([A-Za-z0-9+/=]+)/);
+      if(!achado)throw new Error('Arquivo sem dados do módulo');
+      const pacote=decodificarDadosBilhete(achado[1]);
+      if(!pacote||pacote.tipo!=='bilhete-gestao-escolar-word'||!pacote.dados)throw new Error('Formato inválido');
+      aplicarDadosBilhete(pacote.dados);
+      document.querySelector('.navitem[data-tab="bilhetes-manual"]')?.click();
+      if(status){status.style.display='block';status.textContent=`Arquivo “${arquivo.name}” importado com sucesso.`;}
+      setTimeout(()=>document.getElementById('bilheteMensagem')?.focus(),50);
+    }catch(e){console.error(e);if(status){status.style.display='block';status.textContent='Não foi possível importar. Selecione um arquivo .doc criado pela opção “Exportar bilhete atual em Word”.';}alert('Arquivo incompatível. Importe um documento Word exportado por este módulo.');}
+  };
+  leitor.readAsText(arquivo,'utf-8');
+}
+function montarTabelaBilhete(d){
+  if(!d.usarTabela||!d.tabelaDados)return '';
+  const linhas=d.tabelaDados.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.split(/\s*\/\s*/).map(c=>c.trim()));
+  if(!linhas.length)return '';
+  const colunas=Math.max(...linhas.map(l=>l.length));
+  const normalizar=l=>Array.from({length:colunas},(_,i)=>l[i]||'');
+  const cab=normalizar(linhas[0]);
+  const corpo=linhas.slice(1).map(normalizar);
+  return `<div class="bilhete-tabela-wrap"><table class="bilhete-tabela"><thead><tr>${cab.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>${corpo.length?`<tbody>${corpo.map(l=>`<tr>${l.map(c=>`<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody>`:''}</table></div>`;
+}
+function montarBilheteCard(d){const classeEstilo=d.estilo==='economico'?'economico':(d.estilo==='preto-branco'?'preto-branco':'');const opacidade=Math.max(0,Math.min(20,Number(d.transparencia??7)))/100;return `<article class="bilhete-card ${classeEstilo}" style="--bilhete-cor:${d.cor};--bilhete-marca-opacity:${opacidade}"><div class="bilhete-marca-dagua"><img src="${LOGO_FOLHA_PADRAO}" alt=""></div><div class="bilhete-cabecalho"><div class="bilhete-cabecalho-texto">${d.titulo?`<div class="bilhete-titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="bilhete-data">${escapeHtml(d.data)}</div>`:''}</div></div>${d.destinatario?`<div class="bilhete-destinatario">${escapeHtml(d.destinatario)},</div>`:''}<div class="bilhete-texto">${escapeHtml(d.mensagem)}</div>${montarTabelaBilhete(d)}${d.fecho?`<div class="bilhete-fecho">${escapeHtml(d.fecho)}</div>`:''}${d.assinatura?`<div class="bilhete-assinatura"><span>Assinatura do responsável</span></div>`:''}</article>`;}
 function montarFolhaBilhetes(d){const cols=d.quantidade===2?1:2;const rows=Math.ceil(d.quantidade/cols);return `<div class="bilhete-sheet qtd-${d.quantidade}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(0,1fr));">${Array.from({length:d.quantidade},()=>montarBilheteCard(d)).join('')}</div>`;}
 function ajustarBilhetesAoEspaco(root){
   if(!root)return true;
@@ -4635,8 +4963,8 @@ function ajustarBilhetesAoEspaco(root){
   return todosCabem;
 }
 function atualizarPreviewBilhete(validar=true){const a=document.getElementById('bilhetePreviewArea');if(!a)return;const v=document.getElementById('bilhetePreviewEmpty'),d=dadosBilheteManual();if(!d.mensagem){if(validar)alert('Digite a mensagem do bilhete.');a.innerHTML='';v.style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;bilheteHtmlAtual='';return;}bilheteHtmlAtual=montarFolhaBilhetes(d);a.innerHTML=`<div class="bilhete-preview-wrap">${bilheteHtmlAtual}</div>`;requestAnimationFrame(()=>ajustarBilhetesAoEspaco(a));v.style.display='none';document.getElementById('bilheteImprimirBtn').disabled=false;}
-function imprimirBilhetes(){atualizarPreviewBilhete(true);if(!bilheteHtmlAtual)return;const area=document.getElementById('printarea');area.innerHTML=`<div class="print-page">${bilheteHtmlAtual}</div>`;document.body.classList.add('print-bilhetes');requestAnimationFrame(()=>requestAnimationFrame(()=>{const cabe=ajustarBilhetesAoEspaco(area);if(!cabe){document.body.classList.remove('print-bilhetes');alert('O texto é muito grande para a quantidade escolhida. Reduza o texto ou selecione menos bilhetes por folha.');return;}window.print();setTimeout(()=>{document.body.classList.remove('print-bilhetes');if(!bilheteExportadoAtual)alert('Lembrete: exporte este bilhete para uma pasta segura do computador.');},600);}));}
-function limparBilheteManual(){document.getElementById('bilheteTitulo').value='Comunicado';document.getElementById('bilheteDestinatario').value='Senhores pais e/ou responsáveis';['bilheteMensagem','bilheteData'].forEach(id=>document.getElementById(id).value='');document.getElementById('bilheteFecho').value='Atenciosamente,\nCMEI Pró Saber';document.getElementById('bilhetePorFolha').value='4';document.getElementById('bilheteEstilo').value='colorido';document.getElementById('bilheteCor').value='#4FB6E8';document.getElementById('bilheteAssinatura').checked=false;bilheteHtmlAtual='';document.getElementById('bilhetePreviewArea').innerHTML='';document.getElementById('bilhetePreviewEmpty').style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;atualizarAnaliseBilhete();bilheteSalvoAtual=false;bilheteExportadoAtual=false;}
+function imprimirBilhetes(){const d=dadosBilheteManual();if(!validarPendenciasBilhete(d,'imprimir'))return;atualizarPreviewBilhete(true);if(!bilheteHtmlAtual)return;const area=document.getElementById('printarea');area.innerHTML=`<div class="print-page">${bilheteHtmlAtual}</div>`;document.body.classList.add('print-bilhetes');requestAnimationFrame(()=>requestAnimationFrame(()=>{const cabe=ajustarBilhetesAoEspaco(area);if(!cabe){document.body.classList.remove('print-bilhetes');alert('O texto é muito grande para a quantidade escolhida. Reduza o texto ou selecione menos bilhetes por folha.');return;}window.print();setTimeout(()=>{document.body.classList.remove('print-bilhetes');if(!bilheteExportadoAtual)alert('Lembrete: acesse a aba Arquivos e exporte este bilhete em Word para uma pasta segura do computador.');},600);}));}
+function limparBilheteManual(){document.getElementById('bilheteTitulo').value='Comunicado';document.getElementById('bilheteDestinatario').value='Senhores pais e/ou responsáveis';['bilheteMensagem','bilheteData'].forEach(id=>document.getElementById(id).value='');document.getElementById('bilheteFecho').value='Atenciosamente,\nCMEI Pró Saber';document.getElementById('bilhetePorFolha').value='4';document.getElementById('bilheteEstilo').value='colorido';document.getElementById('bilheteCor').value='#4FB6E8';document.getElementById('bilheteTransparencia').value='7';document.getElementById('bilheteTransparenciaValor').textContent='7%';document.getElementById('bilheteAssinatura').checked=false;document.getElementById('bilheteUsarTabela').checked=false;document.getElementById('bilheteTabelaDados').value='';document.getElementById('bilheteTabelaBox').classList.remove('ativo');bilheteHtmlAtual='';document.getElementById('bilhetePreviewArea').innerHTML='';document.getElementById('bilhetePreviewEmpty').style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;atualizarAnaliseBilhete();bilheteExportadoAtual=false;}
 
 /* =========================================================================
    PROFESSOR / KIT DO PROFESSOR
@@ -4833,7 +5161,7 @@ function nomePontilhadoSvg(nome){
   if(!p)return '';
   const txt=escapeHtml(p.charAt(0).toUpperCase()+p.slice(1).toLowerCase());
   const largura=Math.max(420, txt.length*38);
-  return `<svg viewBox="0 0 ${largura} 120" xmlns="http://www.w3.org/2000/svg" aria-label="${txt}"><text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="64" font-weight="700" fill="none" stroke="#444" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round">${txt}</text></svg>`;
+  return `<svg viewBox="0 0 ${largura} 120" xmlns="http://www.w3.org/2000/svg" aria-label="${txt}"><text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="64" font-weight="700" fill="none" stroke="#444" stroke-width="2.2" stroke-dasharray="2.5 7" stroke-linecap="round" stroke-linejoin="round">${txt}</text></svg>`;
 }
 function gerarKitProfessor(){
   if(!professorKitState.alunos.length){alert('Importe uma lista da turma primeiro.');return;}
