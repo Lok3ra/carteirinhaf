@@ -1388,6 +1388,18 @@ Valparaíso de Goiás – GO – Fone: 61 9929 3856 – prosaber.escola@gmail.co
       </div>
 
       <div class="card-block">
+        <h3>Gerar material individual</h3>
+        <p style="font-size:13px;color:#6b6355;margin-top:-4px;">Preencha os dados de um aluno para gerar os materiais sem precisar importar uma turma.</p>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field"><label>Nome do aluno</label><input type="text" id="kitProfessorManualNome" placeholder="Nome completo"></div>
+          <div class="field" style="max-width:210px;"><label>Data de nascimento</label><input type="date" id="kitProfessorManualNascimento"></div>
+          <div class="field" style="max-width:260px;"><label>Turma</label><input type="text" id="kitProfessorManualTurma" placeholder="Ex: Infantil 5 A"></div>
+          <button class="btn" id="kitProfessorManualGerar" type="button" style="margin-bottom:14px;">Gerar material individual</button>
+        </div>
+        <div class="helpbox" style="margin-top:4px;">Os materiais marcados em <b>Escolher materiais</b> serão gerados somente para esse aluno.</div>
+      </div>
+
+      <div class="card-block">
         <h3>1. Importar lista da turma</h3>
         <div class="helpbox"><b>Dica:</b> você também pode utilizar a mesma planilha usada na importação das carteirinhas. O Kit do Professor aproveita os campos <b>Nome</b>, <b>Data de nascimento</b>, <b>Turma</b> e <b>Foto</b> e ignora as demais colunas. Também aceita o relatório <b>Alunos da Turma</b> em CSV, mesmo quando ele contém várias turmas ou continua em várias páginas.</div>
         <input type="file" id="kitProfessorArquivo" accept=".xlsx,.xls,.csv">
@@ -5049,9 +5061,11 @@ function bindProfessorKit(){
   document.getElementById('kitProfessorTurmaSelect').addEventListener('change',e=>{professorKitState.turmaSelecionada=e.target.value;aplicarTurmaProfessorKit();});
   document.getElementById('kitProfessorSomenteAtivos').addEventListener('change',aplicarTurmaProfessorKit);
   document.getElementById('kitProfessorGerar').addEventListener('click',gerarKitProfessor);
+  document.getElementById('kitProfessorManualGerar').addEventListener('click',gerarKitProfessorManual);
   document.getElementById('kitProfessorLimpar').addEventListener('click',()=>{
     professorKitState.alunos=[];professorKitState.turmas={};professorKitState.turmaSelecionada='';input.value='';
     document.getElementById('kitProfessorTurma').value='';document.getElementById('kitProfessorResultado').innerHTML='';
+    ['kitProfessorManualNome','kitProfessorManualNascimento','kitProfessorManualTurma'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('kitProfessorEscolhaTurmaWrap').style.display='none';renderProfessorKit();
   });
 }
@@ -5176,8 +5190,24 @@ function nomePontilhadoSvg(nome){
   const p=primeiroNome(nome);
   if(!p)return '';
   const txt=escapeHtml(p.charAt(0).toUpperCase()+p.slice(1).toLowerCase());
-  const largura=Math.max(420, txt.length*38);
-  return `<svg viewBox="0 0 ${largura} 120" xmlns="http://www.w3.org/2000/svg" aria-label="${txt}"><text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="64" font-weight="700" fill="none" stroke="#444" stroke-width="2.2" stroke-dasharray="2.5 7" stroke-linecap="round" stroke-linejoin="round">${txt}</text></svg>`;
+  const espacamento=10;
+  const largura=Math.max(460, txt.length*52);
+  return `<svg viewBox="0 0 ${largura} 120" xmlns="http://www.w3.org/2000/svg" aria-label="${txt}"><text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="64" font-weight="700" letter-spacing="${espacamento}" fill="none" stroke="#444" stroke-width="2.2" stroke-dasharray="2.5 7" stroke-linecap="round" stroke-linejoin="round">${txt}</text></svg>`;
+}
+function gerarKitProfessorManual(){
+  const nome=document.getElementById('kitProfessorManualNome').value.trim();
+  const nascimentoIso=document.getElementById('kitProfessorManualNascimento').value;
+  const turma=document.getElementById('kitProfessorManualTurma').value.trim();
+  if(!nome){alert('Digite o nome do aluno.');document.getElementById('kitProfessorManualNome').focus();return;}
+  if(!turma){alert('Digite a turma do aluno.');document.getElementById('kitProfessorManualTurma').focus();return;}
+  const nascimento=nascimentoIso?nascimentoIso.split('-').reverse().join('/'):'';
+  professorKitState.alunos=[{numero:'1',nome,nascimento,turma,foto:'',situacao:'CURSANDO'}];
+  professorKitState.turmas={[turma]:[...professorKitState.alunos]};
+  professorKitState.turmaSelecionada=turma;
+  document.getElementById('kitProfessorTurma').value=turma;
+  renderProfessorKit();
+  gerarKitProfessor();
+  document.getElementById('kitProfessorResultado').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function gerarKitProfessor(){
   if(!professorKitState.alunos.length){alert('Importe uma lista da turma primeiro.');return;}
