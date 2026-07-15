@@ -279,7 +279,7 @@
     body.print-ponto #printarea .print-page{page:folha-ponto;width:185mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
     body.print-ponto #printarea .print-page:last-child{page-break-after:auto;break-after:auto;}
     body.print-ponto #printarea .folha{width:185mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
-    body.print-ponto #printarea .folha-assinaturas>div{height:9mm!important;padding-top:1mm!important;}
+    body.print-ponto #printarea .folha-assinaturas>div{height:19mm!important;padding-top:1mm!important;}
     body.print-ponto #printarea .folha-fechamento{padding-top:2mm!important;}
     body.print-ponto #printarea,body.print-ponto #printarea *,body.print-lista #printarea,body.print-lista #printarea *{visibility:visible!important;}
     body.print-lista #printarea .print-page{page:lista-servidores;width:185mm!important;margin:0!important;padding:0!important;}
@@ -299,6 +299,20 @@
     body.print-kit-professor #printarea{display:block!important;position:static!important;width:auto!important;margin:0!important;padding:0!important;}
     body.print-kit-professor #printarea,body.print-kit-professor #printarea *{visibility:visible!important;}
     body.print-kit-professor #printarea .print-page{width:190mm!important;margin:0 auto!important;page-break-after:auto;}
+    body.print-kit-professor .kit-simple-card,
+    body.print-kit-professor .kit-name-card,
+    body.print-kit-professor .kit-name-dotted-card,
+    body.print-kit-professor .kit-print-block,
+    body.print-kit-professor .kit-print-table tr{break-inside:avoid!important;page-break-inside:avoid!important;}
+    body.print-kit-professor .kit-print-title{break-after:avoid!important;page-break-after:avoid!important;}
+    body.print-kit-professor .kit-print-table thead{display:table-header-group;}
+    body.print-kit-professor .kit-dotted-page{width:190mm;height:277mm;box-sizing:border-box;display:flex;flex-direction:column;page-break-after:always;break-after:page;overflow:hidden;}
+    body.print-kit-professor .kit-dotted-page:last-child{page-break-after:auto;break-after:auto;}
+    body.print-kit-professor .kit-dotted-page .kit-print-title{margin:0 0 6mm!important;flex:0 0 auto;}
+    body.print-kit-professor .kit-dotted-page-grid{display:grid;grid-template-columns:1fr;grid-template-rows:repeat(2,minmax(0,1fr));gap:7mm;flex:1;min-height:0;}
+    body.print-kit-professor .kit-dotted-page-grid.one{grid-template-rows:1fr;}
+    body.print-kit-professor .kit-dotted-page .kit-name-dotted-card{min-height:0;height:100%;box-sizing:border-box;padding:6mm;}
+    body.print-kit-professor .kit-dotted-page .kit-name-dotted-card svg{height:100%;max-height:105mm;}
   @media screen{ #printarea{ display:none; } }
 
   /* ---- Folha de Ponto (modelo oficial da planilha) ---- */
@@ -336,7 +350,7 @@
   .folha-modelo-table .obs-label{height:5mm;font-size:8px;font-weight:700;vertical-align:top;}
   .folha-modelo-table .obs-area{height:5mm;}
   .folha-assinaturas{display:grid;grid-template-columns:1fr 1fr 1fr;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;}
-  .folha-assinaturas>div{height:11mm;text-align:center;font-size:9px;font-weight:700;padding-top:1.5px;border-right:1px solid #222;}
+  .folha-assinaturas>div{height:21mm;text-align:center;font-size:9px;font-weight:700;padding-top:1.5px;border-right:1px solid #222;}
   .folha-assinaturas>div:last-child{border-right:none;}
   .folha-fechamento{text-align:center;padding-top:3mm;font-family:'Times New Roman',serif;font-size:10px;}
   .folha-preview-wrap{background:#ddd;padding:10px;overflow-x:auto;}
@@ -428,13 +442,13 @@
 
   /* ---------- Bilhetes / Manual ---------- */
   .bilhete-preview-wrap{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:16px;overflow:auto;}
-  .bilhete-sheet{width:190mm;height:267mm;background:#fff;margin:0 auto;padding:8mm;display:grid;gap:5mm;align-content:stretch;box-sizing:border-box;overflow:hidden;}
+  .bilhete-sheet{width:190mm;height:267mm;background:#fff;margin:0 auto;padding:8mm;display:grid;gap:5mm;align-content:start;align-items:start;box-sizing:border-box;overflow:hidden;}
   .bilhete-card{
     --bilhete-escala:1;
     --bilhete-fonte-msg:12pt;
     border:2px solid var(--bilhete-cor,#4FB6E8);border-radius:10px;
-    padding:1mm 3mm;font-family:Arial,sans-serif;color:#222;
-    position:relative;break-inside:avoid;background:#fff;min-height:0;width:100%;height:100%;overflow:hidden;box-sizing:border-box;
+    padding:2.5mm 3mm;font-family:Arial,sans-serif;color:#222;
+    position:relative;break-inside:avoid;background:#fff;min-height:0;width:100%;height:auto;align-self:start;overflow:hidden;box-sizing:border-box;
     display:flex;flex-direction:column;align-items:stretch;
     gap:calc(2.2mm * var(--bilhete-escala));
   }
@@ -479,7 +493,7 @@
     body.print-bilhetes{margin:0!important;background:#fff!important;}
     body.print-bilhetes #printarea{display:block!important;position:static!important;width:auto!important;margin:0!important;padding:0!important;}
     body.print-bilhetes #printarea,body.print-bilhetes #printarea *{visibility:visible!important;}
-    body.print-bilhetes .bilhete-sheet{width:190mm!important;height:277mm!important;min-height:0!important;padding:5mm!important;margin:0!important;overflow:hidden!important;align-content:stretch!important;}
+    body.print-bilhetes .bilhete-sheet{width:190mm!important;height:277mm!important;min-height:0!important;padding:5mm!important;margin:0!important;overflow:hidden!important;align-content:start!important;align-items:start!important;}
     body.print-bilhetes .bilhete-card{box-shadow:none!important;}
     @page{size:A4 portrait;margin:10mm;}
   }
@@ -4937,27 +4951,29 @@ function montarTabelaBilhete(d){
   return `<div class="bilhete-tabela-wrap"><table class="bilhete-tabela"><thead><tr>${cab.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>${corpo.length?`<tbody>${corpo.map(l=>`<tr>${l.map(c=>`<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody>`:''}</table></div>`;
 }
 function montarBilheteCard(d){const classeEstilo=d.estilo==='economico'?'economico':(d.estilo==='preto-branco'?'preto-branco':'');const opacidade=Math.max(0,Math.min(20,Number(d.transparencia??7)))/100;return `<article class="bilhete-card ${classeEstilo}" style="--bilhete-cor:${d.cor};--bilhete-marca-opacity:${opacidade}"><div class="bilhete-marca-dagua"><img src="${LOGO_FOLHA_PADRAO}" alt=""></div><div class="bilhete-cabecalho"><div class="bilhete-cabecalho-texto">${d.titulo?`<div class="bilhete-titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="bilhete-data">${escapeHtml(d.data)}</div>`:''}</div></div>${d.destinatario?`<div class="bilhete-destinatario">${escapeHtml(d.destinatario)},</div>`:''}<div class="bilhete-texto">${escapeHtml(d.mensagem)}</div>${montarTabelaBilhete(d)}${d.fecho?`<div class="bilhete-fecho">${escapeHtml(d.fecho)}</div>`:''}${d.assinatura?`<div class="bilhete-assinatura"><span>Assinatura do responsável</span></div>`:''}</article>`;}
-function montarFolhaBilhetes(d){const cols=d.quantidade===2?1:2;const rows=Math.ceil(d.quantidade/cols);return `<div class="bilhete-sheet qtd-${d.quantidade}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(0,1fr));">${Array.from({length:d.quantidade},()=>montarBilheteCard(d)).join('')}</div>`;}
+function montarFolhaBilhetes(d){const cols=d.quantidade===2?1:2;return `<div class="bilhete-sheet qtd-${d.quantidade}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-auto-rows:max-content;">${Array.from({length:d.quantidade},()=>montarBilheteCard(d)).join('')}</div>`;}
 function ajustarBilhetesAoEspaco(root){
   if(!root)return true;
   let todosCabem=true;
-  root.querySelectorAll('.bilhete-card').forEach(card=>{
-    const sheet=card.closest('.bilhete-sheet');
-    const qtd=sheet?.classList.contains('qtd-8')?8:sheet?.classList.contains('qtd-6')?6:sheet?.classList.contains('qtd-4')?4:2;
+  root.querySelectorAll('.bilhete-sheet').forEach(sheet=>{
+    const qtd=sheet.classList.contains('qtd-8')?8:sheet.classList.contains('qtd-6')?6:sheet.classList.contains('qtd-4')?4:2;
     const escalaBase=qtd===8?.84:qtd===6?.92:1;
     const fonteInicial=qtd===8?10:qtd===6?10.5:qtd===4?11.5:12;
-    card.style.setProperty('--bilhete-escala',String(escalaBase));
-    card.style.setProperty('--bilhete-fonte-msg',fonteInicial+'pt');
-    const texto=card.querySelector('.bilhete-texto');
+    const cards=[...sheet.querySelectorAll('.bilhete-card')];
+    cards.forEach(card=>{
+      card.style.setProperty('--bilhete-escala',String(escalaBase));
+      card.style.setProperty('--bilhete-fonte-msg',fonteInicial+'pt');
+      card.classList.remove('conteudo-excedido');
+    });
     let fonte=fonteInicial;
     let tentativas=0;
-    while(card.scrollHeight>card.clientHeight+1&&fonte>10&&tentativas<12){
+    while(sheet.scrollHeight>sheet.clientHeight+1&&fonte>10&&tentativas<12){
       fonte=Math.max(10,fonte-.25);
-      card.style.setProperty('--bilhete-fonte-msg',fonte+'pt');
+      cards.forEach(card=>card.style.setProperty('--bilhete-fonte-msg',fonte+'pt'));
       tentativas++;
     }
-    const cabe=card.scrollHeight<=card.clientHeight+1 && (!texto || texto.scrollHeight<=texto.clientHeight+1);
-    card.classList.toggle('conteudo-excedido',!cabe);
+    const cabe=sheet.scrollHeight<=sheet.clientHeight+1;
+    cards.forEach(card=>card.classList.toggle('conteudo-excedido',!cabe));
     if(!cabe)todosCabem=false;
   });
   return todosCabem;
@@ -5188,7 +5204,14 @@ function imprimirMaterialProfessor(tipo){
     html=`<h1 class="kit-print-title">Aniversariantes — ${escapeHtml(turma)}</h1>${meses.map((m,idx)=>{const itens=lista.filter(a=>a.mes===idx+1);return itens.length?`<h2 style="font-family:Arial;font-size:15px;margin:6mm 0 2mm">${m}</h2><table class="kit-print-table"><tbody>${itens.map(a=>`<tr><td style="width:18%">${pad2(a.dia)}/${pad2(a.mes)}</td><td>${escapeHtml(a.nome)}</td></tr>`).join('')}</tbody></table>`:'';}).join('')}`;
   }
   if(tipo==='primeiros-nomes')html=`<h1 class="kit-print-title">Primeiros nomes — ${escapeHtml(turma)}</h1><div class="kit-name-grid">${alunos.map(a=>`<div class="kit-name-card">${nomeComInicialVermelha(a.nome)}</div>`).join('')}</div>`;
-  if(tipo==='primeiro-nome-pontilhado')html=`<h1 class="kit-print-title">Primeiro nome pontilhado — ${escapeHtml(turma)}</h1><div class="kit-name-grid">${alunos.map(a=>`<div class="kit-name-dotted-card">${nomePontilhadoSvg(a.nome)}</div>`).join('')}</div>`;
+  if(tipo==='primeiro-nome-pontilhado'){
+    const paginas=[];
+    for(let i=0;i<alunos.length;i+=2){
+      const grupo=alunos.slice(i,i+2);
+      paginas.push(`<section class="kit-dotted-page"><h1 class="kit-print-title">Primeiro nome pontilhado — ${escapeHtml(turma)}</h1><div class="kit-dotted-page-grid ${grupo.length===1?'one':''}">${grupo.map(a=>`<div class="kit-name-dotted-card">${nomePontilhadoSvg(a.nome)}</div>`).join('')}</div></section>`);
+    }
+    html=paginas.join('');
+  }
   const printarea=document.getElementById('printarea');printarea.innerHTML=`<div class="print-page">${html}</div>`;
   document.body.classList.add('print-kit-professor');
   window.print();setTimeout(()=>document.body.classList.remove('print-kit-professor'),500);
