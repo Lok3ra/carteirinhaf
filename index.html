@@ -3780,7 +3780,7 @@ function handleFileServidores(e){
         const is40 = cargaNumero === 40;
         const is30 = cargaNumero === 30;
         const funcao = cellRaw(row,['funcao','função']).toString().trim();
-        const ehProfessor = normalize(funcao) === 'professor';
+        const ehProfessor = ehFuncaoProfessor(funcao);
         return {
           id: 'srv_' + normalize(nome).replace(/[^a-z0-9]/g,'_'),
           nome,
@@ -3789,7 +3789,7 @@ function handleFileServidores(e){
           turno1: is40 ? 'MATUTINO' : turnoInformado,
           turno2: is40 ? 'VESPERTINO' : '',
           turno3: '',
-          coordenacao: ehProfessor ? cellRaw(row,['coordenacao','coordenação']).toString().trim().toUpperCase().charAt(0) : '',
+          coordenacao: ehProfessor ? normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])) : '',
           matricula: cellRaw(row,['matricula','matrícula']).toString().trim(),
           cargaSemanal: cargaNumero ? String(cargaNumero) + 'H' : '',
           cargaMensal: is40 ? '200H' : (is30 ? '150H' : '')
@@ -3945,7 +3945,7 @@ async function updateServidorPontoField(id, field, value){
     s.turno1 = value;
     s.turno2 = '';
   }else if(field==='coordenacao'){
-    s.coordenacao = normalize(s.funcao)==='professor' ? value : '';
+    s.coordenacao = ehFuncaoProfessor(s.funcao) ? normalizarCoordenacaoLivre(value) : '';
   }else{
     s[field] = value;
   }
@@ -4163,6 +4163,18 @@ function renderDiasLetivosTags(){
 }
 
 /* ---- rule engine ---- */
+function ehFuncaoProfessor(valor){
+  const n=normalize(valor||'');
+  if(n.includes('aee')) return false;
+  return n==='professor' || n==='professora' || n.startsWith('professor ') || n.startsWith('professora ');
+}
+function normalizarCoordenacaoLivre(valor){
+  const n=normalize(String(valor||'').trim());
+  if(!n)return '';
+  if(n==='m' || n.startsWith('matut'))return 'M';
+  if(n==='v' || n.startsWith('vespert'))return 'V';
+  return String(valor||'').trim().toUpperCase().charAt(0);
+}
 function findFeriado(iso, servidor=null){
   const eventos = calendarioEventosNaData(iso, {contexto:'folhaPonto', servidor});
   const evento = eventos.find(e=>{
@@ -4228,9 +4240,9 @@ function celula(servidor, date, turno){
   // Para professores, a coordenação livre ocorre às segundas e sextas-feiras
   // apenas no turno indicado. Feriados, recessos e férias têm prioridade,
   // pois já foram verificados acima.
-  const ehProfessor = normalize(servidor.funcao) === 'professor';
+  const ehProfessor = ehFuncaoProfessor(servidor.funcao);
   const ehSegundaOuSexta = wd === 1 || wd === 5;
-  const coordenacao = String(servidor.coordenacao || '').trim().toUpperCase();
+  const coordenacao = normalizarCoordenacaoLivre(servidor.coordenacao);
   if(ehProfessor && ehSegundaOuSexta){
     if(coordenacao === 'M' && turno === 'manha') return {text:'COORDENAÇÃO LIVRE', tipo:'coordenacao'};
     if(coordenacao === 'V' && turno === 'tarde') return {text:'COORDENAÇÃO LIVRE', tipo:'coordenacao'};
@@ -4334,7 +4346,7 @@ function celulaManual(servidor,date,turno,op){
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
   const regraIndividual=()=>{if(!op.individual)return null;const p=findPeriodoServidor(servidor.id,iso);if(!p)return null;const n=normalize(p.descricao||p.tipo||'');if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};if(n.includes('atestado'))return {text:'ATESTADO MÉDICO',tipo:'afastamento'};if(n.includes('licenca premio'))return {text:'LICENÇA PRÊMIO',tipo:'afastamento'};return {text:String(p.tipo||p.descricao||'').toUpperCase(),tipo:'afastamento'};};
   const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];if(exc.includes(normalize(servidor.cargo||'')))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};return {text:'FERIADO',tipo:'feriado'};};
-  const regraCoord=()=>{if(!op.coordenacao||normalize(servidor.funcao)!=='professor'||!(wd===1||wd===5))return null;const c=String(servidor.coordenacao||'').toUpperCase();if(c==='M'&&turno==='manha')return {text:'COORDENAÇÃO LIVRE',tipo:'coordenacao'};if(c==='V'&&turno==='tarde')return {text:'COORDENAÇÃO LIVRE',tipo:'coordenacao'};return null;};
+  const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);if(c==='M'&&turno==='manha')return {text:'COORDENAÇÃO LIVRE',tipo:'coordenacao'};if(c==='V'&&turno==='tarde')return {text:'COORDENAÇÃO LIVRE',tipo:'coordenacao'};return null;};
   const regras=op.prioridade?[regraCarga,regraFimSemana,regraIndividual,regraCalendario,regraCoord]:[regraCarga,regraIndividual,regraCalendario,regraFimSemana,regraCoord];
   for(const fn of regras){const r=fn();if(r)return r;}
   return {text:'',tipo:'normal'};
