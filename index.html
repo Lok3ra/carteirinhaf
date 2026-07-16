@@ -348,7 +348,7 @@
   .folha-modelo-table .dia-num{text-align:center;font-family:'Times New Roman',serif;font-size:11px;}
   .folha-modelo-table .hora{text-align:center;font-family:'Times New Roman',serif;font-size:12px;letter-spacing:1px;}
   .folha-modelo-table .registro{text-align:center;font-family:'Times New Roman',serif;font-size:12px;font-weight:700;}
-  .folha-modelo-table .registro.feriado,.folha-modelo-table .registro.afastamento,.folha-modelo-table .registro.coordenacao{font-size:9px;line-height:1.05;}
+  .folha-modelo-table .registro.feriado,.folha-modelo-table .registro.afastamento,.folha-modelo-table .registro.coordenacao,.folha-modelo-table .registro.lei-larissa{font-size:9px;line-height:1.05;}
   .folha-modelo-table .obs-label{height:5mm;font-size:8px;font-weight:700;vertical-align:top;}
   .folha-modelo-table .obs-area{height:5mm;}
   .folha-assinaturas{display:grid;grid-template-columns:1fr 1fr 1fr;border-left:1px solid #222;border-right:1px solid #222;border-bottom:1px solid #222;}
@@ -3790,6 +3790,7 @@ function handleFileServidores(e){
           turno2: is40 ? 'VESPERTINO' : '',
           turno3: '',
           coordenacao: ehProfessor ? normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])) : '',
+          leiLarissa: normalize(cellRaw(row,['lei larissa','lei larissa (sim/nao)','lei larissa (sim/não)'])) === 'sim',
           matricula: cellRaw(row,['matricula','matrícula']).toString().trim(),
           cargaSemanal: cargaNumero ? String(cargaNumero) + 'H' : '',
           cargaMensal: is40 ? '200H' : (is30 ? '150H' : '')
@@ -4244,8 +4245,10 @@ function celula(servidor, date, turno){
   const ehSegundaOuSexta = wd === 1 || wd === 5;
   const coordenacao = normalizarCoordenacaoLivre(servidor.coordenacao);
   if(ehProfessor && ehSegundaOuSexta){
-    if(coordenacao === 'M' && turno === 'manha') return {text:'COORDENAÇÃO LIVRE', tipo:'coordenacao'};
-    if(coordenacao === 'V' && turno === 'tarde') return {text:'COORDENAÇÃO LIVRE', tipo:'coordenacao'};
+    const textoCoordenacao = servidor.leiLarissa ? 'LEI LARISSA' : 'COORDENAÇÃO LIVRE';
+    const tipoCoordenacao = servidor.leiLarissa ? 'lei-larissa' : 'coordenacao';
+    if(coordenacao === 'M' && turno === 'manha') return {text:textoCoordenacao, tipo:tipoCoordenacao};
+    if(coordenacao === 'V' && turno === 'tarde') return {text:textoCoordenacao, tipo:tipoCoordenacao};
   }
 
   return {text:'', tipo:'normal'};
@@ -4346,7 +4349,7 @@ function celulaManual(servidor,date,turno,op){
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
   const regraIndividual=()=>{if(!op.individual)return null;const p=findPeriodoServidor(servidor.id,iso);if(!p)return null;const n=normalize(p.descricao||p.tipo||'');if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};if(n.includes('atestado'))return {text:'ATESTADO MÉDICO',tipo:'afastamento'};if(n.includes('licenca premio'))return {text:'LICENÇA PRÊMIO',tipo:'afastamento'};return {text:String(p.tipo||p.descricao||'').toUpperCase(),tipo:'afastamento'};};
   const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];if(exc.includes(normalize(servidor.cargo||'')))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};return {text:'FERIADO',tipo:'feriado'};};
-  const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);if(c==='M'&&turno==='manha')return {text:'COORDENAÇÃO LIVRE',tipo:'coordenacao'};if(c==='V'&&turno==='tarde')return {text:'COORDENAÇÃO LIVRE',tipo:'coordenacao'};return null;};
+  const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE';const tipo=servidor.leiLarissa?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text,tipo};if(c==='V'&&turno==='tarde')return {text,tipo};return null;};
   const regras=op.prioridade?[regraCarga,regraFimSemana,regraIndividual,regraCalendario,regraCoord]:[regraCarga,regraIndividual,regraCalendario,regraFimSemana,regraCoord];
   for(const fn of regras){const r=fn();if(r)return r;}
   return {text:'',tipo:'normal'};
@@ -4502,7 +4505,7 @@ function buildFolhaHtml(servidor, mes, ano, opcoesManual=null){
           <th class="cab-dia">HORA<br>ENTRADA</th><th class="cab-dia cab-servidor">SERVIDOR</th><th class="cab-dia">HORA SAÍDA</th>
         </tr>
         ${linhas}
-        <tr><td class="obs-label">OBS:</td><td colspan="6" class="obs-area"></td></tr>
+        <tr><td class="obs-label">OBS:</td><td colspan="6" class="obs-area">${servidor.leiLarissa ? 'O servidor faz usufruto da Lei nº 786/2009 (Lei Larissa).' : ''}</td></tr>
         <tr><td></td><td colspan="6" class="obs-area"></td></tr>
       </tbody>
     </table>
