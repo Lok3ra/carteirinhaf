@@ -3890,7 +3890,7 @@ function renderServidoresPontoTable(){
   tbody.innerHTML = filtered.map(s=>{
     const carga = parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10) || '';
     const turnoAtual = [s.turno1,s.turno2].filter(Boolean).join(' / ');
-    const ehProfessor = normalize(s.funcao)==='professor';
+    const ehProfessor = ehFuncaoProfessor(s.funcao);
     return `
     <tr>
       <td><b>${escapeHtml(s.nome)}</b></td>
