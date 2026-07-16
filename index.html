@@ -4234,7 +4234,14 @@ function celula(servidor, date, turno){
     const excluidoPeloCalendario = excluidos.includes(cargoServidor);
     if(excluidoPeloCalendario) return {text:'', tipo:'normal'};
     if(descricaoNormalizada.includes('ferias')) return {text:'FÉRIAS', tipo:'feriado'};
-    if(descricaoNormalizada.includes('recesso')) return {text:'RECESSO', tipo:'feriado'};
+    if(descricaoNormalizada.includes('recesso')){
+      // Secretário Escolar e Agente de educação não recebem automaticamente
+      // o recesso escolar do meio do ano. Para esses cargos, o período deve
+      // ser lançado individualmente na aba Feriados & dias letivos.
+      const ehRecessoMeioAno = date.getMonth() === 6;
+      if(ehRecessoMeioAno && isCargoSemRecessoEscolarMeioAno(servidor)) return {text:'', tipo:'normal'};
+      return {text:'RECESSO', tipo:'feriado'};
+    }
     return {text:'FERIADO', tipo:'feriado'};
   }
 
@@ -4348,7 +4355,7 @@ function celulaManual(servidor,date,turno,op){
   const regraCarga=()=>{if(!op.carga||carga!==30)return null;if(turno==='manha'&&turnos.includes('VESPERTINO'))return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&turnos.includes('MATUTINO'))return {text:'****',tipo:'bloqueado'};return null;};
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
   const regraIndividual=()=>{if(!op.individual)return null;const p=findPeriodoServidor(servidor.id,iso);if(!p)return null;const n=normalize(p.descricao||p.tipo||'');if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};if(n.includes('atestado'))return {text:'ATESTADO MÉDICO',tipo:'afastamento'};if(n.includes('licenca premio'))return {text:'LICENÇA PRÊMIO',tipo:'afastamento'};return {text:String(p.tipo||p.descricao||'').toUpperCase(),tipo:'afastamento'};};
-  const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];if(exc.includes(normalize(servidor.cargo||'')))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};return {text:'FERIADO',tipo:'feriado'};};
+  const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];if(exc.includes(normalize(servidor.cargo||'')))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso')){if(date.getMonth()===6&&isCargoSemRecessoEscolarMeioAno(servidor))return null;return {text:'RECESSO',tipo:'feriado'};}return {text:'FERIADO',tipo:'feriado'};};
   const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE';const tipo=servidor.leiLarissa?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text,tipo};if(c==='V'&&turno==='tarde')return {text,tipo};return null;};
   const regras=op.prioridade?[regraCarga,regraFimSemana,regraIndividual,regraCalendario,regraCoord]:[regraCarga,regraIndividual,regraCalendario,regraFimSemana,regraCoord];
   for(const fn of regras){const r=fn();if(r)return r;}
