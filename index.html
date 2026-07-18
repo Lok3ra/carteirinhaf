@@ -1103,7 +1103,7 @@
         <div class="taglist" id="feriadosTagList" style="margin-bottom:22px;"></div>
 
         <h3>Adicionar período para um servidor</h3>
-        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">O período será aplicado somente à folha de ponto do servidor selecionado.</p>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">O período será aplicado somente à folha de ponto do servidor selecionado. Para Secretário Escolar e Agente de Educação, férias ou recesso de meio de ano devem ser adicionados manualmente aqui.</p>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="min-width:260px;"><label>Servidor</label><select id="novoPeriodoServidor"><option value="">— selecione —</option></select></div>
           <div class="field" style="max-width:190px;"><label>Data de início</label><input type="date" id="novoPeriodoInicio"></div>
@@ -4379,8 +4379,8 @@ function findPeriodoServidor(servidorId, iso){
 }
 
 function isCargoSemRecessoEscolarMeioAno(servidor){
-  const cargo=normalize(servidor.cargo||'');
-  return cargo.includes('secretario escolar') || cargo.includes('agente de educacao');
+  const identificacao=normalize([servidor.cargo,servidor.funcao].filter(Boolean).join(' '));
+  return identificacao.includes('secretario escolar') || identificacao.includes('agente de educacao');
 }
 
 async function addDiaLetivo(){
@@ -4486,8 +4486,8 @@ function celula(servidor, date, turno){
     const eventoCentral = feriado.evento || null;
     const excluidos = eventoCentral && eventoCentral.aplicaA && Array.isArray(eventoCentral.aplicaA.excluirCargos)
       ? eventoCentral.aplicaA.excluirCargos.map(normalize) : [];
-    const cargoServidor = normalize(servidor.cargo || '');
-    const excluidoPeloCalendario = excluidos.includes(cargoServidor);
+    const identificadoresServidor = [servidor.cargo,servidor.funcao].map(v=>normalize(v||'')).filter(Boolean);
+    const excluidoPeloCalendario = excluidos.some(cargo=>identificadoresServidor.includes(cargo));
     if(excluidoPeloCalendario) return {text:'', tipo:'normal'};
     if(descricaoNormalizada.includes('ferias')) return {text:'FÉRIAS', tipo:'feriado'};
     if(descricaoNormalizada.includes('recesso')){
@@ -4611,7 +4611,7 @@ function celulaManual(servidor,date,turno,op){
   const regraCarga=()=>{if(!op.carga||carga!==30)return null;if(turno==='manha'&&turnos.includes('VESPERTINO'))return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&turnos.includes('MATUTINO'))return {text:'****',tipo:'bloqueado'};return null;};
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
   const regraIndividual=()=>{if(!op.individual)return null;const p=findPeriodoServidor(servidor.id,iso);if(!p)return null;const n=normalize(p.descricao||p.tipo||'');if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};if(n.includes('atestado'))return {text:'ATESTADO MÉDICO',tipo:'afastamento'};if(n.includes('licenca premio'))return {text:'LICENÇA PRÊMIO',tipo:'afastamento'};return {text:String(p.tipo||p.descricao||'').toUpperCase(),tipo:'afastamento'};};
-  const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];if(exc.includes(normalize(servidor.cargo||'')))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso')){if(date.getMonth()===6&&isCargoSemRecessoEscolarMeioAno(servidor))return null;return {text:'RECESSO',tipo:'feriado'};}return {text:'FERIADO',tipo:'feriado'};};
+  const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];const ids=[servidor.cargo,servidor.funcao].map(v=>normalize(v||'')).filter(Boolean);if(exc.some(c=>ids.includes(c)))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso')){if(date.getMonth()===6&&isCargoSemRecessoEscolarMeioAno(servidor))return null;return {text:'RECESSO',tipo:'feriado'};}return {text:'FERIADO',tipo:'feriado'};};
   const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE';const tipo=servidor.leiLarissa?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text,tipo};if(c==='V'&&turno==='tarde')return {text,tipo};return null;};
   const regras=op.prioridade?[regraCarga,regraFimSemana,regraIndividual,regraCalendario,regraCoord]:[regraCarga,regraIndividual,regraCalendario,regraFimSemana,regraCoord];
   for(const fn of regras){const r=fn();if(r)return r;}
