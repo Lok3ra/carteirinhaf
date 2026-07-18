@@ -4379,8 +4379,18 @@ function findPeriodoServidor(servidorId, iso){
 }
 
 function isCargoSemRecessoEscolarMeioAno(servidor){
-  const identificacao=normalize([servidor.cargo,servidor.funcao].filter(Boolean).join(' '));
-  return identificacao.includes('secretario escolar') || identificacao.includes('agente de educacao');
+  const campos=[servidor.cargo,servidor.funcao]
+    .map(valor=>normalize(valor||'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim())
+    .filter(Boolean);
+  return campos.some(campo=>{
+    // Aceita Secretário, Secretaria, Secretário Escolar e variações com acento.
+    if(/^secretari[oa](?:\s|$)/.test(campo)) return true;
+    // Aceita Agente, Agente Educação, Agente de Educação e Agente Educacional.
+    if(campo==='agente') return true;
+    if(/^agente\s+(?:de\s+)?educa(?:cao|cional)(?:\s|$)/.test(campo)) return true;
+    if(/^ag\s+(?:de\s+)?educa(?:cao|cional)(?:\s|$)/.test(campo)) return true;
+    return false;
+  });
 }
 
 async function addDiaLetivo(){
