@@ -3933,6 +3933,36 @@ async function salvarServidoresGoogleSheets(){
   }
 }
 
+async function salvarServidorGoogleSheets(id){
+  const servidor = pontoState.servidores.find(item=>item.id===id);
+  if(!servidor){ sheetsStatus('Servidor não encontrado.','erro'); return; }
+  const escola = document.getElementById('sheetsEscolaSelect').value;
+  if(!pontoState.sheets.conectado || !escola){
+    sheetsStatus('Conecte o Google Sheets e selecione a escola antes de salvar.','erro');
+    return;
+  }
+  if(!String(servidor.matricula||'').trim()){
+    sheetsStatus(`O servidor ${servidor.nome||''} está sem matrícula. A matrícula é obrigatória para salvar.`,'erro');
+    return;
+  }
+  const repetidos = pontoState.servidores.filter(item=>normalize(item.matricula||'')===normalize(servidor.matricula||''));
+  if(repetidos.length>1){
+    sheetsStatus(`A matrícula ${servidor.matricula} está repetida. Corrija antes de salvar.`,'erro');
+    return;
+  }
+  sheetsStatus(`Salvando ${servidor.nome}...`);
+  try{
+    const data = await sheetsRequest('salvarServidor',{
+      method:'POST', body:{escola,servidor:servidorParaSheets(servidor)}
+    });
+    await window.storage.set('servidor:'+servidor.id, JSON.stringify(servidor));
+    sheetsStatus(`${servidor.nome} foi ${data.criado?'adicionado':'atualizado'} com sucesso na aba “${escola}”.`,'sucesso');
+  }catch(err){
+    console.error(err);
+    sheetsStatus(err.message || `Não foi possível salvar ${servidor.nome}.`,'erro');
+  }
+}
+
 function marcarServidoresAlterados(){
   pontoState.sheets.alterado = true;
   if(pontoState.sheets.conectado) sheetsStatus('Há alterações ainda não salvas no Google Sheets.');
@@ -4140,7 +4170,12 @@ function renderServidoresPontoTable(){
         </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
       </td>
       <td>${escapeHtml(s.matricula||'—')}</td>
-      <td><button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn small" onclick="salvarServidorGoogleSheets('${s.id}')">Salvar</button>
+          <button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button>
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
