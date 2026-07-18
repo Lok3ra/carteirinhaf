@@ -741,12 +741,11 @@
         <span>Folha de Ponto</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="ponto-servidores"><span class="idx">06</span> Servidores</div>
-        <div class="navitem" data-tab="ponto-gerar"><span class="idx">07</span> Gerar folha</div>
-        <div class="navitem" data-tab="ponto-manual"><span class="idx">08</span> Folha manual</div>
-        <div class="navitem" data-tab="ponto-listas"><span class="idx">09</span> Listas</div>
-        <div class="navitem" data-tab="ponto-feriados"><span class="idx">10</span> Calendário e períodos</div>
-        <div class="navitem" data-tab="ponto-importar"><span class="idx">11</span> Importar servidores</div>
+        <div class="navitem" data-tab="ponto-gerar"><span class="idx">06</span> Gerar folha</div>
+        <div class="navitem" data-tab="ponto-servidores"><span class="idx">07</span> Servidores</div>
+        <div class="navitem" data-tab="ponto-feriados"><span class="idx">08</span> Ocorrências</div>
+        <div class="navitem" data-tab="ponto-listas"><span class="idx">09</span> Relatórios</div>
+        <div class="navitem" data-tab="ponto-manual"><span class="idx">10</span> Folha manual</div>
       </div>
     </div>
 
@@ -755,10 +754,10 @@
         <span>Carteirinhas</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="carteirinhas"><span class="idx">12</span> Gerar carteirinhas</div>
-        <div class="navitem" data-tab="alunos"><span class="idx">13</span> Alunos</div>
-        <div class="navitem" data-tab="importar"><span class="idx">14</span> Importar dados</div>
-        <div class="navitem" data-tab="config"><span class="idx">15</span> Configurações</div>
+        <div class="navitem" data-tab="carteirinhas"><span class="idx">11</span> Gerar carteirinhas</div>
+        <div class="navitem" data-tab="alunos"><span class="idx">12</span> Alunos</div>
+        <div class="navitem" data-tab="importar"><span class="idx">13</span> Importar dados</div>
+        <div class="navitem" data-tab="config"><span class="idx">14</span> Configurações</div>
       </div>
     </div>
 
@@ -767,8 +766,8 @@
         <span>Calendário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="calendario-central"><span class="idx">16</span> Calendário</div>
-        <div class="navitem" data-tab="calendario-legendas"><span class="idx">17</span> Legendas</div>
+        <div class="navitem" data-tab="calendario-central"><span class="idx">15</span> Calendário</div>
+        <div class="navitem" data-tab="calendario-legendas"><span class="idx">16</span> Legendas</div>
       </div>
     </div>
 
@@ -777,8 +776,8 @@
         <span>Festa Junina</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="festa-junina"><span class="idx">18</span> Calculadora</div>
-        <div class="navitem" data-tab="festa-config"><span class="idx">19</span> Configuração</div>
+        <div class="navitem" data-tab="festa-junina"><span class="idx">17</span> Calculadora</div>
+        <div class="navitem" data-tab="festa-config"><span class="idx">18</span> Configuração</div>
       </div>
     </div>
 
@@ -998,45 +997,6 @@
       </div>
     </div>
 
-    <!-- ===================== TAB: PONTO / IMPORTAR ===================== -->
-    <div class="panel" id="panel-ponto-importar">
-      <div class="pagehead">
-        <h2>Importar dados</h2>
-        <p>Importe os servidores pela planilha e selecione o ano do calendário usado na geração das folhas de ponto.</p>
-      </div>
-
-      <div class="card-block">
-        <h3>Importar Servidores</h3>
-        <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b> e <b>Matrícula</b>. Para 40h, o sistema define automaticamente 200h mensais e os turnos Matutino e Vespertino. Para 30h, define 150h mensais e utiliza o turno informado. O campo <b>Coordenação</b> é aplicado somente quando a função for <b>Professor</b>.</div>
-        <div class="row" style="align-items:center;margin-bottom:12px;">
-          <button class="btn outline" id="baixarModeloServidoresBtn" type="button">Baixar modelo Excel</button>
-          <span style="font-size:12.5px;color:#6b6355;">Preencha o modelo e importe o arquivo abaixo.</span>
-        </div>
-        <input type="file" id="fileInputServidores" accept=".xlsx,.xls,.xlsm">
-        <p id="importStatusServidores" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
-      </div>
-
-      <div class="card-block" id="importSummaryServidores" style="display:none;">
-        <h3>Resumo da última importação de servidores</h3>
-        <p id="importSummaryTextServidores" style="font-size:13.5px;"></p>
-      </div>
-
-      <div class="card-block">
-        <h3>Calendário da folha de ponto</h3>
-        <div class="helpbox">Selecione o ano. Os feriados, férias escolares, sábados e domingos correspondentes serão utilizados automaticamente na geração da folha de ponto.</div>
-        <div class="row" style="align-items:flex-end;">
-          <div class="field" style="max-width:220px;margin-bottom:0;">
-            <label>Ano do calendário</label>
-            <select id="calendarioAnoSelect">
-              <option value="">— selecione —</option>
-              <option value="2026">2026</option>
-            </select>
-          </div>
-        </div>
-        <p id="calendarioAnoStatus" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
-      </div>
-    </div>
-
     <!-- ===================== TAB: PONTO / SERVIDORES ===================== -->
     <div class="panel" id="panel-ponto-servidores">
       <div class="pagehead">
@@ -1072,15 +1032,47 @@
           <thead><tr><th>Servidor</th><th>Cargo</th><th>Função</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th>Ações</th></tr></thead>
           <tbody id="servidoresPontoTbody"></tbody>
         </table>
-        <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor importado ainda. Vá em "Importar servidores".</div>
+        <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor carregado. Conecte o Google Sheets ou use a importação por Excel abaixo.</div>
       </div>
+
+      <details class="card-block" style="margin-top:14px;">
+        <summary style="cursor:pointer;font-weight:700;color:var(--forest);">Importar servidores por Excel</summary>
+        <div style="margin-top:14px;">
+          <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b>, <b>Matrícula</b> e <b>Lei Larissa (Sim/Não)</b>. A importação é uma alternativa ao Google Sheets para atualizações em massa.</div>
+          <div class="row" style="align-items:center;margin-bottom:12px;">
+            <button class="btn outline" id="baixarModeloServidoresBtn" type="button">Baixar modelo Excel</button>
+            <span style="font-size:12.5px;color:#6b6355;">Preencha o modelo e importe o arquivo abaixo.</span>
+          </div>
+          <input type="file" id="fileInputServidores" accept=".xlsx,.xls,.xlsm">
+          <p id="importStatusServidores" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
+          <div id="importSummaryServidores" style="display:none;margin-top:12px;">
+            <h3>Resumo da última importação</h3>
+            <p id="importSummaryTextServidores" style="font-size:13.5px;"></p>
+          </div>
+        </div>
+      </details>
+
+      <details class="card-block" style="margin-top:14px;">
+        <summary style="cursor:pointer;font-weight:700;color:var(--forest);">Ano do calendário da folha</summary>
+        <div style="margin-top:14px;">
+          <div class="helpbox">O calendário central fornece feriados, férias escolares, recessos e dias letivos usados na geração das folhas.</div>
+          <div class="field" style="max-width:220px;margin-bottom:0;">
+            <label>Ano do calendário</label>
+            <select id="calendarioAnoSelect">
+              <option value="">— selecione —</option>
+              <option value="2026">2026</option>
+            </select>
+          </div>
+          <p id="calendarioAnoStatus" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
+        </div>
+      </details>
     </div>
 
     <!-- ===================== TAB: PONTO / FERIADOS ===================== -->
     <div class="panel" id="panel-ponto-feriados">
       <div class="pagehead">
-        <h2>Feriados, recessos e dias letivos</h2>
-        <p>A lista abaixo vem do calendário anual selecionado. Você também pode adicionar datas extras e marcar sábados ou domingos que sejam excepcionalmente dias letivos.</p>
+        <h2>Ocorrências</h2>
+        <p>Consulte o calendário central e cadastre períodos individuais, férias, recessos, atestados, licenças e dias letivos excepcionais.</p>
       </div>
 
       <div class="card-block">
@@ -1138,6 +1130,13 @@
       <div class="pagehead">
         <h2>Gerar folha de ponto</h2>
         <p>Escolha o mês, o ano e o(s) servidor(es). A impressão sai em A4, uma folha por servidor.</p>
+      </div>
+
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="btn outline" type="button" onclick="abrirAbaPonto('ponto-servidores')">Atualizar servidores</button>
+        <button class="btn outline" type="button" onclick="abrirAbaPonto('ponto-feriados')">Cadastrar ocorrência</button>
+        <button class="btn outline" type="button" onclick="imprimirCapaPonto()">Imprimir capa</button>
+        <button class="btn outline" type="button" onclick="abrirAbaPonto('ponto-manual')">Abrir folha manual</button>
       </div>
 
       <div class="card-block">
@@ -1247,8 +1246,8 @@
     <!-- ===================== TAB: PONTO / LISTAS ===================== -->
     <div class="panel" id="panel-ponto-listas">
       <div class="pagehead">
-        <h2>Lista de servidores</h2>
-        <p>Relação completa dos servidores, organizada em ordem alfabética.</p>
+        <h2>Relatórios</h2>
+        <p>Consulte e imprima a relação de servidores por nome ou função.</p>
       </div>
 
       <div class="row" style="margin-bottom:14px;align-items:flex-end;">
@@ -1261,6 +1260,7 @@
           </select>
         </div>
         <button class="btn outline" id="imprimirListaServidoresBtn">Imprimir lista</button>
+        <button class="btn outline" type="button" onclick="imprimirCapaPonto()">Imprimir capa mensal</button>
       </div>
 
       <div class="card-block" style="padding:0;overflow:hidden;">
@@ -1981,6 +1981,11 @@ function bindNav(){
       if(item.dataset.tab==='bilhetes-manual') atualizarPreviewBilhete(false);
     });
   });
+}
+
+function abrirAbaPonto(tab){
+  const item=document.querySelector(`.navitem[data-tab="${tab}"]`);
+  if(item) item.click();
 }
 
 /* =========================================================================
@@ -4135,7 +4140,7 @@ function renderServidoresPontoTable(){
   empty.style.display = filtered.length ? 'none':'block';
   empty.textContent = pontoState.servidores.length
     ? 'Nenhum servidor encontrado para esta busca.'
-    : 'Nenhum servidor importado ainda. Vá em "Importar servidores".';
+    : 'Nenhum servidor carregado. Conecte o Google Sheets ou abra a importação por Excel nesta tela.';
 
   tbody.innerHTML = filtered.map(s=>{
     const carga = parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10) || '';
@@ -4503,7 +4508,7 @@ function celula(servidor, date, turno){
     if(descricaoNormalizada.includes('recesso')){
       // Secretário Escolar e Agente de educação não recebem automaticamente
       // o recesso escolar do meio do ano. Para esses cargos, o período deve
-      // ser lançado individualmente na aba Feriados & dias letivos.
+      // ser lançado individualmente na aba Ocorrências.
       const ehRecessoMeioAno = date.getMonth() === 6;
       if(ehRecessoMeioAno && isCargoSemRecessoEscolarMeioAno(servidor)) return {text:'', tipo:'normal'};
       return {text:'RECESSO', tipo:'feriado'};
