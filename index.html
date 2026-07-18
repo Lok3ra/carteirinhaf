@@ -1041,7 +1041,28 @@
     <div class="panel" id="panel-ponto-servidores">
       <div class="pagehead">
         <h2>Servidores</h2>
-        <p>Dados importados da planilha. Ajustes aqui valem só para a geração da folha nesta sessão — a fonte oficial continua sendo a planilha.</p>
+        <p>Lista conectada ao Google Sheets. Escolha a escola, atualize os dados e salve as alterações na planilha oficial.</p>
+      </div>
+      <div class="card-block" style="margin-bottom:14px;">
+        <h3 style="margin-bottom:10px;">Banco de dados dos servidores</h3>
+        <div class="grid2">
+          <div class="field">
+            <label>Endereço do conector Google Sheets</label>
+            <input type="url" id="sheetsServidoresEndpoint" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div class="field">
+            <label>Escola</label>
+            <select id="sheetsEscolaSelect" disabled>
+              <option value="">— conecte para escolher —</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="gap:8px;flex-wrap:wrap;">
+          <button class="btn outline" id="conectarSheetsServidoresBtn" type="button">Conectar</button>
+          <button class="btn outline" id="atualizarSheetsServidoresBtn" type="button" disabled>Atualizar lista</button>
+          <button class="btn" id="salvarSheetsServidoresBtn" type="button" disabled>Salvar alterações</button>
+        </div>
+        <p id="sheetsServidoresStatus" style="font-size:13px;color:#6b6355;margin:10px 0 0;"></p>
       </div>
       <div class="row" style="margin-bottom:14px;">
         <input type="text" id="searchServidoresPonto" placeholder="Buscar por nome..." style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;">
@@ -3642,7 +3663,8 @@ const pontoState = {
   periodosServidor: [], // {data, descricao, servidorId, periodoId, inicio, fim}
   config: { orgao:'', escola:'', cidade:'' },
   folhasGeradas: null,
-  calendarioAno: null
+  calendarioAno: null,
+  sheets: { endpoint:'', escola:'', conectado:false, alterado:false }
 };
 
 function daysInMonth(month, year){
@@ -3656,6 +3678,14 @@ function bindPontoTabs(){
   document.getElementById('baixarModeloServidoresBtn').addEventListener('click', baixarModeloServidores);
   document.getElementById('calendarioAnoSelect').addEventListener('change', handleCalendarioAnoChange);
   document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
+  document.getElementById('conectarSheetsServidoresBtn').addEventListener('click', conectarGoogleSheetsServidores);
+  document.getElementById('atualizarSheetsServidoresBtn').addEventListener('click', carregarServidoresGoogleSheets);
+  document.getElementById('salvarSheetsServidoresBtn').addEventListener('click', salvarServidoresGoogleSheets);
+  document.getElementById('sheetsEscolaSelect').addEventListener('change', async (e)=>{
+    pontoState.sheets.escola = e.target.value;
+    localStorage.setItem('pontoSheetsEscola', e.target.value);
+    if(e.target.value) await carregarServidoresGoogleSheets();
+  });
   document.getElementById('addFeriadoBtn').addEventListener('click', addFeriado);
   document.getElementById('addDiaLetivoBtn').addEventListener('click', addDiaLetivo);
   document.getElementById('filtroMesPonto').addEventListener('change', ()=>{
@@ -3709,6 +3739,7 @@ async function loadPontoData(){
   if(calendarioSelect) calendarioSelect.value = pontoState.calendarioAno ? String(pontoState.calendarioAno) : '';
   if(calendarioCentral && calendarioCentral.ano) sincronizarDadosCalendarioNosModulos();
   atualizarStatusCalendario();
+  inicializarGoogleSheetsServidores();
 }
 
 function renderPontoAll(){
@@ -3719,6 +3750,192 @@ function renderPontoAll(){
   refreshServidorPeriodoSelect();
   refreshServidorSelectPonto();
   renderListaServidores();
+}
+
+/* ---- Google Sheets: banco central de servidores ---- */
+const GOOGLE_SHEETS_SERVIDORES_ID = '176jQISJxUMNYSpGG1B5op8gd9MdUj3yfWwR7XgBOm8s';
+
+function sheetsStatus(mensagem, tipo='normal'){
+  const el = document.getElementById('sheetsServidoresStatus');
+  if(!el) return;
+  el.textContent = mensagem;
+  el.style.color = tipo==='erro' ? '#a33b2b' : (tipo==='sucesso' ? '#2f6f4e' : '#6b6355');
+}
+
+function inicializarGoogleSheetsServidores(){
+  const endpoint = localStorage.getItem('pontoSheetsEndpoint') || '';
+  const escola = localStorage.getItem('pontoSheetsEscola') || '';
+  pontoState.sheets.endpoint = endpoint;
+  pontoState.sheets.escola = escola;
+  const input = document.getElementById('sheetsServidoresEndpoint');
+  if(input) input.value = endpoint;
+  if(endpoint) conectarGoogleSheetsServidores();
+  else sheetsStatus('Cole o endereço do aplicativo da Web criado no Google Apps Script para conectar a planilha.');
+}
+
+function endpointSheetsServidores(){
+  const input = document.getElementById('sheetsServidoresEndpoint');
+  return String(input ? input.value : pontoState.sheets.endpoint).trim();
+}
+
+async function sheetsRequest(action, options={}){
+  const endpoint = endpointSheetsServidores();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(endpoint)){
+    throw new Error('Informe um endereço válido do aplicativo da Web do Google Apps Script.');
+  }
+  if(options.method==='POST'){
+    const response = await fetch(endpoint, {
+      method:'POST',
+      redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action, planilhaId:GOOGLE_SHEETS_SERVIDORES_ID, ...options.body})
+    });
+    if(!response.ok) throw new Error('Falha de comunicação com o Google Sheets.');
+    const data = await response.json();
+    if(data.ok===false) throw new Error(data.erro || 'O Google Sheets recusou a operação.');
+    return data;
+  }
+  const url = new URL(endpoint);
+  url.searchParams.set('action', action);
+  url.searchParams.set('planilhaId', GOOGLE_SHEETS_SERVIDORES_ID);
+  Object.entries(options.params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
+  url.searchParams.set('_', Date.now());
+  const response = await fetch(url.toString(), {redirect:'follow', cache:'no-store'});
+  if(!response.ok) throw new Error('Falha de comunicação com o Google Sheets.');
+  const data = await response.json();
+  if(data.ok===false) throw new Error(data.erro || 'O Google Sheets recusou a operação.');
+  return data;
+}
+
+async function conectarGoogleSheetsServidores(){
+  const endpoint = endpointSheetsServidores();
+  pontoState.sheets.endpoint = endpoint;
+  sheetsStatus('Conectando à planilha...');
+  try{
+    const data = await sheetsRequest('listarEscolas');
+    const escolas = Array.isArray(data.escolas) ? data.escolas : [];
+    if(!escolas.length) throw new Error('Nenhuma aba de escola foi encontrada na planilha.');
+    localStorage.setItem('pontoSheetsEndpoint', endpoint);
+    const select = document.getElementById('sheetsEscolaSelect');
+    const anterior = pontoState.sheets.escola || localStorage.getItem('pontoSheetsEscola') || '';
+    select.innerHTML = '<option value="">— selecione a escola —</option>' + escolas.map(e=>{
+      const nome = typeof e==='string' ? e : e.nome;
+      const aba = typeof e==='string' ? e : (e.aba||e.nome);
+      return `<option value="${escapeHtml(aba)}">${escapeHtml(nome)}</option>`;
+    }).join('');
+    select.disabled = false;
+    pontoState.sheets.conectado = true;
+    document.getElementById('atualizarSheetsServidoresBtn').disabled = false;
+    document.getElementById('salvarSheetsServidoresBtn').disabled = false;
+    if(anterior && [...select.options].some(o=>o.value===anterior)) select.value = anterior;
+    else if(escolas.length===1) select.selectedIndex = 1;
+    pontoState.sheets.escola = select.value;
+    localStorage.setItem('pontoSheetsEscola', select.value);
+    sheetsStatus('Conectado. Selecione uma escola para carregar os servidores.', 'sucesso');
+    if(select.value) await carregarServidoresGoogleSheets();
+  }catch(err){
+    console.error(err);
+    pontoState.sheets.conectado = false;
+    sheetsStatus(err.message || 'Não foi possível conectar à planilha.', 'erro');
+  }
+}
+
+function idServidorPorMatricula(matricula, nome=''){
+  const base = String(matricula||'').trim() || normalize(nome).replace(/[^a-z0-9]/g,'_');
+  return 'srv_' + base.replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+
+function normalizarServidorSheets(item){
+  const cargaNumero = parseInt(String(item.cargaSemanal||item.cargaHorariaSemanal||'').replace(/\D/g,''),10) || 0;
+  const is40 = cargaNumero===40;
+  const is30 = cargaNumero===30;
+  const turno = String(item.turno||item.turno1||'').trim().toUpperCase();
+  const funcao = String(item.funcao||'').trim();
+  const matricula = String(item.matricula||'').trim();
+  return {
+    id:idServidorPorMatricula(matricula,item.nome),
+    nome:String(item.nome||item.servidor||'').trim(),
+    cargo:String(item.cargo||'').trim().toUpperCase(),
+    funcao,
+    turno1:is40 ? 'MATUTINO' : (turno.includes('VESPERTINO') ? 'VESPERTINO' : 'MATUTINO'),
+    turno2:is40 ? 'VESPERTINO' : '',
+    turno3:'',
+    coordenacao:ehFuncaoProfessor(funcao) ? normalizarCoordenacaoLivre(item.coordenacao||'') : '',
+    leiLarissa:item.leiLarissa===true || normalize(item.leiLarissa||'')==='sim',
+    matricula,
+    cargaSemanal:cargaNumero ? cargaNumero+'H' : '',
+    cargaMensal:String(item.cargaMensal||item.cargaHorariaMensal||'').trim() || (is40?'200H':(is30?'150H':''))
+  };
+}
+
+async function substituirCacheServidores(lista){
+  try{
+    const antigas = await window.storage.list('servidor:');
+    if(antigas && antigas.keys) for(const chave of antigas.keys) await window.storage.delete(chave);
+    for(const servidor of lista) await window.storage.set('servidor:'+servidor.id, JSON.stringify(servidor));
+  }catch(err){ console.warn('Não foi possível atualizar o cache local de servidores.', err); }
+}
+
+async function carregarServidoresGoogleSheets(){
+  const escola = document.getElementById('sheetsEscolaSelect').value;
+  if(!escola){ sheetsStatus('Selecione a escola.', 'erro'); return; }
+  sheetsStatus('Carregando servidores de '+escola+'...');
+  try{
+    const data = await sheetsRequest('listarServidores',{params:{escola}});
+    const servidores = (data.servidores||[]).map(normalizarServidorSheets).filter(s=>s.nome);
+    pontoState.servidores = servidores.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+    pontoState.sheets.escola = escola;
+    pontoState.sheets.alterado = false;
+    localStorage.setItem('pontoSheetsEscola', escola);
+    await substituirCacheServidores(pontoState.servidores);
+    renderPontoAll();
+    sheetsStatus(`${servidores.length} servidor(es) carregado(s) da aba “${escola}”.`, 'sucesso');
+  }catch(err){
+    console.error(err);
+    sheetsStatus(err.message || 'Não foi possível carregar os servidores.', 'erro');
+  }
+}
+
+function servidorParaSheets(s){
+  const carga = parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10) || '';
+  return {
+    nome:s.nome||'', cargo:s.cargo||'', funcao:s.funcao||'',
+    cargaSemanal:carga, turno:carga===40?'MATUTINO E VESPERTINO':(s.turno1||''),
+    coordenacao:s.coordenacao||'', matricula:String(s.matricula||'').trim(),
+    cargaMensal:parseInt(String(s.cargaMensal||'').replace(/\D/g,''),10)||'',
+    leiLarissa:s.leiLarissa?'Sim':'Não'
+  };
+}
+
+function validarMatriculasServidores(){
+  const ausentes = pontoState.servidores.filter(s=>!String(s.matricula||'').trim());
+  const vistas = new Set(), duplicadas = new Set();
+  pontoState.servidores.forEach(s=>{ const m=normalize(s.matricula||''); if(m && vistas.has(m)) duplicadas.add(s.matricula); vistas.add(m); });
+  if(ausentes.length) return `${ausentes.length} servidor(es) estão sem matrícula. Preencha a matrícula antes de salvar.`;
+  if(duplicadas.size) return 'Existem matrículas repetidas: '+[...duplicadas].join(', ')+'.';
+  return '';
+}
+
+async function salvarServidoresGoogleSheets(){
+  const escola = document.getElementById('sheetsEscolaSelect').value;
+  if(!escola){ sheetsStatus('Selecione a escola.', 'erro'); return; }
+  const erro = validarMatriculasServidores();
+  if(erro){ sheetsStatus(erro,'erro'); return; }
+  if(!confirm(`Salvar ${pontoState.servidores.length} servidor(es) na aba “${escola}”? A lista dessa aba será atualizada pela matrícula.`)) return;
+  sheetsStatus('Salvando alterações no Google Sheets...');
+  try{
+    const data = await sheetsRequest('salvarServidores',{method:'POST',body:{escola,servidores:pontoState.servidores.map(servidorParaSheets)}});
+    pontoState.sheets.alterado = false;
+    sheetsStatus(`${data.total||pontoState.servidores.length} servidor(es) salvos com sucesso na aba “${escola}”.`,'sucesso');
+  }catch(err){
+    console.error(err);
+    sheetsStatus(err.message || 'Não foi possível salvar os servidores.','erro');
+  }
+}
+
+function marcarServidoresAlterados(){
+  pontoState.sheets.alterado = true;
+  if(pontoState.sheets.conectado) sheetsStatus('Há alterações ainda não salvas no Google Sheets.');
 }
 
 /* ---- importar servidores + feriados ---- */
@@ -3781,8 +3998,9 @@ function handleFileServidores(e){
         const is30 = cargaNumero === 30;
         const funcao = cellRaw(row,['funcao','função']).toString().trim();
         const ehProfessor = ehFuncaoProfessor(funcao);
+        const matricula = cellRaw(row,['matricula','matrícula']).toString().trim();
         return {
-          id: 'srv_' + normalize(nome).replace(/[^a-z0-9]/g,'_'),
+          id: idServidorPorMatricula(matricula,nome),
           nome,
           cargo: cellRaw(row,['cargo']).toString().trim().toUpperCase(),
           funcao,
@@ -3791,7 +4009,7 @@ function handleFileServidores(e){
           turno3: '',
           coordenacao: ehProfessor ? normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])) : '',
           leiLarissa: normalize(cellRaw(row,['lei larissa','lei larissa (sim/nao)','lei larissa (sim/não)'])) === 'sim',
-          matricula: cellRaw(row,['matricula','matrícula']).toString().trim(),
+          matricula,
           cargaSemanal: cargaNumero ? String(cargaNumero) + 'H' : '',
           cargaMensal: is40 ? '200H' : (is30 ? '150H' : '')
         };
@@ -3803,6 +4021,7 @@ function handleFileServidores(e){
 
       await loadPontoData();
       renderPontoAll();
+      marcarServidoresAlterados();
 
       status.textContent = '';
       const summary = document.getElementById('importSummaryServidores');
@@ -3952,6 +4171,7 @@ async function updateServidorPontoField(id, field, value){
   }
 
   await window.storage.set('servidor:'+id, JSON.stringify(s));
+  marcarServidoresAlterados();
   renderServidoresPontoTable();
   refreshServidorSelectPonto();
 }
@@ -3960,6 +4180,7 @@ async function deleteServidorPonto(id){
   if(!confirm('Remover este servidor da lista (apenas nesta sessão — ele volta ao reimportar a planilha)?')) return;
   try{ await window.storage.delete('servidor:'+id); }catch(e){}
   pontoState.servidores = pontoState.servidores.filter(s=>s.id!==id);
+  marcarServidoresAlterados();
   renderServidoresPontoTable();
   refreshServidorSelectPonto();
 }
