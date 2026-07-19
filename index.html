@@ -742,10 +742,11 @@
       </button>
       <div class="navsubmenu">
         <div class="navitem" data-tab="ponto-gerar"><span class="idx">06</span> Gerar folha</div>
-        <div class="navitem" data-tab="ponto-servidores"><span class="idx">07</span> Servidores</div>
-        <div class="navitem" data-tab="ponto-feriados"><span class="idx">08</span> Ocorrências</div>
-        <div class="navitem" data-tab="ponto-listas"><span class="idx">09</span> Relatórios</div>
-        <div class="navitem" data-tab="ponto-manual"><span class="idx">10</span> Folha manual</div>
+        <div class="navitem" data-tab="ponto-manual"><span class="idx">07</span> Manual</div>
+        <div class="navitem" data-tab="ponto-listas"><span class="idx">08</span> Listas</div>
+        <div class="navitem" data-tab="ponto-servidores"><span class="idx">09</span> Servidores</div>
+        <div class="navitem" data-tab="ponto-importar"><span class="idx">10</span> Importar servidores</div>
+        <div class="navitem" data-tab="ponto-feriados"><span class="idx">11</span> Feriados & dias letivos</div>
       </div>
     </div>
 
@@ -754,10 +755,10 @@
         <span>Carteirinhas</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="carteirinhas"><span class="idx">11</span> Gerar carteirinhas</div>
-        <div class="navitem" data-tab="alunos"><span class="idx">12</span> Alunos</div>
-        <div class="navitem" data-tab="importar"><span class="idx">13</span> Importar dados</div>
-        <div class="navitem" data-tab="config"><span class="idx">14</span> Configurações</div>
+        <div class="navitem" data-tab="carteirinhas"><span class="idx">12</span> Gerar carteirinhas</div>
+        <div class="navitem" data-tab="alunos"><span class="idx">13</span> Alunos</div>
+        <div class="navitem" data-tab="importar"><span class="idx">14</span> Importar dados</div>
+        <div class="navitem" data-tab="config"><span class="idx">15</span> Configurações</div>
       </div>
     </div>
 
@@ -766,8 +767,8 @@
         <span>Calendário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="calendario-central"><span class="idx">15</span> Calendário</div>
-        <div class="navitem" data-tab="calendario-legendas"><span class="idx">16</span> Legendas</div>
+        <div class="navitem" data-tab="calendario-central"><span class="idx">16</span> Calendário</div>
+        <div class="navitem" data-tab="calendario-legendas"><span class="idx">17</span> Legendas</div>
       </div>
     </div>
 
@@ -776,8 +777,8 @@
         <span>Festa Junina</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="festa-junina"><span class="idx">17</span> Calculadora</div>
-        <div class="navitem" data-tab="festa-config"><span class="idx">18</span> Configuração</div>
+        <div class="navitem" data-tab="festa-junina"><span class="idx">18</span> Calculadora</div>
+        <div class="navitem" data-tab="festa-config"><span class="idx">19</span> Configuração</div>
       </div>
     </div>
 
@@ -997,32 +998,69 @@
       </div>
     </div>
 
+    <!-- ===================== TAB: PONTO / IMPORTAR ===================== -->
+    <div class="panel" id="panel-ponto-importar">
+      <div class="pagehead">
+        <h2>Importar dados</h2>
+        <p>Importe os servidores pela planilha e selecione o ano do calendário usado na geração das folhas de ponto.</p>
+      </div>
+
+      <div class="card-block">
+        <h3>Importar Servidores</h3>
+        <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b> e <b>Matrícula</b>. Para 40h, o sistema define automaticamente 200h mensais e os turnos Matutino e Vespertino. Para 30h, define 150h mensais e utiliza o turno informado. O campo <b>Coordenação</b> é aplicado somente quando a função for <b>Professor</b>.</div>
+        <div class="row" style="align-items:center;margin-bottom:12px;">
+          <button class="btn outline" id="baixarModeloServidoresBtn" type="button">Baixar modelo Excel</button>
+          <span style="font-size:12.5px;color:#6b6355;">Preencha o modelo e importe o arquivo abaixo.</span>
+        </div>
+        <input type="file" id="fileInputServidores" accept=".xlsx,.xls,.xlsm">
+        <p id="importStatusServidores" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
+      </div>
+
+      <div class="card-block" id="importSummaryServidores" style="display:none;">
+        <h3>Resumo da última importação de servidores</h3>
+        <p id="importSummaryTextServidores" style="font-size:13.5px;"></p>
+      </div>
+
+      <div class="card-block">
+        <h3>Calendário da folha de ponto</h3>
+        <div class="helpbox">Selecione o ano. Os feriados, férias escolares, sábados e domingos correspondentes serão utilizados automaticamente na geração da folha de ponto.</div>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:220px;margin-bottom:0;">
+            <label>Ano do calendário</label>
+            <select id="calendarioAnoSelect">
+              <option value="">— selecione —</option>
+              <option value="2026">2026</option>
+            </select>
+          </div>
+        </div>
+        <p id="calendarioAnoStatus" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
+      </div>
+    </div>
+
     <!-- ===================== TAB: PONTO / SERVIDORES ===================== -->
     <div class="panel" id="panel-ponto-servidores">
       <div class="pagehead">
         <h2>Servidores</h2>
-        <p>Lista conectada ao Google Sheets. Escolha a escola, atualize os dados e salve as alterações na planilha oficial.</p>
+        <p>Dados importados da planilha. Ajustes aqui valem só para a geração da folha nesta sessão — a fonte oficial continua sendo a planilha.</p>
       </div>
       <div class="card-block" style="margin-bottom:14px;">
-        <h3 style="margin-bottom:10px;">Banco de dados dos servidores</h3>
-        <div class="grid2">
-          <div class="field">
-            <label>Endereço do conector Google Sheets</label>
-            <input type="url" id="sheetsServidoresEndpoint" placeholder="https://script.google.com/macros/s/.../exec">
+        <h3 style="margin-bottom:6px;">Banco de servidores da escola</h3>
+        <p style="font-size:13px;color:#6b6355;margin:0 0 12px;">Cada escola pode usar este mesmo sistema e conectar somente o próprio Google Sheets. A configuração fica salva apenas neste navegador.</p>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="flex:1;min-width:280px;margin-bottom:0;">
+            <label>Link da planilha ou do Apps Script</label>
+            <input type="url" id="sheetsServidorUrl" placeholder="Cole aqui o link exclusivo desta escola">
           </div>
-          <div class="field">
-            <label>Escola</label>
-            <select id="sheetsEscolaSelect" disabled>
-              <option value="">— conecte para escolher —</option>
-            </select>
+          <div class="field" style="min-width:190px;margin-bottom:0;">
+            <label>Nome da aba</label>
+            <input type="text" id="sheetsServidorAba" value="Servidores" placeholder="Servidores">
           </div>
-        </div>
-        <div class="row" style="gap:8px;flex-wrap:wrap;">
           <button class="btn outline" id="conectarSheetsServidoresBtn" type="button">Conectar</button>
-          <button class="btn outline" id="atualizarSheetsServidoresBtn" type="button" disabled>Atualizar lista</button>
-          <button class="btn" id="salvarSheetsServidoresBtn" type="button" disabled>Salvar alterações</button>
+          <button class="btn outline" id="carregarSheetsServidoresBtn" type="button">Atualizar lista</button>
+          <button class="btn" id="salvarSheetsServidoresBtn" type="button">Salvar alterações</button>
+          <button class="btn small danger" id="desconectarSheetsServidoresBtn" type="button">Desconectar</button>
         </div>
-        <p id="sheetsServidoresStatus" style="font-size:13px;color:#6b6355;margin:10px 0 0;"></p>
+        <p id="sheetsServidorStatus" style="font-size:13px;color:#6b6355;margin:10px 0 0;"></p>
       </div>
       <div class="row" style="margin-bottom:14px;">
         <input type="text" id="searchServidoresPonto" placeholder="Buscar por nome..." style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;">
@@ -1032,47 +1070,15 @@
           <thead><tr><th>Servidor</th><th>Cargo</th><th>Função</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th>Ações</th></tr></thead>
           <tbody id="servidoresPontoTbody"></tbody>
         </table>
-        <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor carregado. Conecte o Google Sheets ou use a importação por Excel abaixo.</div>
+        <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor importado ainda. Vá em "Importar servidores".</div>
       </div>
-
-      <details class="card-block" style="margin-top:14px;">
-        <summary style="cursor:pointer;font-weight:700;color:var(--forest);">Importar servidores por Excel</summary>
-        <div style="margin-top:14px;">
-          <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b>, <b>Matrícula</b> e <b>Lei Larissa (Sim/Não)</b>. A importação é uma alternativa ao Google Sheets para atualizações em massa.</div>
-          <div class="row" style="align-items:center;margin-bottom:12px;">
-            <button class="btn outline" id="baixarModeloServidoresBtn" type="button">Baixar modelo Excel</button>
-            <span style="font-size:12.5px;color:#6b6355;">Preencha o modelo e importe o arquivo abaixo.</span>
-          </div>
-          <input type="file" id="fileInputServidores" accept=".xlsx,.xls,.xlsm">
-          <p id="importStatusServidores" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
-          <div id="importSummaryServidores" style="display:none;margin-top:12px;">
-            <h3>Resumo da última importação</h3>
-            <p id="importSummaryTextServidores" style="font-size:13.5px;"></p>
-          </div>
-        </div>
-      </details>
-
-      <details class="card-block" style="margin-top:14px;">
-        <summary style="cursor:pointer;font-weight:700;color:var(--forest);">Ano do calendário da folha</summary>
-        <div style="margin-top:14px;">
-          <div class="helpbox">O calendário central fornece feriados, férias escolares, recessos e dias letivos usados na geração das folhas.</div>
-          <div class="field" style="max-width:220px;margin-bottom:0;">
-            <label>Ano do calendário</label>
-            <select id="calendarioAnoSelect">
-              <option value="">— selecione —</option>
-              <option value="2026">2026</option>
-            </select>
-          </div>
-          <p id="calendarioAnoStatus" style="font-size:13px;color:#6b6355;margin-top:10px;"></p>
-        </div>
-      </details>
     </div>
 
     <!-- ===================== TAB: PONTO / FERIADOS ===================== -->
     <div class="panel" id="panel-ponto-feriados">
       <div class="pagehead">
-        <h2>Ocorrências</h2>
-        <p>Consulte o calendário central e cadastre períodos individuais, férias, recessos, atestados, licenças e dias letivos excepcionais.</p>
+        <h2>Feriados, recessos e dias letivos</h2>
+        <p>A lista abaixo vem do calendário anual selecionado. Você também pode adicionar datas extras e marcar sábados ou domingos que sejam excepcionalmente dias letivos.</p>
       </div>
 
       <div class="card-block">
@@ -1095,7 +1101,7 @@
         <div class="taglist" id="feriadosTagList" style="margin-bottom:22px;"></div>
 
         <h3>Adicionar período para um servidor</h3>
-        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">O período será aplicado somente à folha de ponto do servidor selecionado. Para Secretário Escolar e Agente de Educação, férias ou recesso de meio de ano devem ser adicionados manualmente aqui.</p>
+        <p style="font-size:13px;color:#6b6355;margin-top:-6px;">O período será aplicado somente à folha de ponto do servidor selecionado.</p>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="min-width:260px;"><label>Servidor</label><select id="novoPeriodoServidor"><option value="">— selecione —</option></select></div>
           <div class="field" style="max-width:190px;"><label>Data de início</label><input type="date" id="novoPeriodoInicio"></div>
@@ -1130,13 +1136,6 @@
       <div class="pagehead">
         <h2>Gerar folha de ponto</h2>
         <p>Escolha o mês, o ano e o(s) servidor(es). A impressão sai em A4, uma folha por servidor.</p>
-      </div>
-
-      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-        <button class="btn outline" type="button" onclick="abrirAbaPonto('ponto-servidores')">Atualizar servidores</button>
-        <button class="btn outline" type="button" onclick="abrirAbaPonto('ponto-feriados')">Cadastrar ocorrência</button>
-        <button class="btn outline" type="button" onclick="imprimirCapaPonto()">Imprimir capa</button>
-        <button class="btn outline" type="button" onclick="abrirAbaPonto('ponto-manual')">Abrir folha manual</button>
       </div>
 
       <div class="card-block">
@@ -1246,8 +1245,8 @@
     <!-- ===================== TAB: PONTO / LISTAS ===================== -->
     <div class="panel" id="panel-ponto-listas">
       <div class="pagehead">
-        <h2>Relatórios</h2>
-        <p>Consulte e imprima a relação de servidores por nome ou função.</p>
+        <h2>Lista de servidores</h2>
+        <p>Relação completa dos servidores, organizada em ordem alfabética.</p>
       </div>
 
       <div class="row" style="margin-bottom:14px;align-items:flex-end;">
@@ -1260,7 +1259,6 @@
           </select>
         </div>
         <button class="btn outline" id="imprimirListaServidoresBtn">Imprimir lista</button>
-        <button class="btn outline" type="button" onclick="imprimirCapaPonto()">Imprimir capa mensal</button>
       </div>
 
       <div class="card-block" style="padding:0;overflow:hidden;">
@@ -1981,11 +1979,6 @@ function bindNav(){
       if(item.dataset.tab==='bilhetes-manual') atualizarPreviewBilhete(false);
     });
   });
-}
-
-function abrirAbaPonto(tab){
-  const item=document.querySelector(`.navitem[data-tab="${tab}"]`);
-  if(item) item.click();
 }
 
 /* =========================================================================
@@ -3669,7 +3662,7 @@ const pontoState = {
   config: { orgao:'', escola:'', cidade:'' },
   folhasGeradas: null,
   calendarioAno: null,
-  sheets: { endpoint:'', escola:'', conectado:false, alterado:false }
+  sheets: { url:'', aba:'Servidores', conectado:false, modo:'' }
 };
 
 function daysInMonth(month, year){
@@ -3683,14 +3676,10 @@ function bindPontoTabs(){
   document.getElementById('baixarModeloServidoresBtn').addEventListener('click', baixarModeloServidores);
   document.getElementById('calendarioAnoSelect').addEventListener('change', handleCalendarioAnoChange);
   document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
-  document.getElementById('conectarSheetsServidoresBtn').addEventListener('click', conectarGoogleSheetsServidores);
-  document.getElementById('atualizarSheetsServidoresBtn').addEventListener('click', carregarServidoresGoogleSheets);
-  document.getElementById('salvarSheetsServidoresBtn').addEventListener('click', salvarServidoresGoogleSheets);
-  document.getElementById('sheetsEscolaSelect').addEventListener('change', async (e)=>{
-    pontoState.sheets.escola = e.target.value;
-    localStorage.setItem('pontoSheetsEscola', e.target.value);
-    if(e.target.value) await carregarServidoresGoogleSheets();
-  });
+  document.getElementById('conectarSheetsServidoresBtn').addEventListener('click', conectarSheetsServidores);
+  document.getElementById('carregarSheetsServidoresBtn').addEventListener('click', carregarServidoresDoSheets);
+  document.getElementById('salvarSheetsServidoresBtn').addEventListener('click', salvarServidoresNoSheets);
+  document.getElementById('desconectarSheetsServidoresBtn').addEventListener('click', desconectarSheetsServidores);
   document.getElementById('addFeriadoBtn').addEventListener('click', addFeriado);
   document.getElementById('addDiaLetivoBtn').addEventListener('click', addDiaLetivo);
   document.getElementById('filtroMesPonto').addEventListener('change', ()=>{
@@ -3733,6 +3722,10 @@ async function loadPontoData(){
     const r = await window.storage.get('pontoCalendarioAno');
     pontoState.calendarioAno = parseInt(r.value, 10) || null;
   }catch(e){}
+  try{
+    const r = await window.storage.get('pontoSheetsServidores');
+    pontoState.sheets = Object.assign({url:'',aba:'Servidores',conectado:false,modo:''}, JSON.parse(r.value));
+  }catch(e){}
 
   pontoState.servidores.sort((a,b)=>a.nome.localeCompare(b.nome));
   pontoState.periodosServidor.sort((a,b)=>a.data.localeCompare(b.data));
@@ -3740,11 +3733,15 @@ async function loadPontoData(){
   document.getElementById('cfgOrgaoPonto').value = pontoState.config.orgao || '';
   document.getElementById('cfgEscolaPonto').value = pontoState.config.escola || '';
   document.getElementById('cfgCidadePonto').value = pontoState.config.cidade || '';
+  const sheetsUrlEl = document.getElementById('sheetsServidorUrl');
+  const sheetsAbaEl = document.getElementById('sheetsServidorAba');
+  if(sheetsUrlEl) sheetsUrlEl.value = pontoState.sheets.url || '';
+  if(sheetsAbaEl) sheetsAbaEl.value = pontoState.sheets.aba || 'Servidores';
+  atualizarStatusSheetsServidores();
   const calendarioSelect = document.getElementById('calendarioAnoSelect');
   if(calendarioSelect) calendarioSelect.value = pontoState.calendarioAno ? String(pontoState.calendarioAno) : '';
   if(calendarioCentral && calendarioCentral.ano) sincronizarDadosCalendarioNosModulos();
   atualizarStatusCalendario();
-  inicializarGoogleSheetsServidores();
 }
 
 function renderPontoAll(){
@@ -3755,222 +3752,6 @@ function renderPontoAll(){
   refreshServidorPeriodoSelect();
   refreshServidorSelectPonto();
   renderListaServidores();
-}
-
-/* ---- Google Sheets: banco central de servidores ---- */
-const GOOGLE_SHEETS_SERVIDORES_ID = '176jQISJxUMNYSpGG1B5op8gd9MdUj3yfWwR7XgBOm8s';
-
-function sheetsStatus(mensagem, tipo='normal'){
-  const el = document.getElementById('sheetsServidoresStatus');
-  if(!el) return;
-  el.textContent = mensagem;
-  el.style.color = tipo==='erro' ? '#a33b2b' : (tipo==='sucesso' ? '#2f6f4e' : '#6b6355');
-}
-
-function inicializarGoogleSheetsServidores(){
-  const endpoint = localStorage.getItem('pontoSheetsEndpoint') || '';
-  const escola = localStorage.getItem('pontoSheetsEscola') || '';
-  pontoState.sheets.endpoint = endpoint;
-  pontoState.sheets.escola = escola;
-  const input = document.getElementById('sheetsServidoresEndpoint');
-  if(input) input.value = endpoint;
-  if(endpoint) conectarGoogleSheetsServidores();
-  else sheetsStatus('Cole o endereço do aplicativo da Web criado no Google Apps Script para conectar a planilha.');
-}
-
-function endpointSheetsServidores(){
-  const input = document.getElementById('sheetsServidoresEndpoint');
-  return String(input ? input.value : pontoState.sheets.endpoint).trim();
-}
-
-async function sheetsRequest(action, options={}){
-  const endpoint = endpointSheetsServidores();
-  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(endpoint)){
-    throw new Error('Informe um endereço válido do aplicativo da Web do Google Apps Script.');
-  }
-  if(options.method==='POST'){
-    const response = await fetch(endpoint, {
-      method:'POST',
-      redirect:'follow',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action, planilhaId:GOOGLE_SHEETS_SERVIDORES_ID, ...options.body})
-    });
-    if(!response.ok) throw new Error('Falha de comunicação com o Google Sheets.');
-    const data = await response.json();
-    if(data.ok===false) throw new Error(data.erro || 'O Google Sheets recusou a operação.');
-    return data;
-  }
-  const url = new URL(endpoint);
-  url.searchParams.set('action', action);
-  url.searchParams.set('planilhaId', GOOGLE_SHEETS_SERVIDORES_ID);
-  Object.entries(options.params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
-  url.searchParams.set('_', Date.now());
-  const response = await fetch(url.toString(), {redirect:'follow', cache:'no-store'});
-  if(!response.ok) throw new Error('Falha de comunicação com o Google Sheets.');
-  const data = await response.json();
-  if(data.ok===false) throw new Error(data.erro || 'O Google Sheets recusou a operação.');
-  return data;
-}
-
-async function conectarGoogleSheetsServidores(){
-  const endpoint = endpointSheetsServidores();
-  pontoState.sheets.endpoint = endpoint;
-  sheetsStatus('Conectando à planilha...');
-  try{
-    const data = await sheetsRequest('listarEscolas');
-    const escolas = Array.isArray(data.escolas) ? data.escolas : [];
-    if(!escolas.length) throw new Error('Nenhuma aba de escola foi encontrada na planilha.');
-    localStorage.setItem('pontoSheetsEndpoint', endpoint);
-    const select = document.getElementById('sheetsEscolaSelect');
-    const anterior = pontoState.sheets.escola || localStorage.getItem('pontoSheetsEscola') || '';
-    select.innerHTML = '<option value="">— selecione a escola —</option>' + escolas.map(e=>{
-      const nome = typeof e==='string' ? e : e.nome;
-      const aba = typeof e==='string' ? e : (e.aba||e.nome);
-      return `<option value="${escapeHtml(aba)}">${escapeHtml(nome)}</option>`;
-    }).join('');
-    select.disabled = false;
-    pontoState.sheets.conectado = true;
-    document.getElementById('atualizarSheetsServidoresBtn').disabled = false;
-    document.getElementById('salvarSheetsServidoresBtn').disabled = false;
-    if(anterior && [...select.options].some(o=>o.value===anterior)) select.value = anterior;
-    else if(escolas.length===1) select.selectedIndex = 1;
-    pontoState.sheets.escola = select.value;
-    localStorage.setItem('pontoSheetsEscola', select.value);
-    sheetsStatus('Conectado. Selecione uma escola para carregar os servidores.', 'sucesso');
-    if(select.value) await carregarServidoresGoogleSheets();
-  }catch(err){
-    console.error(err);
-    pontoState.sheets.conectado = false;
-    sheetsStatus(err.message || 'Não foi possível conectar à planilha.', 'erro');
-  }
-}
-
-function idServidorPorMatricula(matricula, nome=''){
-  const base = String(matricula||'').trim() || normalize(nome).replace(/[^a-z0-9]/g,'_');
-  return 'srv_' + base.replace(/[^a-zA-Z0-9_-]/g,'_');
-}
-
-function normalizarServidorSheets(item){
-  const cargaNumero = parseInt(String(item.cargaSemanal||item.cargaHorariaSemanal||'').replace(/\D/g,''),10) || 0;
-  const is40 = cargaNumero===40;
-  const is30 = cargaNumero===30;
-  const turno = String(item.turno||item.turno1||'').trim().toUpperCase();
-  const funcao = String(item.funcao||'').trim();
-  const matricula = String(item.matricula||'').trim();
-  return {
-    id:idServidorPorMatricula(matricula,item.nome),
-    nome:String(item.nome||item.servidor||'').trim(),
-    cargo:String(item.cargo||'').trim().toUpperCase(),
-    funcao,
-    turno1:is40 ? 'MATUTINO' : (turno.includes('VESPERTINO') ? 'VESPERTINO' : 'MATUTINO'),
-    turno2:is40 ? 'VESPERTINO' : '',
-    turno3:'',
-    coordenacao:ehFuncaoProfessor(funcao) ? normalizarCoordenacaoLivre(item.coordenacao||'') : '',
-    leiLarissa:item.leiLarissa===true || normalize(item.leiLarissa||'')==='sim',
-    matricula,
-    cargaSemanal:cargaNumero ? cargaNumero+'H' : '',
-    cargaMensal:String(item.cargaMensal||item.cargaHorariaMensal||'').trim() || (is40?'200H':(is30?'150H':''))
-  };
-}
-
-async function substituirCacheServidores(lista){
-  try{
-    const antigas = await window.storage.list('servidor:');
-    if(antigas && antigas.keys) for(const chave of antigas.keys) await window.storage.delete(chave);
-    for(const servidor of lista) await window.storage.set('servidor:'+servidor.id, JSON.stringify(servidor));
-  }catch(err){ console.warn('Não foi possível atualizar o cache local de servidores.', err); }
-}
-
-async function carregarServidoresGoogleSheets(){
-  const escola = document.getElementById('sheetsEscolaSelect').value;
-  if(!escola){ sheetsStatus('Selecione a escola.', 'erro'); return; }
-  sheetsStatus('Carregando servidores de '+escola+'...');
-  try{
-    const data = await sheetsRequest('listarServidores',{params:{escola}});
-    const servidores = (data.servidores||[]).map(normalizarServidorSheets).filter(s=>s.nome);
-    pontoState.servidores = servidores.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-    pontoState.sheets.escola = escola;
-    pontoState.sheets.alterado = false;
-    localStorage.setItem('pontoSheetsEscola', escola);
-    await substituirCacheServidores(pontoState.servidores);
-    renderPontoAll();
-    sheetsStatus(`${servidores.length} servidor(es) carregado(s) da aba “${escola}”.`, 'sucesso');
-  }catch(err){
-    console.error(err);
-    sheetsStatus(err.message || 'Não foi possível carregar os servidores.', 'erro');
-  }
-}
-
-function servidorParaSheets(s){
-  const carga = parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10) || '';
-  return {
-    nome:s.nome||'', cargo:s.cargo||'', funcao:s.funcao||'',
-    cargaSemanal:carga, turno:carga===40?'MATUTINO E VESPERTINO':(s.turno1||''),
-    coordenacao:s.coordenacao||'', matricula:String(s.matricula||'').trim(),
-    cargaMensal:parseInt(String(s.cargaMensal||'').replace(/\D/g,''),10)||'',
-    leiLarissa:s.leiLarissa?'Sim':'Não'
-  };
-}
-
-function validarMatriculasServidores(){
-  const ausentes = pontoState.servidores.filter(s=>!String(s.matricula||'').trim());
-  const vistas = new Set(), duplicadas = new Set();
-  pontoState.servidores.forEach(s=>{ const m=normalize(s.matricula||''); if(m && vistas.has(m)) duplicadas.add(s.matricula); vistas.add(m); });
-  if(ausentes.length) return `${ausentes.length} servidor(es) estão sem matrícula. Preencha a matrícula antes de salvar.`;
-  if(duplicadas.size) return 'Existem matrículas repetidas: '+[...duplicadas].join(', ')+'.';
-  return '';
-}
-
-async function salvarServidoresGoogleSheets(){
-  const escola = document.getElementById('sheetsEscolaSelect').value;
-  if(!escola){ sheetsStatus('Selecione a escola.', 'erro'); return; }
-  const erro = validarMatriculasServidores();
-  if(erro){ sheetsStatus(erro,'erro'); return; }
-  if(!confirm(`Salvar ${pontoState.servidores.length} servidor(es) na aba “${escola}”? A lista dessa aba será atualizada pela matrícula.`)) return;
-  sheetsStatus('Salvando alterações no Google Sheets...');
-  try{
-    const data = await sheetsRequest('salvarServidores',{method:'POST',body:{escola,servidores:pontoState.servidores.map(servidorParaSheets)}});
-    pontoState.sheets.alterado = false;
-    sheetsStatus(`${data.total||pontoState.servidores.length} servidor(es) salvos com sucesso na aba “${escola}”.`,'sucesso');
-  }catch(err){
-    console.error(err);
-    sheetsStatus(err.message || 'Não foi possível salvar os servidores.','erro');
-  }
-}
-
-async function salvarServidorGoogleSheets(id){
-  const servidor = pontoState.servidores.find(item=>item.id===id);
-  if(!servidor){ sheetsStatus('Servidor não encontrado.','erro'); return; }
-  const escola = document.getElementById('sheetsEscolaSelect').value;
-  if(!pontoState.sheets.conectado || !escola){
-    sheetsStatus('Conecte o Google Sheets e selecione a escola antes de salvar.','erro');
-    return;
-  }
-  if(!String(servidor.matricula||'').trim()){
-    sheetsStatus(`O servidor ${servidor.nome||''} está sem matrícula. A matrícula é obrigatória para salvar.`,'erro');
-    return;
-  }
-  const repetidos = pontoState.servidores.filter(item=>normalize(item.matricula||'')===normalize(servidor.matricula||''));
-  if(repetidos.length>1){
-    sheetsStatus(`A matrícula ${servidor.matricula} está repetida. Corrija antes de salvar.`,'erro');
-    return;
-  }
-  sheetsStatus(`Salvando ${servidor.nome}...`);
-  try{
-    const data = await sheetsRequest('salvarServidor',{
-      method:'POST', body:{escola,servidor:servidorParaSheets(servidor)}
-    });
-    await window.storage.set('servidor:'+servidor.id, JSON.stringify(servidor));
-    sheetsStatus(`${servidor.nome} foi ${data.criado?'adicionado':'atualizado'} com sucesso na aba “${escola}”.`,'sucesso');
-  }catch(err){
-    console.error(err);
-    sheetsStatus(err.message || `Não foi possível salvar ${servidor.nome}.`,'erro');
-  }
-}
-
-function marcarServidoresAlterados(){
-  pontoState.sheets.alterado = true;
-  if(pontoState.sheets.conectado) sheetsStatus('Há alterações ainda não salvas no Google Sheets.');
 }
 
 /* ---- importar servidores + feriados ---- */
@@ -4033,9 +3814,8 @@ function handleFileServidores(e){
         const is30 = cargaNumero === 30;
         const funcao = cellRaw(row,['funcao','função']).toString().trim();
         const ehProfessor = ehFuncaoProfessor(funcao);
-        const matricula = cellRaw(row,['matricula','matrícula']).toString().trim();
         return {
-          id: idServidorPorMatricula(matricula,nome),
+          id: 'srv_' + normalize(nome).replace(/[^a-z0-9]/g,'_'),
           nome,
           cargo: cellRaw(row,['cargo']).toString().trim().toUpperCase(),
           funcao,
@@ -4044,7 +3824,7 @@ function handleFileServidores(e){
           turno3: '',
           coordenacao: ehProfessor ? normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])) : '',
           leiLarissa: normalize(cellRaw(row,['lei larissa','lei larissa (sim/nao)','lei larissa (sim/não)'])) === 'sim',
-          matricula,
+          matricula: cellRaw(row,['matricula','matrícula']).toString().trim(),
           cargaSemanal: cargaNumero ? String(cargaNumero) + 'H' : '',
           cargaMensal: is40 ? '200H' : (is30 ? '150H' : '')
         };
@@ -4056,7 +3836,6 @@ function handleFileServidores(e){
 
       await loadPontoData();
       renderPontoAll();
-      marcarServidoresAlterados();
 
       status.textContent = '';
       const summary = document.getElementById('importSummaryServidores');
@@ -4128,6 +3907,146 @@ function atualizarStatusCalendario(){
   }
 }
 
+/* ---- conexão Google Sheets por escola ---- */
+function extrairSpreadsheetId(url){
+  const m=String(url||'').match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : '';
+}
+function ehAppsScriptUrl(url){ return /script\.google\.com\/(?:macros|a)\//i.test(String(url||'')); }
+function atualizarStatusSheetsServidores(msg, erro=false){
+  const el=document.getElementById('sheetsServidorStatus');
+  if(!el) return;
+  if(msg){ el.textContent=msg; el.style.color=erro?'#a32626':'#356b39'; return; }
+  if(!pontoState.sheets.url){ el.textContent='Nenhum banco conectado. Os dados permanecem somente neste navegador.'; el.style.color='#6b6355'; return; }
+  const tipo=pontoState.sheets.modo==='api'?'Apps Script (leitura e gravação)':'Google Sheets (somente leitura)';
+  el.textContent='Conectado a: '+tipo+' — aba '+(pontoState.sheets.aba||'Servidores')+'.';
+  el.style.color='#356b39';
+}
+async function salvarConfigSheetsServidores(){
+  await window.storage.set('pontoSheetsServidores', JSON.stringify(pontoState.sheets));
+}
+async function conectarSheetsServidores(){
+  const url=(document.getElementById('sheetsServidorUrl').value||'').trim();
+  const aba=(document.getElementById('sheetsServidorAba').value||'Servidores').trim();
+  if(!url){ alert('Cole o link da planilha ou do Apps Script desta escola.'); return; }
+  const modo=ehAppsScriptUrl(url)?'api':(extrairSpreadsheetId(url)?'sheet':'');
+  if(!modo){ alert('O link informado não parece ser do Google Sheets nem do Google Apps Script.'); return; }
+  pontoState.sheets={url,aba,conectado:true,modo};
+  await salvarConfigSheetsServidores();
+  atualizarStatusSheetsServidores('Conexão salva neste navegador. Testando e carregando os servidores...');
+  await carregarServidoresDoSheets();
+}
+async function desconectarSheetsServidores(){
+  if(!confirm('Desconectar o banco desta escola neste navegador? Os servidores já carregados permanecerão disponíveis localmente.')) return;
+  pontoState.sheets={url:'',aba:'Servidores',conectado:false,modo:''};
+  document.getElementById('sheetsServidorUrl').value='';
+  document.getElementById('sheetsServidorAba').value='Servidores';
+  try{ await window.storage.delete('pontoSheetsServidores'); }catch(e){}
+  atualizarStatusSheetsServidores();
+}
+function csvParaObjetos(texto){
+  const linhas=[]; let linha=[],campo='',aspas=false;
+  for(let i=0;i<texto.length;i++){
+    const c=texto[i], prox=texto[i+1];
+    if(c==='"' && aspas && prox==='"'){ campo+='"'; i++; }
+    else if(c==='"') aspas=!aspas;
+    else if(c===',' && !aspas){ linha.push(campo); campo=''; }
+    else if((c==='\n'||c==='\r') && !aspas){
+      if(c==='\r'&&prox==='\n') i++;
+      linha.push(campo); campo=''; if(linha.some(v=>v!=='')) linhas.push(linha); linha=[];
+    }else campo+=c;
+  }
+  if(campo||linha.length){ linha.push(campo); linhas.push(linha); }
+  if(!linhas.length) return [];
+  const cab=linhas[0].map(x=>x.trim());
+  return linhas.slice(1).map(cols=>Object.fromEntries(cab.map((h,i)=>[h,cols[i]||''])));
+}
+function normalizarServidorSheets(row){
+  const nome=String(cellRaw(row,['servidor','nome'])||'').trim();
+  const cargaNumero=parseInt(String(cellRaw(row,['carga hor.sem','carga horaria semanal','carga hor. semanal'])||'').replace(/\D/g,''),10);
+  const turnoInformado=String(cellRaw(row,['turno'])||'').trim().toUpperCase();
+  const funcao=String(cellRaw(row,['funcao','função'])||'').trim();
+  const matricula=String(cellRaw(row,['matricula','matrícula'])||'').trim();
+  const is40=cargaNumero===40, is30=cargaNumero===30;
+  return {
+    id: matricula ? 'srv_mat_'+normalize(matricula).replace(/[^a-z0-9]/g,'_') : 'srv_'+normalize(nome).replace(/[^a-z0-9]/g,'_'),
+    nome,
+    cargo:String(cellRaw(row,['cargo'])||'').trim().toUpperCase(),
+    funcao,
+    turno1:is40?'MATUTINO':turnoInformado,
+    turno2:is40?'VESPERTINO':'', turno3:'',
+    coordenacao:ehFuncaoProfessor(funcao)?normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])):'',
+    leiLarissa:normalize(cellRaw(row,['lei larissa','lei larissa (sim/nao)','lei larissa (sim/não)']))==='sim',
+    matricula,
+    cargaSemanal:cargaNumero?String(cargaNumero)+'H':'',
+    cargaMensal:is40?'200H':(is30?'150H':'')
+  };
+}
+async function substituirServidoresLocais(lista){
+  const old=await window.storage.list('servidor:');
+  if(old&&old.keys) for(const k of old.keys) await window.storage.delete(k);
+  for(const s of lista) await window.storage.set('servidor:'+s.id,JSON.stringify(s));
+  pontoState.servidores=lista.sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  renderPontoAll();
+}
+async function carregarServidoresDoSheets(){
+  const cfg=pontoState.sheets;
+  if(!cfg.url){ alert('Conecte primeiro o banco desta escola.'); return; }
+  atualizarStatusSheetsServidores('Carregando servidores...');
+  try{
+    let rows=[];
+    if(cfg.modo==='api'){
+      const u=new URL(cfg.url); u.searchParams.set('action','list'); u.searchParams.set('aba',cfg.aba||'Servidores');
+      const res=await fetch(u.toString(),{method:'GET',cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      rows=Array.isArray(data)?data:(data.servidores||data.data||[]);
+    }else{
+      const id=extrairSpreadsheetId(cfg.url);
+      const csvUrl='https://docs.google.com/spreadsheets/d/'+id+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(cfg.aba||'Servidores');
+      const res=await fetch(csvUrl,{cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      rows=csvParaObjetos(await res.text());
+    }
+    const lista=rows.map(normalizarServidorSheets).filter(s=>s.nome);
+    await substituirServidoresLocais(lista);
+    atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".');
+  }catch(err){
+    console.error(err);
+    atualizarStatusSheetsServidores('Não foi possível carregar. Confira o link, a permissão da planilha e o nome da aba.',true);
+  }
+}
+function servidorParaLinhaSheets(s){
+  return {
+    'Servidor':s.nome||'', 'Cargo':s.cargo||'', 'Função':s.funcao||'',
+    'Carga Horária Semanal':parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10)||'',
+    'Turno':parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10)===40?'':(s.turno1||''),
+    'Coordenação (M/V)':s.coordenacao||'', 'Matrícula':s.matricula||'',
+    'Carga Horária Mensal':parseInt(String(s.cargaMensal||'').replace(/\D/g,''),10)||'',
+    'Lei Larissa (Sim/Não)':s.leiLarissa?'Sim':'Não'
+  };
+}
+async function salvarServidoresNoSheets(){
+  const cfg=pontoState.sheets;
+  if(!cfg.url){ alert('Conecte primeiro o banco desta escola.'); return; }
+  if(cfg.modo!=='api'){
+    alert('O link comum do Google Sheets permite apenas leitura. Para salvar alterações, cole a URL do Google Apps Script publicado como aplicativo da web.');
+    return;
+  }
+  atualizarStatusSheetsServidores('Salvando alterações...');
+  try{
+    const payload={action:'saveAll',aba:cfg.aba||'Servidores',servidores:pontoState.servidores.map(servidorParaLinhaSheets)};
+    const res=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json().catch(()=>({ok:true}));
+    if(data.ok===false) throw new Error(data.error||'Falha ao salvar');
+    atualizarStatusSheetsServidores(pontoState.servidores.length+' servidor(es) salvos no Google Sheets.');
+  }catch(err){
+    console.error(err);
+    atualizarStatusSheetsServidores('Não foi possível salvar no Google Sheets. Verifique a implantação do Apps Script.',true);
+  }
+}
+
 /* ---- servidores tab ---- */
 function renderServidoresPontoTable(){
   const q = normalize(document.getElementById('searchServidoresPonto').value);
@@ -4140,7 +4059,7 @@ function renderServidoresPontoTable(){
   empty.style.display = filtered.length ? 'none':'block';
   empty.textContent = pontoState.servidores.length
     ? 'Nenhum servidor encontrado para esta busca.'
-    : 'Nenhum servidor carregado. Conecte o Google Sheets ou abra a importação por Excel nesta tela.';
+    : 'Nenhum servidor importado ainda. Vá em "Importar servidores".';
 
   tbody.innerHTML = filtered.map(s=>{
     const carga = parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10) || '';
@@ -4175,12 +4094,7 @@ function renderServidoresPontoTable(){
         </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
       </td>
       <td>${escapeHtml(s.matricula||'—')}</td>
-      <td>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn small" onclick="salvarServidorGoogleSheets('${s.id}')">Salvar</button>
-          <button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button>
-        </div>
-      </td>
+      <td><button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
     </tr>`;
   }).join('');
 }
@@ -4211,7 +4125,6 @@ async function updateServidorPontoField(id, field, value){
   }
 
   await window.storage.set('servidor:'+id, JSON.stringify(s));
-  marcarServidoresAlterados();
   renderServidoresPontoTable();
   refreshServidorSelectPonto();
 }
@@ -4220,7 +4133,6 @@ async function deleteServidorPonto(id){
   if(!confirm('Remover este servidor da lista (apenas nesta sessão — ele volta ao reimportar a planilha)?')) return;
   try{ await window.storage.delete('servidor:'+id); }catch(e){}
   pontoState.servidores = pontoState.servidores.filter(s=>s.id!==id);
-  marcarServidoresAlterados();
   renderServidoresPontoTable();
   refreshServidorSelectPonto();
 }
@@ -4384,18 +4296,8 @@ function findPeriodoServidor(servidorId, iso){
 }
 
 function isCargoSemRecessoEscolarMeioAno(servidor){
-  const campos=[servidor.cargo,servidor.funcao]
-    .map(valor=>normalize(valor||'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim())
-    .filter(Boolean);
-  return campos.some(campo=>{
-    // Aceita Secretário, Secretaria, Secretário Escolar e variações com acento.
-    if(/^secretari[oa](?:\s|$)/.test(campo)) return true;
-    // Aceita Agente, Agente Educação, Agente de Educação e Agente Educacional.
-    if(campo==='agente') return true;
-    if(/^agente\s+(?:de\s+)?educa(?:cao|cional)(?:\s|$)/.test(campo)) return true;
-    if(/^ag\s+(?:de\s+)?educa(?:cao|cional)(?:\s|$)/.test(campo)) return true;
-    return false;
-  });
+  const cargo=normalize(servidor.cargo||'');
+  return cargo.includes('secretario escolar') || cargo.includes('agente de educacao');
 }
 
 async function addDiaLetivo(){
@@ -4501,14 +4403,14 @@ function celula(servidor, date, turno){
     const eventoCentral = feriado.evento || null;
     const excluidos = eventoCentral && eventoCentral.aplicaA && Array.isArray(eventoCentral.aplicaA.excluirCargos)
       ? eventoCentral.aplicaA.excluirCargos.map(normalize) : [];
-    const identificadoresServidor = [servidor.cargo,servidor.funcao].map(v=>normalize(v||'')).filter(Boolean);
-    const excluidoPeloCalendario = excluidos.some(cargo=>identificadoresServidor.includes(cargo));
+    const cargoServidor = normalize(servidor.cargo || '');
+    const excluidoPeloCalendario = excluidos.includes(cargoServidor);
     if(excluidoPeloCalendario) return {text:'', tipo:'normal'};
     if(descricaoNormalizada.includes('ferias')) return {text:'FÉRIAS', tipo:'feriado'};
     if(descricaoNormalizada.includes('recesso')){
       // Secretário Escolar e Agente de educação não recebem automaticamente
       // o recesso escolar do meio do ano. Para esses cargos, o período deve
-      // ser lançado individualmente na aba Ocorrências.
+      // ser lançado individualmente na aba Feriados & dias letivos.
       const ehRecessoMeioAno = date.getMonth() === 6;
       if(ehRecessoMeioAno && isCargoSemRecessoEscolarMeioAno(servidor)) return {text:'', tipo:'normal'};
       return {text:'RECESSO', tipo:'feriado'};
@@ -4626,7 +4528,7 @@ function celulaManual(servidor,date,turno,op){
   const regraCarga=()=>{if(!op.carga||carga!==30)return null;if(turno==='manha'&&turnos.includes('VESPERTINO'))return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&turnos.includes('MATUTINO'))return {text:'****',tipo:'bloqueado'};return null;};
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
   const regraIndividual=()=>{if(!op.individual)return null;const p=findPeriodoServidor(servidor.id,iso);if(!p)return null;const n=normalize(p.descricao||p.tipo||'');if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};if(n.includes('atestado'))return {text:'ATESTADO MÉDICO',tipo:'afastamento'};if(n.includes('licenca premio'))return {text:'LICENÇA PRÊMIO',tipo:'afastamento'};return {text:String(p.tipo||p.descricao||'').toUpperCase(),tipo:'afastamento'};};
-  const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];const ids=[servidor.cargo,servidor.funcao].map(v=>normalize(v||'')).filter(Boolean);if(exc.some(c=>ids.includes(c)))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso')){if(date.getMonth()===6&&isCargoSemRecessoEscolarMeioAno(servidor))return null;return {text:'RECESSO',tipo:'feriado'};}return {text:'FERIADO',tipo:'feriado'};};
+  const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];if(exc.includes(normalize(servidor.cargo||'')))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso')){if(date.getMonth()===6&&isCargoSemRecessoEscolarMeioAno(servidor))return null;return {text:'RECESSO',tipo:'feriado'};}return {text:'FERIADO',tipo:'feriado'};};
   const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE';const tipo=servidor.leiLarissa?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text,tipo};if(c==='V'&&turno==='tarde')return {text,tipo};return null;};
   const regras=op.prioridade?[regraCarga,regraFimSemana,regraIndividual,regraCalendario,regraCoord]:[regraCarga,regraIndividual,regraCalendario,regraFimSemana,regraCoord];
   for(const fn of regras){const r=fn();if(r)return r;}
