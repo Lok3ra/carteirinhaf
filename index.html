@@ -4130,7 +4130,10 @@ async function updateServidorPontoField(id, field, value){
 }
 
 async function deleteServidorPonto(id){
-  if(!confirm('Remover este servidor da lista (apenas nesta sessão — ele volta ao reimportar a planilha)?')) return;
+  const servidor = pontoState.servidores.find(s=>s.id===id);
+  const nome = servidor && servidor.nome ? servidor.nome : 'este servidor';
+  const mensagem = 'Tem certeza que deseja excluir "' + nome + '" da lista de servidores?\n\nEsta ação não poderá ser desfeita no sistema. Caso esteja conectado ao Google Sheets, use o botão “Salvar alterações” para atualizar a planilha.';
+  if(!confirm(mensagem)) return;
   try{ await window.storage.delete('servidor:'+id); }catch(e){}
   pontoState.servidores = pontoState.servidores.filter(s=>s.id!==id);
   renderServidoresPontoTable();
