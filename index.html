@@ -979,7 +979,9 @@
           <div class="field" style="max-width:240px"><label>Legenda</label><select id="calEventoLegenda"></select></div>
           <div class="field" style="min-width:250px"><label>Observação</label><input type="text" id="calEventoObs" placeholder="Opcional"></div>
           <button class="btn" id="calEventoAdicionar" type="button">Adicionar</button>
+          <button class="btn outline" id="calEventoCancelarEdicao" type="button" style="display:none">Cancelar edição</button>
         </div>
+        <div id="calEventoConflitoAviso" class="helpbox" style="display:none;border-color:#d8902f;background:#fff7e8;color:#7a4d00;"></div>
         <div style="overflow-x:auto"><table class="cal-events-table"><thead><tr><th>Período</th><th>Legenda</th><th>Observação</th><th>Ações</th></tr></thead><tbody id="calEventosTbody"></tbody></table></div>
         <div class="empty" id="calEventosEmpty" style="display:none">Nenhuma data cadastrada neste ano.</div>
       </div>
@@ -1721,6 +1723,36 @@ Valparaíso de Goiás – GO – Fone: 61 9929 3856 – prosaber.escola@gmail.co
    but if you store many high-resolution photos you may eventually hit that
    ceiling — if so, a QuotaExceededError will surface in the browser console.
 ========================================================================= */
+
+/* Avisos centralizados para falhas de armazenamento. */
+const storageErrorNotices = new Map();
+function mostrarAvisoSistema(mensagem, tipo='erro'){
+  let host=document.getElementById('systemNoticeHost');
+  if(!host){
+    host=document.createElement('div');
+    host.id='systemNoticeHost';
+    host.style.cssText='position:fixed;right:18px;bottom:18px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:min(420px,calc(100vw - 36px));';
+    document.body.appendChild(host);
+  }
+  const item=document.createElement('div');
+  item.setAttribute('role','alert');
+  item.style.cssText='padding:11px 14px;border-radius:10px;box-shadow:0 5px 18px rgba(0,0,0,.18);font-size:13px;line-height:1.4;background:'+(tipo==='erro'?'#fff1ef':'#eef7ee')+';border:1px solid '+(tipo==='erro'?'#d98c80':'#8fbd91')+';color:'+(tipo==='erro'?'#852d20':'#2f6334')+';';
+  item.textContent=mensagem;
+  host.appendChild(item);
+  setTimeout(()=>item.remove(),7000);
+}
+function reportStorageError(acao,chave,erro){
+  console.error('Falha de armazenamento:',acao,chave,erro);
+  const nome=(erro&&erro.name)||'Erro';
+  const assinatura=acao+'|'+chave+'|'+nome;
+  const agora=Date.now();
+  if((storageErrorNotices.get(assinatura)||0)+5000>agora) return;
+  storageErrorNotices.set(assinatura,agora);
+  let detalhe='Verifique as permissões e o espaço disponível no navegador.';
+  if(nome==='QuotaExceededError') detalhe='O espaço de armazenamento do navegador está cheio. Exporte um backup ou remova dados antigos.';
+  mostrarAvisoSistema('Não foi possível '+acao+' os dados'+(chave?' (“'+chave+'”)':'')+'. '+detalhe);
+}
+
 if (typeof window.storage === 'undefined') {
   (function(){
     const LS_PREFIX = 'carteirinhas_escolares::';
@@ -3687,7 +3719,7 @@ const pontoState = {
   config: { orgao:'', escola:'', cidade:'' },
   folhasGeradas: null,
   calendarioAno: null,
-  sheets: { url:'', aba:'Servidores', conectado:false, modo:'', sync:'idle', ultimaSincronizacao:'' }
+  sheets: { url:'', aba:'Servidores', conectado:false, modo:'', sync:'idle', ultimaSincronizacao:'', versao:null }
 };
 
 function daysInMonth(month, year){
@@ -3705,7 +3737,8 @@ function bindPontoTabs(){
   document.getElementById('salvarPeriodoRapidoBtn').addEventListener('click', salvarPeriodoRapidoServidor);
   document.getElementById('fecharPeriodoRapidoBtn').addEventListener('click', ()=>{document.getElementById('periodoRapidoServidorCard').style.display='none';});
   document.getElementById('mostrarLeiLarissaServidoresChk').addEventListener('change', (e)=>{
-    localStorage.setItem('mostrarLeiLarissaServidores', e.target.checked ? '1' : '0');
+    try{ localStorage.setItem('mostrarLeiLarissaServidores', e.target.checked ? '1' : '0'); }
+    catch(erro){ reportStorageError('salvar','mostrarLeiLarissaServidores',erro); }
     renderServidoresPontoTable();
   });
   document.getElementById('mostrarLeiLarissaServidoresChk').checked = localStorage.getItem('mostrarLeiLarissaServidores') === '1';
@@ -3764,7 +3797,7 @@ async function loadPontoData(){
   }catch(e){}
   try{
     const r = await window.storage.get('pontoSheetsServidores');
-    pontoState.sheets = Object.assign({url:'',aba:'Servidores',conectado:false,modo:''}, JSON.parse(r.value));
+    pontoState.sheets = Object.assign({url:'',aba:'Servidores',conectado:false,modo:'',sync:'idle',ultimaSincronizacao:'',versao:null}, JSON.parse(r.value));
   }catch(e){}
 
   pontoState.servidores.sort((a,b)=>a.nome.localeCompare(b.nome));
@@ -3971,7 +4004,10 @@ function atualizarBadgeSheets(){
   const st=pontoState.sheets.sync||'idle';
   const map={idle:['Não conectado','#eee8da','#6b6355'],loading:['Carregando...','#fff2c7','#725c00'],dirty:['Alterações não salvas','#ffe1d8','#9a351d'],saving:['Salvando...','#dfeaff','#274f8a'],saved:['Sincronizado','#dff3e2','#2f6b38'],error:['Erro de conexão','#f8dada','#9b2323'],readonly:['Somente leitura','#e7e7e7','#555']};
   const cfg=map[st]||map.idle; el.textContent=cfg[0]; el.style.background=cfg[1]; el.style.color=cfg[2];
-  if(pontoState.sheets.ultimaSincronizacao) el.title='Última sincronização: '+pontoState.sheets.ultimaSincronizacao;
+  const detalhes=[];
+  if(pontoState.sheets.ultimaSincronizacao) detalhes.push('Última sincronização: '+pontoState.sheets.ultimaSincronizacao);
+  if(pontoState.sheets.versao!==null && pontoState.sheets.versao!==undefined) detalhes.push('Versão: '+pontoState.sheets.versao);
+  el.title=detalhes.join(' | ');
 }
 function preencherFiltroFuncoes(){
   const el=document.getElementById('filtroFuncaoServidoresPonto'); if(!el) return; const atual=el.value;
@@ -4020,7 +4056,7 @@ async function conectarSheetsServidores(){
   if(!url){ alert('Cole o link da planilha ou do Apps Script desta escola.'); return; }
   const modo=ehAppsScriptUrl(url)?'api':(extrairSpreadsheetId(url)?'sheet':'');
   if(!modo){ alert('O link informado não parece ser do Google Sheets nem do Google Apps Script.'); return; }
-  pontoState.sheets={url,aba,conectado:true,modo,sync:'loading',ultimaSincronizacao:''};
+  pontoState.sheets={url,aba,conectado:true,modo,sync:'loading',ultimaSincronizacao:'',versao:null};
   atualizarBadgeSheets();
   await salvarConfigSheetsServidores();
   atualizarStatusSheetsServidores('Conexão salva neste navegador. Testando e carregando os servidores...');
@@ -4028,7 +4064,7 @@ async function conectarSheetsServidores(){
 }
 async function desconectarSheetsServidores(){
   if(!confirm('Desconectar o banco desta escola neste navegador? Os servidores já carregados permanecerão disponíveis localmente.')) return;
-  pontoState.sheets={url:'',aba:'Servidores',conectado:false,modo:'',sync:'idle',ultimaSincronizacao:''};
+  pontoState.sheets={url:'',aba:'Servidores',conectado:false,modo:'',sync:'idle',ultimaSincronizacao:'',versao:null};
   atualizarBadgeSheets();
   document.getElementById('sheetsServidorUrl').value='';
   document.getElementById('sheetsServidorAba').value='Servidores';
@@ -4093,6 +4129,10 @@ async function carregarServidoresDoSheets(){
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
       rows=Array.isArray(data)?data:(data.servidores||data.data||[]);
+      if(!Array.isArray(data)){
+        const versao=data.versao ?? data.version ?? (data.meta&&data.meta.versao) ?? null;
+        pontoState.sheets.versao=versao===null?null:Number(versao);
+      }
     }else{
       const id=extrairSpreadsheetId(cfg.url);
       const csvUrl='https://docs.google.com/spreadsheets/d/'+id+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(cfg.aba||'Servidores');
@@ -4103,7 +4143,9 @@ async function carregarServidoresDoSheets(){
     const lista=rows.map(normalizarServidorSheets).filter(s=>s.nome);
     await substituirServidoresLocais(lista);
     pontoState.sheets.sync=cfg.modo==='api'?'saved':'readonly'; pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR'); atualizarBadgeSheets();
-    atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".');
+    await salvarConfigSheetsServidores();
+    const txtVersao=(cfg.modo==='api' && pontoState.sheets.versao!==null)?' Versão '+pontoState.sheets.versao+'.':'';
+    atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".'+txtVersao);
   }catch(err){
     console.error(err);
     pontoState.sheets.sync='error'; atualizarBadgeSheets();
@@ -4130,17 +4172,31 @@ async function salvarServidoresNoSheets(){
   pontoState.sheets.sync='saving'; atualizarBadgeSheets();
   atualizarStatusSheetsServidores('Salvando alterações...');
   try{
-    const payload={action:'saveAll',aba:cfg.aba||'Servidores',servidores:pontoState.servidores.map(servidorParaLinhaSheets)};
+    const payload={action:'saveAll',aba:cfg.aba||'Servidores',versaoEsperada:cfg.versao,servidores:pontoState.servidores.map(servidorParaLinhaSheets)};
     const res=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json().catch(()=>({ok:true}));
+    const data=await res.json().catch(()=>({ok:res.ok}));
+    const conflito=res.status===409 || data.conflict===true || data.code==='VERSION_CONFLICT' || data.codigo==='CONFLITO_VERSAO';
+    if(conflito){
+      const erro=new Error(data.error||'A lista foi alterada por outra pessoa.');
+      erro.tipo='conflito'; erro.versaoAtual=data.versaoAtual ?? data.version ?? null; throw erro;
+    }
+    if(!res.ok) throw new Error(data.error||('HTTP '+res.status));
     if(data.ok===false) throw new Error(data.error||'Falha ao salvar');
+    const novaVersao=data.versao ?? data.version ?? data.novaVersao ?? null;
+    if(novaVersao!==null) pontoState.sheets.versao=Number(novaVersao);
     pontoState.sheets.sync='saved'; pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR'); atualizarBadgeSheets();
-    atualizarStatusSheetsServidores(pontoState.servidores.length+' servidor(es) salvos no Google Sheets.');
+    await salvarConfigSheetsServidores();
+    atualizarStatusSheetsServidores(pontoState.servidores.length+' servidor(es) salvos no Google Sheets.'+(pontoState.sheets.versao!==null?' Versão '+pontoState.sheets.versao+'.':''));
   }catch(err){
     console.error(err);
     pontoState.sheets.sync='error'; atualizarBadgeSheets();
-    atualizarStatusSheetsServidores('Não foi possível salvar no Google Sheets. Verifique a implantação do Apps Script.',true);
+    if(err.tipo==='conflito'){
+      if(err.versaoAtual!==null) pontoState.sheets.versao=Number(err.versaoAtual);
+      atualizarStatusSheetsServidores('Conflito detectado: outra pessoa alterou a lista depois do seu carregamento. Clique em “Atualizar lista”, confira os dados e refaça sua alteração antes de salvar.',true);
+      mostrarAvisoSistema('O salvamento foi bloqueado para não sobrescrever alterações de outra pessoa. Atualize a lista do Google Sheets.');
+    }else{
+      atualizarStatusSheetsServidores('Não foi possível salvar no Google Sheets. Verifique a implantação do Apps Script.',true);
+    }
   }
 }
 
@@ -5112,6 +5168,7 @@ function bindFestaJunina(){
 const CAL_MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const CAL_DIAS=['D','S','T','Q','Q','S','S'];
 let calendarioCentral={ano:new Date().getFullYear(),versao:0,legendas:[],eventos:[],bimestres:[],regras:{}};
+let calendarioEventoEditandoId=null;
 const CAL_LEGENDAS_PADRAO=[
   {id:'feriado',nome:'Feriado',cor:'#C94C4C',tipo:'nao-letivo'},
   {id:'ferias',nome:'Férias',cor:'#7A6FC2',tipo:'nao-letivo'},
@@ -5145,7 +5202,7 @@ async function carregarCalendarioCentral(ano){
   sincronizarDadosCalendarioNosModulos();
   renderCalendarioCentral();renderLegendasCalendario();
 }
-async function salvarCalendarioCentral(){try{calendarioCentral.versao=Number(calendarioCentral.versao||0)+1;await window.storage.set(calKey(calendarioCentral.ano),JSON.stringify(calendarioCentral));}catch(e){alert('Não foi possível salvar o calendário.');}}
+async function salvarCalendarioCentral(){try{calendarioCentral.versao=Number(calendarioCentral.versao||0)+1;await window.storage.set(calKey(calendarioCentral.ano),JSON.stringify(calendarioCentral));sincronizarDadosCalendarioNosModulos();atualizarStatusCalendarioPonto?.();}catch(e){alert('Não foi possível salvar o calendário.');}}
 function calendarioLegendaPorId(id){return (calendarioCentral.legendas||[]).find(l=>l.id===id)||null;}
 function calendarioPrioridadeEvento(e){
   if(Number.isFinite(Number(e.prioridade))) return Number(e.prioridade);
@@ -5194,28 +5251,98 @@ function bindCalendarioCentral(){
   const ano=document.getElementById('calCentralAno'); if(!ano)return; ano.value=new Date().getFullYear();
   document.getElementById('calCentralCarregar').addEventListener('click',()=>carregarCalendarioCentral(ano.value));
   document.getElementById('calEventoAdicionar').addEventListener('click',adicionarEventoCalendario);
+  document.getElementById('calEventoCancelarEdicao')?.addEventListener('click',cancelarEdicaoEventoCalendario);
+  ['calEventoInicio','calEventoFim'].forEach(id=>document.getElementById(id)?.addEventListener('change',atualizarAvisoConflitoFormulario));
+  document.getElementById('calEventoLegenda')?.addEventListener('change',atualizarAvisoConflitoFormulario);
   document.getElementById('calLegendaAdicionar').addEventListener('click',adicionarLegendaCalendario);
   document.getElementById('calCentralExportar').addEventListener('click',exportarCalendarioCentral);
   document.getElementById('calCentralImportar').addEventListener('change',importarCalendarioCentral);
   document.getElementById('calCentralLimpar').addEventListener('click',async()=>{if(confirm('Apagar todas as datas deste ano?')){calendarioCentral.eventos=[];await salvarCalendarioCentral();renderCalendarioCentral();}});
 }
 
+function intervalosSobrepostos(inicioA,fimA,inicioB,fimB){return inicioA<=fimB&&fimA>=inicioB;}
+function conflitosEventoCalendario(inicio,fim,ignorarId=null){
+  return (calendarioCentral.eventos||[]).filter(e=>e.id!==ignorarId&&intervalosSobrepostos(inicio,fim,e.inicio,e.fim));
+}
+function nomeEventoCalendario(e){const l=calendarioLegendaPorId(e.legendaId);return l?l.nome:'Legenda removida';}
+function atualizarAvisoConflitoFormulario(){
+  const aviso=document.getElementById('calEventoConflitoAviso');if(!aviso)return;
+  const inicio=document.getElementById('calEventoInicio')?.value||'';
+  const fim=document.getElementById('calEventoFim')?.value||inicio;
+  if(!inicio){aviso.style.display='none';aviso.textContent='';return;}
+  const conflitos=conflitosEventoCalendario(inicio,fim,calendarioEventoEditandoId);
+  aviso.style.display=conflitos.length?'block':'none';
+  aviso.innerHTML=conflitos.length?`<strong>Atenção:</strong> este período coincide com ${conflitos.length} evento(s): ${conflitos.map(e=>escapeHtml(nomeEventoCalendario(e))).join(', ')}.`:'';
+}
+function limparFormularioEventoCalendario(){
+  calendarioEventoEditandoId=null;
+  ['calEventoInicio','calEventoFim','calEventoObs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const add=document.getElementById('calEventoAdicionar');if(add)add.textContent='Adicionar';
+  const cancel=document.getElementById('calEventoCancelarEdicao');if(cancel)cancel.style.display='none';
+  atualizarAvisoConflitoFormulario();
+}
+function cancelarEdicaoEventoCalendario(){limparFormularioEventoCalendario();}
+function editarEventoCalendario(id){
+  const e=(calendarioCentral.eventos||[]).find(x=>x.id===id);if(!e)return;
+  calendarioEventoEditandoId=id;
+  document.getElementById('calEventoInicio').value=e.inicio;
+  document.getElementById('calEventoFim').value=e.fim;
+  document.getElementById('calEventoLegenda').value=e.legendaId;
+  document.getElementById('calEventoObs').value=e.observacao||'';
+  document.getElementById('calEventoAdicionar').textContent='Salvar alteração';
+  document.getElementById('calEventoCancelarEdicao').style.display='inline-flex';
+  atualizarAvisoConflitoFormulario();
+  document.getElementById('calEventoInicio').scrollIntoView({behavior:'smooth',block:'center'});
+}
 function renderCalendarioCentral(){
   const grade=document.getElementById('calCentralGrade');if(!grade)return;
   const ano=calendarioCentral.ano; const anoInput=document.getElementById('calCentralAno');if(anoInput)anoInput.value=ano;
   grade.innerHTML=CAL_MESES.map((nome,mes)=>{
     const primeiro=new Date(ano,mes,1).getDay(),total=new Date(ano,mes+1,0).getDate();let dias='';
     for(let i=0;i<primeiro;i++)dias+='<div class="cal-day empty"></div>';
-    for(let d=1;d<=total;d++){const iso=ano+'-'+pad2(mes+1)+'-'+pad2(d);const ev=calendarioEventoNaData(iso);const leg=ev?calendarioLegendaPorId(ev.legendaId):null;dias+=`<div class="cal-day" data-date="${iso}"><span class="num">${d}</span>${leg?`<span class="mark" style="background:${leg.cor};color:#fff" title="${escapeHtml(leg.nome+(ev.observacao?' — '+ev.observacao:''))}">${escapeHtml(leg.nome)}</span>`:''}</div>`;}
+    for(let d=1;d<=total;d++){
+      const iso=ano+'-'+pad2(mes+1)+'-'+pad2(d),eventos=calendarioEventosNaData(iso),ev=eventos[0]||null,leg=ev?calendarioLegendaPorId(ev.legendaId):null;
+      const titulo=eventos.length?eventos.map(x=>nomeEventoCalendario(x)+(x.observacao?' — '+x.observacao:'')).join('\n'):'';
+      const conflito=eventos.length>1?`<span title="${escapeHtml(titulo)}" style="position:absolute;right:3px;top:2px;font-size:11px;color:#a65b00;font-weight:800">⚠</span>`:'';
+      dias+=`<div class="cal-day" data-date="${iso}" style="position:relative"><span class="num">${d}</span>${conflito}${leg?`<span class="mark" style="background:${leg.cor};color:#fff" title="${escapeHtml(titulo)}">${escapeHtml(leg.nome)}</span>`:''}</div>`;
+    }
     return `<section class="cal-month"><h3>${nome}</h3><div class="cal-week">${CAL_DIAS.map(x=>'<span>'+x+'</span>').join('')}</div><div class="cal-days">${dias}</div></section>`;
   }).join('');
-  grade.querySelectorAll('.cal-day:not(.empty)').forEach(el=>el.addEventListener('click',()=>{document.getElementById('calEventoInicio').value=el.dataset.date;document.getElementById('calEventoFim').value=el.dataset.date;document.getElementById('calEventoLegenda').focus();}));
-  const sel=document.getElementById('calEventoLegenda');if(sel)sel.innerHTML=calendarioCentral.legendas.map(l=>`<option value="${l.id}">${escapeHtml(l.nome)}</option>`).join('');
+  grade.querySelectorAll('.cal-day:not(.empty)').forEach(el=>el.addEventListener('click',()=>{document.getElementById('calEventoInicio').value=el.dataset.date;document.getElementById('calEventoFim').value=el.dataset.date;atualizarAvisoConflitoFormulario();document.getElementById('calEventoLegenda').focus();}));
+  const sel=document.getElementById('calEventoLegenda');if(sel){const atual=sel.value;sel.innerHTML=calendarioCentral.legendas.map(l=>`<option value="${l.id}">${escapeHtml(l.nome)}</option>`).join('');if(atual&&calendarioLegendaPorId(atual))sel.value=atual;}
   renderEventosCalendario();
 }
-function renderEventosCalendario(){const tb=document.getElementById('calEventosTbody'),empty=document.getElementById('calEventosEmpty');if(!tb)return;const evs=[...calendarioCentral.eventos].sort((a,b)=>a.inicio.localeCompare(b.inicio));empty.style.display=evs.length?'none':'block';tb.innerHTML=evs.map(e=>{const l=calendarioLegendaPorId(e.legendaId)||{nome:'Legenda removida',cor:'#999'};const fmt=x=>x.split('-').reverse().join('/');return `<tr><td>${fmt(e.inicio)}${e.fim!==e.inicio?' a '+fmt(e.fim):''}</td><td><span class="cal-dot" style="background:${l.cor}"></span> ${escapeHtml(l.nome)}</td><td>${escapeHtml(e.observacao||'')}</td><td><button class="btn danger small" onclick="removerEventoCalendario('${e.id}')">Remover</button></td></tr>`;}).join('');}
-async function adicionarEventoCalendario(){const inicio=document.getElementById('calEventoInicio').value,fim=document.getElementById('calEventoFim').value||inicio,legendaId=document.getElementById('calEventoLegenda').value,observacao=document.getElementById('calEventoObs').value.trim();if(!inicio||!legendaId){alert('Informe a data e a legenda.');return;}if(fim<inicio){alert('A data final não pode ser anterior à inicial.');return;}calendarioCentral.eventos.push({id:'evt-'+Date.now().toString(36),inicio,fim,legendaId,observacao});await salvarCalendarioCentral();renderCalendarioCentral();document.getElementById('calEventoObs').value='';}
-async function removerEventoCalendario(id){calendarioCentral.eventos=calendarioCentral.eventos.filter(e=>e.id!==id);await salvarCalendarioCentral();renderCalendarioCentral();}
+function renderEventosCalendario(){
+  const tb=document.getElementById('calEventosTbody'),empty=document.getElementById('calEventosEmpty');if(!tb)return;
+  const evs=[...calendarioCentral.eventos].sort((a,b)=>a.inicio.localeCompare(b.inicio));empty.style.display=evs.length?'none':'block';
+  tb.innerHTML=evs.map(e=>{
+    const l=calendarioLegendaPorId(e.legendaId)||{nome:'Legenda removida',cor:'#999'},fmt=x=>x.split('-').reverse().join('/');
+    const conflitos=conflitosEventoCalendario(e.inicio,e.fim,e.id);
+    const aviso=conflitos.length?`<div style="margin-top:4px;color:#a65b00;font-size:11px;font-weight:700">⚠ Conflito com ${conflitos.length} evento(s)</div>`:'';
+    return `<tr><td>${fmt(e.inicio)}${e.fim!==e.inicio?' a '+fmt(e.fim):''}${aviso}</td><td><span class="cal-dot" style="background:${l.cor}"></span> ${escapeHtml(l.nome)}</td><td>${escapeHtml(e.observacao||'')}</td><td><button class="btn outline small" onclick="editarEventoCalendario('${e.id}')">Editar</button> <button class="btn danger small" onclick="removerEventoCalendario('${e.id}')">Remover</button></td></tr>`;
+  }).join('');
+}
+async function adicionarEventoCalendario(){
+  const inicio=document.getElementById('calEventoInicio').value,fim=document.getElementById('calEventoFim').value||inicio,legendaId=document.getElementById('calEventoLegenda').value,observacao=document.getElementById('calEventoObs').value.trim();
+  if(!inicio||!legendaId){alert('Informe a data e a legenda.');return;}
+  if(fim<inicio){alert('A data final não pode ser anterior à inicial.');return;}
+  const ano=Number(calendarioCentral.ano),anoInicio=Number(inicio.slice(0,4)),anoFim=Number(fim.slice(0,4));
+  if(anoInicio!==ano||anoFim!==ano){alert(`As datas devem pertencer ao ano ${ano}.`);return;}
+  const conflitos=conflitosEventoCalendario(inicio,fim,calendarioEventoEditandoId);
+  if(conflitos.length&&!confirm(`Este período coincide com ${conflitos.length} evento(s):\n\n${conflitos.map(e=>'• '+nomeEventoCalendario(e)).join('\n')}\n\nDeseja salvar mesmo assim?`))return;
+  if(calendarioEventoEditandoId){
+    const e=calendarioCentral.eventos.find(x=>x.id===calendarioEventoEditandoId);if(e)Object.assign(e,{inicio,fim,legendaId,observacao});
+  }else calendarioCentral.eventos.push({id:'evt-'+Date.now().toString(36),inicio,fim,legendaId,observacao});
+  await salvarCalendarioCentral();renderCalendarioCentral();limparFormularioEventoCalendario();
+}
+async function removerEventoCalendario(id){
+  const e=(calendarioCentral.eventos||[]).find(x=>x.id===id);if(!e)return;
+  const l=nomeEventoCalendario(e),periodo=e.inicio===e.fim?e.inicio:`${e.inicio} a ${e.fim}`;
+  if(!confirm(`Remover o evento "${l}" (${periodo})?\n\nEsta ação não poderá ser desfeita.`))return;
+  calendarioCentral.eventos=calendarioCentral.eventos.filter(x=>x.id!==id);
+  if(calendarioEventoEditandoId===id)limparFormularioEventoCalendario();
+  await salvarCalendarioCentral();renderCalendarioCentral();
+}
 function renderLegendasCalendario(){const box=document.getElementById('calLegendasLista');if(!box)return;box.innerHTML=calendarioCentral.legendas.map(l=>`<span class="cal-legend-chip"><i class="cal-dot" style="background:${l.cor}"></i><b>${escapeHtml(l.nome)}</b><small>${l.tipo==='letivo'?'letivo':l.tipo==='nao-letivo'?'sem aula':'informativo'}</small><button class="btn danger small" onclick="removerLegendaCalendario('${l.id}')">×</button></span>`).join('');}
 async function adicionarLegendaCalendario(){const nome=document.getElementById('calLegendaNome').value.trim(),cor=document.getElementById('calLegendaCor').value,tipo=document.getElementById('calLegendaTipo').value;if(!nome){alert('Informe o nome da legenda.');return;}calendarioCentral.legendas.push({id:calSlug(nome),nome,cor,tipo});await salvarCalendarioCentral();document.getElementById('calLegendaNome').value='';renderLegendasCalendario();renderCalendarioCentral();}
 async function removerLegendaCalendario(id){if(calendarioCentral.eventos.some(e=>e.legendaId===id)){alert('Essa legenda está sendo usada. Remova primeiro as datas relacionadas.');return;}calendarioCentral.legendas=calendarioCentral.legendas.filter(l=>l.id!==id);await salvarCalendarioCentral();renderLegendasCalendario();renderCalendarioCentral();}
