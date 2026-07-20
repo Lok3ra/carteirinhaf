@@ -1062,15 +1062,37 @@
         </div>
         <p id="sheetsServidorStatus" style="font-size:13px;color:#6b6355;margin:10px 0 0;"></p>
       </div>
-      <div class="row" style="margin-bottom:14px;">
-        <input type="text" id="searchServidoresPonto" placeholder="Buscar por nome..." style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;">
+      <div class="row" style="margin-bottom:10px;align-items:flex-end;">
+        <div class="field" style="flex:1;min-width:220px;margin-bottom:0;"><label>Pesquisar</label><input type="text" id="searchServidoresPonto" placeholder="Nome, matrícula, cargo ou função"></div>
+        <div class="field" style="min-width:190px;margin-bottom:0;"><label>Função</label><select id="filtroFuncaoServidoresPonto"><option value="">Todas</option></select></div>
+        <div class="field" style="min-width:150px;margin-bottom:0;"><label>Carga</label><select id="filtroCargaServidoresPonto"><option value="">Todas</option><option value="40">40h</option><option value="30">30h</option><option value="20">20h</option></select></div>
+        <div class="field" style="min-width:160px;margin-bottom:0;"><label>Turno</label><select id="filtroTurnoServidoresPonto"><option value="">Todos</option><option value="MATUTINO">Matutino</option><option value="VESPERTINO">Vespertino</option></select></div>
+        <div class="field" style="min-width:160px;margin-bottom:0;"><label>Situação</label><select id="filtroSituacaoServidoresPonto"><option value="">Todos</option><option value="lei">Lei Larissa</option><option value="pendencia">Com pendência</option></select></div>
+      </div>
+      <div class="row" style="margin-bottom:14px;align-items:center;justify-content:space-between;">
+        <label style="display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:pointer;">
+          <input type="checkbox" id="mostrarLeiLarissaServidoresChk"> Lei Larissa
+        </label>
+        <span id="sheetsSyncBadge" style="font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:#eee8da;color:#6b6355;">Não conectado</span>
       </div>
       <div class="card-block" style="padding:0;overflow:hidden;overflow-x:auto;">
         <table>
-          <thead><tr><th>Servidor</th><th>Cargo</th><th>Função</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Servidor</th><th>Cargo</th><th>Função</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th class="col-lei-larissa-servidores" style="display:none;">Lei Larissa</th><th>Ações</th></tr></thead>
           <tbody id="servidoresPontoTbody"></tbody>
         </table>
         <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor importado ainda. Vá em "Importar servidores".</div>
+      </div>
+      <div class="card-block" id="periodoRapidoServidorCard" style="display:none;margin-top:14px;">
+        <h3 id="periodoRapidoServidorTitulo">Períodos do servidor</h3>
+        <div class="row" style="align-items:flex-end;">
+          <input type="hidden" id="periodoRapidoServidorId">
+          <div class="field" style="max-width:190px;"><label>Data de início</label><input type="date" id="periodoRapidoInicio"></div>
+          <div class="field" style="max-width:190px;"><label>Data de fim</label><input type="date" id="periodoRapidoFim"></div>
+          <div class="field" style="max-width:210px;"><label>Tipo</label><select id="periodoRapidoTipo"><option value="Férias">Férias</option><option value="Recesso">Recesso</option><option value="Atestado médico">Atestado médico</option><option value="Licença Prêmio">Licença Prêmio</option></select></div>
+          <button class="btn" id="salvarPeriodoRapidoBtn" type="button">Adicionar período</button>
+          <button class="btn outline" id="fecharPeriodoRapidoBtn" type="button">Fechar</button>
+        </div>
+        <div class="taglist" id="periodoRapidoLista"></div>
       </div>
     </div>
 
@@ -1175,6 +1197,7 @@
         </div>
       </div>
 
+      <div id="pontoValidacaoBox" class="helpbox" style="display:none;margin-bottom:14px;"></div>
       <div id="pontoPreviewArea"></div>
       <div class="empty" id="pontoGerarEmpty">Escolha o período e o servidor, depois clique em "Gerar pré-visualização".</div>
     </div>
@@ -1209,6 +1232,7 @@
           <div class="field"><label>Cargo</label><input type="text" id="manualCargo"></div>
           <div class="field"><label>Função</label><input type="text" id="manualFuncao"></div>
           <div class="field" style="max-width:220px;"><label>Coordenação</label><select id="manualCoordenacao"><option value="">Não se aplica</option><option value="M">Matutina</option><option value="V">Vespertina</option></select></div>
+          <div class="field" style="max-width:170px;"><label>Lei Larissa</label><select id="manualLeiLarissa"><option value="false">Não</option><option value="true">Sim</option></select></div>
         </div>
         <div class="row">
           <div class="field" style="max-width:180px;"><label>Carga semanal</label><select id="manualCargaSemanal"><option value="40">40h</option><option value="30">30h</option><option value="20">20h</option><option value="">Outra</option></select></div>
@@ -1502,9 +1526,10 @@ Valparaíso de Goiás – GO – Fone: 61 9929 3856 – prosaber.escola@gmail.co
         <h3>2. Conferir a turma</h3>
         <div class="row" style="align-items:flex-end;">
           <div class="field" style="max-width:260px;"><label>Nome da turma</label><input type="text" id="kitProfessorTurma" placeholder="Ex: Infantil 5 A"></div>
+          <label style="font-size:13px;margin-bottom:14px;"><input type="checkbox" id="kitProfessorSelecionarTodos" checked> Selecionar todos</label>
         </div>
         <div style="overflow-x:auto;max-height:300px;overflow-y:auto;">
-          <table><thead><tr><th>Nº</th><th>Nome</th><th>Nascimento</th><th>Turma</th></tr></thead><tbody id="kitProfessorTbody"></tbody></table>
+          <table><thead><tr><th style="width:76px;">Gerar</th><th>Nº</th><th>Nome</th><th>Nascimento</th><th>Turma</th></tr></thead><tbody id="kitProfessorTbody"></tbody></table>
         </div>
         <div class="empty" id="kitProfessorEmpty">Nenhuma turma importada.</div>
       </div>
@@ -3662,7 +3687,7 @@ const pontoState = {
   config: { orgao:'', escola:'', cidade:'' },
   folhasGeradas: null,
   calendarioAno: null,
-  sheets: { url:'', aba:'Servidores', conectado:false, modo:'' }
+  sheets: { url:'', aba:'Servidores', conectado:false, modo:'', sync:'idle', ultimaSincronizacao:'' }
 };
 
 function daysInMonth(month, year){
@@ -3676,6 +3701,14 @@ function bindPontoTabs(){
   document.getElementById('baixarModeloServidoresBtn').addEventListener('click', baixarModeloServidores);
   document.getElementById('calendarioAnoSelect').addEventListener('change', handleCalendarioAnoChange);
   document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
+  ['filtroFuncaoServidoresPonto','filtroCargaServidoresPonto','filtroTurnoServidoresPonto','filtroSituacaoServidoresPonto'].forEach(id=>document.getElementById(id).addEventListener('change',renderServidoresPontoTable));
+  document.getElementById('salvarPeriodoRapidoBtn').addEventListener('click', salvarPeriodoRapidoServidor);
+  document.getElementById('fecharPeriodoRapidoBtn').addEventListener('click', ()=>{document.getElementById('periodoRapidoServidorCard').style.display='none';});
+  document.getElementById('mostrarLeiLarissaServidoresChk').addEventListener('change', (e)=>{
+    localStorage.setItem('mostrarLeiLarissaServidores', e.target.checked ? '1' : '0');
+    renderServidoresPontoTable();
+  });
+  document.getElementById('mostrarLeiLarissaServidoresChk').checked = localStorage.getItem('mostrarLeiLarissaServidores') === '1';
   document.getElementById('conectarSheetsServidoresBtn').addEventListener('click', conectarSheetsServidores);
   document.getElementById('carregarSheetsServidoresBtn').addEventListener('click', carregarServidoresDoSheets);
   document.getElementById('salvarSheetsServidoresBtn').addEventListener('click', salvarServidoresNoSheets);
@@ -3708,7 +3741,14 @@ async function loadPontoData(){
   pontoState.periodosServidor = [];
   try{
     const list = await window.storage.list('servidor:');
-    if(list && list.keys) for(const k of list.keys){ try{ const r=await window.storage.get(k); pontoState.servidores.push(JSON.parse(r.value)); }catch(e){} }
+    if(list && list.keys) for(const k of list.keys){
+      try{
+        const r=await window.storage.get(k);
+        const servidor=JSON.parse(r.value);
+        servidor.leiLarissa = servidor.leiLarissa === true || normalize(servidor.leiLarissa) === 'sim';
+        pontoState.servidores.push(servidor);
+      }catch(e){}
+    }
   }catch(e){}
   try{
     const list = await window.storage.list('periodoServidor:');
@@ -3745,6 +3785,7 @@ async function loadPontoData(){
 }
 
 function renderPontoAll(){
+  atualizarBadgeSheets();
   renderServidoresPontoTable();
   renderFeriadosTags();
   renderDiasLetivosTags();
@@ -3913,6 +3954,54 @@ function extrairSpreadsheetId(url){
   return m ? m[1] : '';
 }
 function ehAppsScriptUrl(url){ return /script\.google\.com\/(?:macros|a)\//i.test(String(url||'')); }
+function servidorTemPendencia(s){
+  const carga=parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10);
+  if(!String(s.nome||'').trim() || !String(s.matricula||'').trim() || !carga) return true;
+  if(carga===30 && ![s.turno1,s.turno2].some(t=>/MATUTINO|VESPERTINO/.test(t||''))) return true;
+  if(ehFuncaoProfessor(s.funcao) && !normalizarCoordenacaoLivre(s.coordenacao)) return true;
+  if(s.leiLarissa && !normalizarCoordenacaoLivre(s.coordenacao)) return true;
+  return false;
+}
+function marcarSheetsAlterado(){
+  if(pontoState.sheets.url && pontoState.sheets.modo==='api') pontoState.sheets.sync='dirty';
+  atualizarBadgeSheets();
+}
+function atualizarBadgeSheets(){
+  const el=document.getElementById('sheetsSyncBadge'); if(!el) return;
+  const st=pontoState.sheets.sync||'idle';
+  const map={idle:['Não conectado','#eee8da','#6b6355'],loading:['Carregando...','#fff2c7','#725c00'],dirty:['Alterações não salvas','#ffe1d8','#9a351d'],saving:['Salvando...','#dfeaff','#274f8a'],saved:['Sincronizado','#dff3e2','#2f6b38'],error:['Erro de conexão','#f8dada','#9b2323'],readonly:['Somente leitura','#e7e7e7','#555']};
+  const cfg=map[st]||map.idle; el.textContent=cfg[0]; el.style.background=cfg[1]; el.style.color=cfg[2];
+  if(pontoState.sheets.ultimaSincronizacao) el.title='Última sincronização: '+pontoState.sheets.ultimaSincronizacao;
+}
+function preencherFiltroFuncoes(){
+  const el=document.getElementById('filtroFuncaoServidoresPonto'); if(!el) return; const atual=el.value;
+  const vals=[...new Set(pontoState.servidores.map(s=>s.funcao).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  el.innerHTML='<option value="">Todas</option>'+vals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  if(vals.includes(atual)) el.value=atual;
+}
+function validarServidoresParaGeracao(alvos){
+  const erros=[]; const mats=new Map();
+  for(const s of pontoState.servidores){ const m=normalize(s.matricula); if(m) mats.set(m,(mats.get(m)||0)+1); }
+  for(const s of alvos){
+    const p=[]; const carga=parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10);
+    if(!String(s.nome||'').trim()) p.push('nome não informado');
+    if(!String(s.matricula||'').trim()) p.push('matrícula não informada');
+    else if((mats.get(normalize(s.matricula))||0)>1) p.push('matrícula duplicada');
+    if(!carga) p.push('carga horária não informada');
+    if(carga===30 && ![s.turno1,s.turno2].some(t=>/MATUTINO|VESPERTINO/.test(t||''))) p.push('servidor de 30h sem turno');
+    if(ehFuncaoProfessor(s.funcao) && !normalizarCoordenacaoLivre(s.coordenacao)) p.push('professor sem coordenação');
+    if(s.leiLarissa && !normalizarCoordenacaoLivre(s.coordenacao)) p.push('Lei Larissa sem turno de coordenação');
+    if(p.length) erros.push({nome:s.nome||'Servidor sem nome',problemas:p});
+  }
+  return erros;
+}
+function mostrarValidacaoPonto(erros){
+  const box=document.getElementById('pontoValidacaoBox'); if(!box) return;
+  if(!erros.length){ box.style.display='block'; box.style.borderColor='#87b98d'; box.innerHTML='<b>Validação concluída:</b> nenhum problema encontrado.'; return; }
+  box.style.display='block'; box.style.borderColor='#d18a7d';
+  box.innerHTML='<b>'+erros.length+' servidor(es) precisam de correção:</b><ul style="margin:8px 0 0 18px;">'+erros.map(e=>'<li><b>'+escapeHtml(e.nome)+'</b>: '+e.problemas.map(escapeHtml).join(', ')+'</li>').join('')+'</ul>';
+}
+
 function atualizarStatusSheetsServidores(msg, erro=false){
   const el=document.getElementById('sheetsServidorStatus');
   if(!el) return;
@@ -3931,14 +4020,16 @@ async function conectarSheetsServidores(){
   if(!url){ alert('Cole o link da planilha ou do Apps Script desta escola.'); return; }
   const modo=ehAppsScriptUrl(url)?'api':(extrairSpreadsheetId(url)?'sheet':'');
   if(!modo){ alert('O link informado não parece ser do Google Sheets nem do Google Apps Script.'); return; }
-  pontoState.sheets={url,aba,conectado:true,modo};
+  pontoState.sheets={url,aba,conectado:true,modo,sync:'loading',ultimaSincronizacao:''};
+  atualizarBadgeSheets();
   await salvarConfigSheetsServidores();
   atualizarStatusSheetsServidores('Conexão salva neste navegador. Testando e carregando os servidores...');
   await carregarServidoresDoSheets();
 }
 async function desconectarSheetsServidores(){
   if(!confirm('Desconectar o banco desta escola neste navegador? Os servidores já carregados permanecerão disponíveis localmente.')) return;
-  pontoState.sheets={url:'',aba:'Servidores',conectado:false,modo:''};
+  pontoState.sheets={url:'',aba:'Servidores',conectado:false,modo:'',sync:'idle',ultimaSincronizacao:''};
+  atualizarBadgeSheets();
   document.getElementById('sheetsServidorUrl').value='';
   document.getElementById('sheetsServidorAba').value='Servidores';
   try{ await window.storage.delete('pontoSheetsServidores'); }catch(e){}
@@ -3992,6 +4083,7 @@ async function substituirServidoresLocais(lista){
 async function carregarServidoresDoSheets(){
   const cfg=pontoState.sheets;
   if(!cfg.url){ alert('Conecte primeiro o banco desta escola.'); return; }
+  pontoState.sheets.sync='loading'; atualizarBadgeSheets();
   atualizarStatusSheetsServidores('Carregando servidores...');
   try{
     let rows=[];
@@ -4010,9 +4102,11 @@ async function carregarServidoresDoSheets(){
     }
     const lista=rows.map(normalizarServidorSheets).filter(s=>s.nome);
     await substituirServidoresLocais(lista);
+    pontoState.sheets.sync=cfg.modo==='api'?'saved':'readonly'; pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR'); atualizarBadgeSheets();
     atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".');
   }catch(err){
     console.error(err);
+    pontoState.sheets.sync='error'; atualizarBadgeSheets();
     atualizarStatusSheetsServidores('Não foi possível carregar. Confira o link, a permissão da planilha e o nome da aba.',true);
   }
 }
@@ -4033,6 +4127,7 @@ async function salvarServidoresNoSheets(){
     alert('O link comum do Google Sheets permite apenas leitura. Para salvar alterações, cole a URL do Google Apps Script publicado como aplicativo da web.');
     return;
   }
+  pontoState.sheets.sync='saving'; atualizarBadgeSheets();
   atualizarStatusSheetsServidores('Salvando alterações...');
   try{
     const payload={action:'saveAll',aba:cfg.aba||'Servidores',servidores:pontoState.servidores.map(servidorParaLinhaSheets)};
@@ -4040,9 +4135,11 @@ async function salvarServidoresNoSheets(){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json().catch(()=>({ok:true}));
     if(data.ok===false) throw new Error(data.error||'Falha ao salvar');
+    pontoState.sheets.sync='saved'; pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR'); atualizarBadgeSheets();
     atualizarStatusSheetsServidores(pontoState.servidores.length+' servidor(es) salvos no Google Sheets.');
   }catch(err){
     console.error(err);
+    pontoState.sheets.sync='error'; atualizarBadgeSheets();
     atualizarStatusSheetsServidores('Não foi possível salvar no Google Sheets. Verifique a implantação do Apps Script.',true);
   }
 }
@@ -4052,9 +4149,22 @@ function renderServidoresPontoTable(){
   const q = normalize(document.getElementById('searchServidoresPonto').value);
   const tbody = document.getElementById('servidoresPontoTbody');
   const empty = document.getElementById('servidoresPontoEmpty');
-  const filtered = pontoState.servidores.filter(s=>
-    !q || [s.nome,s.cargo,s.funcao,s.matricula].some(v=>normalize(v).includes(q))
-  ).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  const mostrarLeiLarissa = !!document.getElementById('mostrarLeiLarissaServidoresChk')?.checked;
+  document.querySelectorAll('.col-lei-larissa-servidores').forEach(el=>{
+    el.style.display = mostrarLeiLarissa ? '' : 'none';
+  });
+  preencherFiltroFuncoes();
+  const ff=document.getElementById('filtroFuncaoServidoresPonto')?.value||'';
+  const fc=document.getElementById('filtroCargaServidoresPonto')?.value||'';
+  const ft=document.getElementById('filtroTurnoServidoresPonto')?.value||'';
+  const fsit=document.getElementById('filtroSituacaoServidoresPonto')?.value||'';
+  const filtered = pontoState.servidores.filter(s=>{
+    const carga=String(parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10)||'');
+    const turnos=[s.turno1,s.turno2,s.turno3].filter(Boolean);
+    return (!q || [s.nome,s.cargo,s.funcao,s.matricula].some(v=>normalize(v).includes(q)))
+      && (!ff || s.funcao===ff) && (!fc || carga===fc) && (!ft || turnos.includes(ft))
+      && (!fsit || (fsit==='lei'&&s.leiLarissa) || (fsit==='pendencia'&&servidorTemPendencia(s)));
+  }).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
 
   empty.style.display = filtered.length ? 'none':'block';
   empty.textContent = pontoState.servidores.length
@@ -4094,7 +4204,13 @@ function renderServidoresPontoTable(){
         </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
       </td>
       <td>${escapeHtml(s.matricula||'—')}</td>
-      <td><button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
+      <td class="col-lei-larissa-servidores" style="display:${mostrarLeiLarissa?'':'none'};">
+        <select onchange="updateServidorPontoField('${s.id}','leiLarissa',this.value)" style="padding:4px 6px;font-size:12.5px;min-width:82px;">
+          <option value="false" ${!s.leiLarissa?'selected':''}>Não</option>
+          <option value="true" ${s.leiLarissa?'selected':''}>Sim</option>
+        </select>
+      </td>
+      <td style="white-space:nowrap;"><button class="btn small outline" onclick="abrirPeriodosServidor('${s.id}')">Períodos</button> <button class="btn small danger" onclick="deleteServidorPonto('${s.id}')">Excluir</button></td>
     </tr>`;
   }).join('');
 }
@@ -4120,11 +4236,14 @@ async function updateServidorPontoField(id, field, value){
     s.turno2 = '';
   }else if(field==='coordenacao'){
     s.coordenacao = ehFuncaoProfessor(s.funcao) ? normalizarCoordenacaoLivre(value) : '';
+  }else if(field==='leiLarissa'){
+    s.leiLarissa = value === true || value === 'true' || normalize(value) === 'sim';
   }else{
     s[field] = value;
   }
 
   await window.storage.set('servidor:'+id, JSON.stringify(s));
+  marcarSheetsAlterado();
   renderServidoresPontoTable();
   refreshServidorSelectPonto();
 }
@@ -4136,9 +4255,34 @@ async function deleteServidorPonto(id){
   if(!confirm(mensagem)) return;
   try{ await window.storage.delete('servidor:'+id); }catch(e){}
   pontoState.servidores = pontoState.servidores.filter(s=>s.id!==id);
-  renderServidoresPontoTable();
-  refreshServidorSelectPonto();
+  marcarSheetsAlterado();
+  renderPontoAll();
 }
+
+/* ---- períodos individuais diretamente no servidor ---- */
+function abrirPeriodosServidor(id){
+  const s=pontoState.servidores.find(x=>x.id===id); if(!s) return;
+  document.getElementById('periodoRapidoServidorId').value=id;
+  document.getElementById('periodoRapidoServidorTitulo').textContent='Períodos individuais — '+s.nome;
+  document.getElementById('periodoRapidoServidorCard').style.display='block';
+  renderPeriodoRapidoServidor();
+  document.getElementById('periodoRapidoServidorCard').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function renderPeriodoRapidoServidor(){
+  const id=document.getElementById('periodoRapidoServidorId').value; const box=document.getElementById('periodoRapidoLista'); if(!box) return;
+  const vistos=new Set(); const itens=[];
+  pontoState.periodosServidor.filter(p=>p.servidorId===id).forEach(p=>{if(!vistos.has(p.periodoId)){vistos.add(p.periodoId);itens.push(p);}});
+  box.innerHTML=itens.length?itens.map(p=>{const [yi,mi,di]=p.inicio.split('-'),[yf,mf,df]=p.fim.split('-');return `<span class="tag manual">${di}/${mi}/${yi} a ${df}/${mf}/${yf} — ${escapeHtml(p.tipo||p.descricao)} <button onclick="removePeriodoRapidoServidor('${id}','${p.periodoId}')">×</button></span>`;}).join(''):'<p style="color:#8b8471;font-size:13px;">Nenhum período individual cadastrado.</p>';
+}
+async function salvarPeriodoRapidoServidor(){
+  const id=document.getElementById('periodoRapidoServidorId').value, inicio=document.getElementById('periodoRapidoInicio').value, fim=document.getElementById('periodoRapidoFim').value, tipo=document.getElementById('periodoRapidoTipo').value;
+  if(!id||!inicio||!fim){alert('Preencha as datas de início e fim.');return;} if(fim<inicio){alert('A data final não pode ser anterior à inicial.');return;}
+  const periodoId='ps-'+Date.now(), novos=[];
+  for(const data of datasDoIntervalo(inicio,fim)){const item={data,descricao:tipo,tipo,servidorId:id,periodoId,inicio,fim,origem:'manual-servidor'};await window.storage.set('periodoServidor:'+id+':'+data,JSON.stringify(item));novos.push(item);}
+  const chaves=new Set(novos.map(x=>x.servidorId+'|'+x.data)); pontoState.periodosServidor=pontoState.periodosServidor.filter(x=>!chaves.has(x.servidorId+'|'+x.data)).concat(novos).sort((a,b)=>a.data.localeCompare(b.data));
+  document.getElementById('periodoRapidoInicio').value=''; document.getElementById('periodoRapidoFim').value=''; renderPeriodoRapidoServidor(); renderPeriodosServidor();
+}
+async function removePeriodoRapidoServidor(id,periodoId){await removePeriodoServidor(id,periodoId);renderPeriodoRapidoServidor();}
 
 /* ---- feriados / dias letivos tab ---- */
 async function addFeriado(){
@@ -4241,27 +4385,7 @@ function refreshServidorPeriodoSelect(){
   if(servidores.some(s=>s.id===atual)) sel.value = atual;
 }
 async function addPeriodoServidor(){
-  const servidorId = document.getElementById('periodoServidorSelect').value;
-  const inicio = document.getElementById('periodoServidorInicio').value;
-  const fim = document.getElementById('periodoServidorFim').value;
-  const tipo = document.getElementById('periodoServidorTipo').value;
-  if(!servidorId){ alert('Selecione o servidor.'); return; }
-  if(!inicio || !fim){ alert('Preencha a data de início e a data de fim.'); return; }
-  if(fim < inicio){ alert('A data de fim não pode ser anterior à data de início.'); return; }
-  const periodoId = 'ps-' + Date.now();
-  const novos = [];
-  for(const data of datasDoIntervalo(inicio,fim)){
-    const item = {data, descricao:tipo, tipo, servidorId, periodoId, inicio, fim, origem:'manual-servidor'};
-    await window.storage.set('periodoServidor:'+servidorId+':'+data, JSON.stringify(item));
-    novos.push(item);
-  }
-  const novasChaves = new Set(novos.map(x=>x.servidorId+'|'+x.data));
-  pontoState.periodosServidor = pontoState.periodosServidor.filter(x=>!novasChaves.has(x.servidorId+'|'+x.data));
-  pontoState.periodosServidor.push(...novos);
-  pontoState.periodosServidor.sort((a,b)=>a.data.localeCompare(b.data));
-  document.getElementById('periodoServidorInicio').value='';
-  document.getElementById('periodoServidorFim').value='';
-  renderPeriodosServidor();
+  return addFeriado();
 }
 
 async function removePeriodoServidor(servidorId, periodoId){
@@ -4489,6 +4613,7 @@ function carregarServidorManual(){
   document.getElementById('manualCargo').value=s.cargo||'';
   document.getElementById('manualFuncao').value=s.funcao||'';
   document.getElementById('manualCoordenacao').value=s.coordenacao||'';
+  document.getElementById('manualLeiLarissa').value=s.leiLarissa?'true':'false';
   const carga=String(s.cargaSemanal||'').replace(/\D/g,'');
   document.getElementById('manualCargaSemanal').value=['40','30','20'].includes(carga)?carga:'';
   document.getElementById('manualCargaMensal').value=s.cargaMensal|| (carga==='40'?'200':carga==='30'?'150':'');
@@ -4509,6 +4634,7 @@ function obterServidorManual(){
     cargo:document.getElementById('manualCargo').value.trim(),
     funcao:document.getElementById('manualFuncao').value.trim(),
     coordenacao:document.getElementById('manualCoordenacao').value,
+    leiLarissa:document.getElementById('manualLeiLarissa').value==='true',
     cargaSemanal:document.getElementById('manualCargaSemanal').value,
     cargaMensal:document.getElementById('manualCargaMensal').value.trim(),
     turno1:partes[0]||'',turno2:partes[1]||'',turno3:''
@@ -4532,7 +4658,7 @@ function celulaManual(servidor,date,turno,op){
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
   const regraIndividual=()=>{if(!op.individual)return null;const p=findPeriodoServidor(servidor.id,iso);if(!p)return null;const n=normalize(p.descricao||p.tipo||'');if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso'))return {text:'RECESSO',tipo:'feriado'};if(n.includes('atestado'))return {text:'ATESTADO MÉDICO',tipo:'afastamento'};if(n.includes('licenca premio'))return {text:'LICENÇA PRÊMIO',tipo:'afastamento'};return {text:String(p.tipo||p.descricao||'').toUpperCase(),tipo:'afastamento'};};
   const regraCalendario=()=>{if(!op.calendario)return null;const f=findFeriado(iso,servidor);if(!f)return null;const n=normalize(f.descricao||'');const ev=f.evento||null;const exc=ev&&ev.aplicaA&&Array.isArray(ev.aplicaA.excluirCargos)?ev.aplicaA.excluirCargos.map(normalize):[];if(exc.includes(normalize(servidor.cargo||'')))return null;if(n.includes('ferias'))return {text:'FÉRIAS',tipo:'feriado'};if(n.includes('recesso')){if(date.getMonth()===6&&isCargoSemRecessoEscolarMeioAno(servidor))return null;return {text:'RECESSO',tipo:'feriado'};}return {text:'FERIADO',tipo:'feriado'};};
-  const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE';const tipo=servidor.leiLarissa?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text,tipo};if(c==='V'&&turno==='tarde')return {text,tipo};return null;};
+  const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE';const tipo=servidor.leiLarissa?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text:texto,tipo};if(c==='V'&&turno==='tarde')return {text:texto,tipo};return null;};
   const regras=op.prioridade?[regraCarga,regraFimSemana,regraIndividual,regraCalendario,regraCoord]:[regraCarga,regraIndividual,regraCalendario,regraFimSemana,regraCoord];
   for(const fn of regras){const r=fn();if(r)return r;}
   return {text:'',tipo:'normal'};
@@ -4716,6 +4842,11 @@ function gerarPontoPreview(){
     alvos = [s];
   }
   if(!alvos.length){ alert('Nenhum servidor disponível.'); return; }
+  const errosValidacao=validarServidoresParaGeracao(alvos);
+  mostrarValidacaoPonto(errosValidacao);
+  if(errosValidacao.length){
+    if(!confirm('Foram encontradas pendências em '+errosValidacao.length+' servidor(es). Deseja gerar mesmo assim?')) return;
+  }
 
   const folhas = alvos.map(s=>({tipo:'folha', servidor:s, html: buildFolhaHtml(s, mes, ano)}));
   pontoState.folhasGeradas = todos
@@ -5409,29 +5540,53 @@ function imprimirDeclaracaoComparecimento(){
   setTimeout(()=>document.body.classList.remove('print-declaracao'),500);
 }
 
-const professorKitState={alunos:[],turmas:{},turmaSelecionada:'',modo:'nenhum',ultimoContexto:''};
+const professorKitState={alunos:[],turmas:{},turmaSelecionada:'',modo:'nenhum',ultimoContexto:'',selecionados:new Set()};
 function bindProfessorKit(){
   const input=document.getElementById('kitProfessorArquivo'); if(!input)return;
   input.addEventListener('change',lerArquivoProfessorKit);
   document.getElementById('kitProfessorTurmaSelect').addEventListener('change',e=>{professorKitState.turmaSelecionada=e.target.value;aplicarTurmaProfessorKit();});
   document.getElementById('kitProfessorSomenteAtivos').addEventListener('change',aplicarTurmaProfessorKit);
+  document.getElementById('kitProfessorSelecionarTodos').addEventListener('change',e=>{
+    if(e.target.checked) professorKitState.alunos.forEach(a=>professorKitState.selecionados.add(chaveAlunoProfessorKit(a)));
+    else professorKitState.selecionados.clear();
+    renderProfessorKit();
+    document.getElementById('kitProfessorResultado').innerHTML='';
+  });
+  document.getElementById('kitProfessorTbody').addEventListener('change',e=>{
+    const cb=e.target.closest('[data-kit-aluno-chave]'); if(!cb)return;
+    const chave=cb.dataset.kitAlunoChave;
+    if(cb.checked)professorKitState.selecionados.add(chave);else professorKitState.selecionados.delete(chave);
+    atualizarSelecionarTodosProfessorKit();
+    atualizarModoProfessorKit();
+    document.getElementById('kitProfessorResultado').innerHTML='';
+  });
   document.getElementById('kitProfessorGerar').addEventListener('click',gerarKitProfessor);
   document.getElementById('kitProfessorManualGerar').addEventListener('click',gerarKitProfessorManual);
+  document.getElementById('kitProfessorTurma').addEventListener('change',atualizarNomeTurmaProfessorKit);
   document.getElementById('kitProfessorLimpar').addEventListener('click',()=>{
-    professorKitState.alunos=[];professorKitState.turmas={};professorKitState.turmaSelecionada='';professorKitState.modo='nenhum';input.value='';
+    professorKitState.alunos=[];professorKitState.turmas={};professorKitState.turmaSelecionada='';professorKitState.modo='nenhum';professorKitState.selecionados.clear();input.value='';
     document.getElementById('kitProfessorTurma').value='';document.getElementById('kitProfessorStatus').textContent='';document.getElementById('kitProfessorResultado').innerHTML='';
     ['kitProfessorManualNome','kitProfessorManualNascimento','kitProfessorManualTurma'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('kitProfessorEscolhaTurmaWrap').style.display='none';renderProfessorKit();
   });
   ['kitPrimeiroNomeTamanho','kitPontilhadoPorFolha'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>{aplicarEstiloPrimeirosNomes();if(document.getElementById('kitProfessorResultado').innerHTML.trim())gerarKitProfessor();}));
 }
+function chaveAlunoProfessorKit(a){return String(a.matricula||'').trim()||`${normalize(a.nome||'')}|${a.nascimento||''}|${a.numero||''}`;}
+function alunosSelecionadosProfessorKit(){return professorKitState.alunos.filter(a=>professorKitState.selecionados.has(chaveAlunoProfessorKit(a)));}
+function atualizarSelecionarTodosProfessorKit(){
+  const cb=document.getElementById('kitProfessorSelecionarTodos');if(!cb)return;
+  const total=professorKitState.alunos.length,selecionados=alunosSelecionadosProfessorKit().length;
+  cb.checked=total>0&&selecionados===total;
+  cb.indeterminate=selecionados>0&&selecionados<total;
+}
 function renderProfessorKit(){
   const tb=document.getElementById('kitProfessorTbody'),empty=document.getElementById('kitProfessorEmpty'); if(!tb)return;
   const alunos=[...professorKitState.alunos].sort((a,b)=>(a.numero||999)-(b.numero||999)||a.nome.localeCompare(b.nome,'pt-BR'));
   empty.style.display=alunos.length?'none':'block';
-  tb.innerHTML=alunos.map((a,i)=>`<tr><td>${escapeHtml(a.numero||String(i+1))}</td><td>${escapeHtml(a.nome)}</td><td>${escapeHtml(a.nascimento||'')}</td><td>${escapeHtml(a.turma||'')}</td></tr>`).join('');
-  const totalTurmas=Object.keys(professorKitState.turmas).length;
-  document.getElementById('kitProfessorStatus').textContent=alunos.length?`${alunos.length} aluno(s) carregado(s)${totalTurmas>1?` em ${totalTurmas} turma(s) encontradas`:''}.`:'';
+  tb.innerHTML=alunos.map((a,i)=>{const chave=chaveAlunoProfessorKit(a),marcado=professorKitState.selecionados.has(chave);return `<tr><td style="text-align:center;"><input type="checkbox" data-kit-aluno-chave="${escapeHtml(chave)}" ${marcado?'checked':''} aria-label="Selecionar ${escapeHtml(a.nome)}"></td><td>${escapeHtml(a.numero||String(i+1))}</td><td>${escapeHtml(a.nome)}</td><td>${escapeHtml(a.nascimento||'')}</td><td>${escapeHtml(a.turma||'')}</td></tr>`;}).join('');
+  const totalTurmas=Object.keys(professorKitState.turmas).length,selecionados=alunosSelecionadosProfessorKit().length;
+  document.getElementById('kitProfessorStatus').textContent=alunos.length?`${alunos.length} aluno(s) carregado(s), ${selecionados} selecionado(s)${totalTurmas>1?` em ${totalTurmas} turma(s) encontradas`:''}.`:'';
+  atualizarSelecionarTodosProfessorKit();
   atualizarModoProfessorKit();
   aplicarEstiloPrimeirosNomes();
 }
@@ -5502,12 +5657,42 @@ function parseCsvTurmasProfessor(texto){
   }
   return {turmas,ano};
 }
+function atualizarNomeTurmaProfessorKit(){
+  const input=document.getElementById('kitProfessorTurma');
+  const novo=(input?.value||'').trim();
+  if(!novo||!professorKitState.alunos.length)return;
+  const antigo=professorKitState.turmaSelecionada;
+  professorKitState.alunos.forEach(a=>a.turma=novo);
+  if(professorKitState.modo==='turma'&&antigo){
+    const base=professorKitState.turmas[antigo]||[];
+    base.forEach(a=>a.turma=novo);
+    if(novo!==antigo){
+      professorKitState.turmas[novo]=base;
+      delete professorKitState.turmas[antigo];
+      professorKitState.turmaSelecionada=novo;
+      const sel=document.getElementById('kitProfessorTurmaSelect');
+      if(sel){
+        const opt=[...sel.options].find(o=>o.value===antigo);
+        if(opt){opt.value=novo;opt.textContent=opt.textContent.replace(antigo,novo);}
+        sel.value=novo;
+      }
+    }
+  }else if(professorKitState.modo==='individual'){
+    professorKitState.turmaSelecionada=novo;
+    professorKitState.turmas={[novo]:professorKitState.alunos};
+    const manual=document.getElementById('kitProfessorManualTurma');if(manual)manual.value=novo;
+  }
+  document.getElementById('kitProfessorResultado').innerHTML='';
+  renderProfessorKit();
+}
+
 function aplicarTurmaProfessorKit(){
   const nome=professorKitState.turmaSelecionada;
   const somenteAtivos=document.getElementById('kitProfessorSomenteAtivos').checked;
   let alunos=[...(professorKitState.turmas[nome]||[])];
   if(somenteAtivos)alunos=alunos.filter(a=>!a.situacao||a.situacao==='CURSANDO');
   professorKitState.alunos=alunos;
+  professorKitState.selecionados=new Set(alunos.map(chaveAlunoProfessorKit));
   professorKitState.modo='turma';
   document.getElementById('kitProfessorTurma').value=nome||'';
   renderProfessorKit();
@@ -5557,7 +5742,7 @@ function tamanhoPrimeiroNome(){return parseInt(document.getElementById('kitPrime
 function nomesPontilhadosPorFolha(){return parseInt(document.getElementById('kitPontilhadoPorFolha')?.value||'2',10)||2;}
 function limitePrimeirosNomesPorPagina(){const t=tamanhoPrimeiroNome();if(t>=36)return 5;if(t>=30)return 6;return 7;}
 function paginasPrimeirosNomes(alunos){const porPagina=limitePrimeirosNomesPorPagina(),pag=[];for(let i=0;i<alunos.length;i+=porPagina)pag.push(alunos.slice(i,i+porPagina));return pag;}
-function atualizarModoProfessorKit(){const el=document.getElementById('kitProfessorModo');if(!el)return;let texto='<b>Modo atual:</b> nenhum material carregado.';if(professorKitState.modo==='individual' && professorKitState.alunos[0]){const a=professorKitState.alunos[0];texto=`<b>Modo atual:</b> individual — ${escapeHtml(a.nome)} (${escapeHtml(a.turma||'Sem turma')}). <span style="color:#6b6355;">Use este modo para gerar materiais de apenas um aluno.</span>`;}else if(professorKitState.modo==='turma' && professorKitState.turmaSelecionada){texto=`<b>Modo atual:</b> turma — ${escapeHtml(professorKitState.turmaSelecionada)} com ${professorKitState.alunos.length} aluno(s) carregado(s). <span style="color:#6b6355;">Use este modo para gerar materiais em lote.</span>`;}el.innerHTML=texto;}
+function atualizarModoProfessorKit(){const el=document.getElementById('kitProfessorModo');if(!el)return;let texto='<b>Modo atual:</b> nenhum material carregado.';if(professorKitState.modo==='individual' && professorKitState.alunos[0]){const a=professorKitState.alunos[0];texto=`<b>Modo atual:</b> individual — ${escapeHtml(a.nome)} (${escapeHtml(a.turma||'Sem turma')}). <span style="color:#6b6355;">Use este modo para gerar materiais de apenas um aluno.</span>`;}else if(professorKitState.modo==='turma' && professorKitState.turmaSelecionada){texto=`<b>Modo atual:</b> turma — ${escapeHtml(professorKitState.turmaSelecionada)} com ${professorKitState.alunos.length} aluno(s) carregado(s) e ${alunosSelecionadosProfessorKit().length} selecionado(s). <span style="color:#6b6355;">Use este modo para gerar materiais em lote.</span>`;}el.innerHTML=texto;}
 function aplicarEstiloPrimeirosNomes(){document.documentElement.style.setProperty('--kit-primeiro-nome-size',`${tamanhoPrimeiroNome()}pt`);document.querySelectorAll('.kit-name-card').forEach(el=>el.style.fontSize=`${tamanhoPrimeiroNome()}pt`);}
 function gerarKitProfessorManual(){
   const nome=document.getElementById('kitProfessorManualNome').value.trim();
@@ -5567,6 +5752,7 @@ function gerarKitProfessorManual(){
   if(!turma){alert('Digite a turma do aluno.');document.getElementById('kitProfessorManualTurma').focus();return;}
   const nascimento=nascimentoIso?nascimentoIso.split('-').reverse().join('/'):'';
   professorKitState.alunos=[{numero:'1',nome,nascimento,turma,foto:'',situacao:'CURSANDO'}];
+  professorKitState.selecionados=new Set(professorKitState.alunos.map(chaveAlunoProfessorKit));
   professorKitState.turmas={[turma]:[...professorKitState.alunos]};
   professorKitState.turmaSelecionada=turma;
   professorKitState.modo='individual';
@@ -5578,8 +5764,10 @@ function gerarKitProfessorManual(){
 function gerarKitProfessor(){
   if(!professorKitState.alunos.length){alert('Importe uma lista da turma primeiro.');return;}
   const tipos=[...document.querySelectorAll('#panel-professor-kit .kit-option input:checked')].map(x=>x.value); if(!tipos.length){alert('Selecione pelo menos um material.');return;}
-  const turma=document.getElementById('kitProfessorTurma').value.trim()||professorKitState.alunos[0].turma||'Turma';
-  const alunos=[...professorKitState.alunos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  const alunosBase=alunosSelecionadosProfessorKit();
+  if(!alunosBase.length){alert('Selecione pelo menos um aluno para gerar os materiais.');return;}
+  const turma=document.getElementById('kitProfessorTurma').value.trim()||alunosBase[0].turma||'Turma';
+  const alunos=[...alunosBase].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   let html='';
   if(tipos.includes('carteirinhas'))html+=`<div class="card-block"><h3>Carteirinhas simples</h3><button class="btn small" onclick="imprimirMaterialProfessor('carteirinhas')">Imprimir</button><div class="kit-preview-grid" style="margin-top:12px;">${alunos.slice(0,6).map(a=>`<div class="kit-preview-card"><b>${escapeHtml(a.nome)}</b><br><small>${escapeHtml(turma)}</small></div>`).join('')}</div></div>`;
   if(tipos.includes('lista'))html+=`<div class="card-block"><h3>Lista de alunos</h3><button class="btn small" onclick="imprimirMaterialProfessor('lista')">Imprimir</button><p>${alunos.length} aluno(s), em ordem alfabética.</p></div>`;
@@ -5590,7 +5778,8 @@ function gerarKitProfessor(){
 }
 function imprimirMaterialProfessor(tipo){
   const turma=document.getElementById('kitProfessorTurma').value.trim()||'Turma';
-  const alunos=[...professorKitState.alunos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  const alunos=[...alunosSelecionadosProfessorKit()].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  if(!alunos.length){alert('Selecione pelo menos um aluno para imprimir.');return;}
   let html='';
   if(tipo==='carteirinhas')html=`<h1 class="kit-print-title">Carteirinhas — ${escapeHtml(turma)}</h1><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8mm;">${alunos.map(a=>`<div class="kit-simple-card"><div class="kit-info"><strong>${escapeHtml(a.nome)}</strong><div>Turma: ${escapeHtml(turma)}</div></div></div>`).join('')}</div>`;
   if(tipo==='lista')html=`<h1 class="kit-print-title">Lista de alunos — ${escapeHtml(turma)}</h1><table class="kit-print-table"><thead><tr><th style="width:12%">Nº</th><th>Nome</th></tr></thead><tbody>${alunos.map((a,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(a.nome)}</td></tr>`).join('')}</tbody></table>`;
@@ -5618,7 +5807,7 @@ function imprimirMaterialProfessor(tipo){
    PROFESSOR / ATIVIDADE AMPLIADA
 ========================================================================= */
 const LOGO_PRO_SABER_ATIVIDADE = 'data:image/jpeg;base64,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';
-let professorAtividadeState={src:'',processedSrc:'',html:'',config:null};
+let professorAtividadeState={src:'',processedSrc:'',html:'',config:null,imageWidth:0,imageHeight:0};
 let montarAtividadeState={src:'',processedSrc:'',html:''};
 function atualizarLabelRange(id,alvo,sufixo='%'){const el=document.getElementById(id),out=document.getElementById(alvo);if(el&&out)out.textContent=`${el.value}${sufixo}`;}
 function loadImageElement(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=src;});}
@@ -5655,25 +5844,37 @@ function renderProfessorAtividade(){
 function configAtividade(){
   const n=parseInt(document.getElementById('atividadeFolhas').value,10)||4;
   const orientacao=document.getElementById('atividadeOrientacao').value||'auto';
+  const grade=n===2?{cols:1,rows:2}:n===3?{cols:1,rows:3}:{cols:2,rows:2};
   let landscape=false;
   if(orientacao==='landscape')landscape=true;
   else if(orientacao==='portrait')landscape=false;
-  else landscape=(n===2||n===3)?false:false;
-  if(n===2)return {n,cols:1,rows:2,landscape,overlayMm:parseInt(document.getElementById('atividadeSobreposicao').value,10)||0};
-  if(n===3)return {n,cols:1,rows:3,landscape,overlayMm:parseInt(document.getElementById('atividadeSobreposicao').value,10)||0};
-  return {n:4,cols:2,rows:2,landscape,overlayMm:parseInt(document.getElementById('atividadeSobreposicao').value,10)||0};
+  else{
+    const iw=professorAtividadeState.imageWidth||1,ih=professorAtividadeState.imageHeight||1;
+    const imgRatio=iw/ih;
+    const ratioPortrait=(210*grade.cols)/(297*grade.rows);
+    const ratioLandscape=(297*grade.cols)/(210*grade.rows);
+    landscape=Math.abs(Math.log(imgRatio/ratioLandscape))<Math.abs(Math.log(imgRatio/ratioPortrait));
+  }
+  return {n:n===4?4:n,cols:grade.cols,rows:grade.rows,landscape,overlayMm:parseInt(document.getElementById('atividadeSobreposicao').value,10)||0};
 }
 function montarPartesAtividade(preview=false){
-  const cfg=configAtividade(),src=professorAtividadeState.processedSrc||professorAtividadeState.src,contraste=document.getElementById('atividadeAltoContraste').checked;
+  const cfg=configAtividade(),src=professorAtividadeState.processedSrc||professorAtividadeState.src;
   if(!src)return '';
+  const iw=professorAtividadeState.imageWidth||1,ih=professorAtividadeState.imageHeight||1;
+  const w=cfg.landscape?297:210,h=cfg.landscape?210:297;
+  const totalW=w*cfg.cols,totalH=h*cfg.rows;
+  const escala=Math.min(totalW/iw,totalH/ih);
+  const imgW=iw*escala,imgH=ih*escala;
+  const offsetX=(totalW-imgW)/2,offsetY=(totalH-imgH)/2;
   const partes=[];
   for(let i=0;i<cfg.n;i++){
     const col=i%cfg.cols,row=Math.floor(i/cfg.cols);
-    const w=cfg.landscape?297:210,h=cfg.landscape?210:297;
-    const totalW=w*cfg.cols,totalH=h*cfg.rows;
     const cls=preview?`atividade-page-crop ${cfg.landscape?'landscape':''}`:'atividade-print-page';
     const style=preview?'':`width:${w}mm;height:${h}mm;`;
-    const imgStyle=preview?`width:${cfg.cols*100}%;height:${cfg.rows*100}%;left:-${col*100}%;top:-${row*100}%;object-fit:fill;${contraste?'filter:grayscale(1) contrast(1.35);':''}`:`width:${totalW}mm;height:${totalH}mm;left:-${col*w}mm;top:-${row*h}mm;object-fit:fill;${contraste?'filter:grayscale(1) contrast(1.35);':''}`;
+    const leftMm=offsetX-col*w,topMm=offsetY-row*h;
+    const imgStyle=preview
+      ?`width:${(imgW/w)*100}%;height:${(imgH/h)*100}%;left:${(leftMm/w)*100}%;top:${(topMm/h)*100}%;`
+      :`width:${imgW}mm;height:${imgH}mm;left:${leftMm}mm;top:${topMm}mm;`;
     const corpo=`<div class="${cls}" style="${style}"><img src="${src}" style="${imgStyle}"><span class="atividade-print-label">Parte ${i+1} de ${cfg.n}</span></div>`;
     partes.push(preview?`<div class="atividade-page-mini"><b>Parte ${i+1} de ${cfg.n}</b>${corpo}</div>`:corpo);
   }
@@ -5682,6 +5883,9 @@ function montarPartesAtividade(preview=false){
 async function gerarAtividadeAmpliada(validar=true){
   if(!professorAtividadeState.src){if(validar)alert('Envie uma imagem da atividade.');return;}
   professorAtividadeState.processedSrc=await processarImagem(professorAtividadeState.src,{rotacao:document.getElementById('atividadeRotacao').value,corte:document.getElementById('atividadeCorte').value,altoContraste:document.getElementById('atividadeAltoContraste').checked});
+  const processada=await loadImageElement(professorAtividadeState.processedSrc);
+  professorAtividadeState.imageWidth=processada.naturalWidth||processada.width||1;
+  professorAtividadeState.imageHeight=processada.naturalHeight||processada.height||1;
   professorAtividadeState.config=configAtividade();
   professorAtividadeState.html=montarPartesAtividade(false);
   document.getElementById('atividadePagesPreview').innerHTML=montarPartesAtividade(true);
@@ -5699,7 +5903,7 @@ async function imprimirAtividadeAmpliada(){
   setTimeout(()=>{document.body.classList.remove('print-atividade');document.getElementById('atividadePrintStyle')?.remove();},500);
 }
 function limparAtividadeAmpliada(){
-  professorAtividadeState={src:'',processedSrc:'',html:'',config:null};
+  professorAtividadeState={src:'',processedSrc:'',html:'',config:null,imageWidth:0,imageHeight:0};
   document.getElementById('atividadeArquivo').value='';document.getElementById('atividadeImagem').removeAttribute('src');document.getElementById('atividadeImagemPreview').style.display='none';document.getElementById('atividadePagesPreview').innerHTML='';document.getElementById('atividadeEmpty').style.display='block';document.getElementById('atividadeImprimir').disabled=true;document.getElementById('atividadeFolhas').value='4';document.getElementById('atividadeOrientacao').value='auto';document.getElementById('atividadeSobreposicao').value='5';document.getElementById('atividadeRotacao').value='0';document.getElementById('atividadeCorte').value='0';atualizarLabelRange('atividadeCorte','atividadeCorteValor');document.getElementById('atividadeAltoContraste').checked=false;
 }
 
