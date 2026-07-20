@@ -741,12 +741,12 @@
         <span>Folha de Ponto</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="ponto-gerar"><span class="idx">06</span> Gerar folha</div>
-        <div class="navitem" data-tab="ponto-manual"><span class="idx">07</span> Manual</div>
-        <div class="navitem" data-tab="ponto-listas"><span class="idx">08</span> Listas</div>
-        <div class="navitem" data-tab="ponto-servidores"><span class="idx">09</span> Servidores</div>
-        <div class="navitem" data-tab="ponto-importar"><span class="idx">10</span> Importar servidores</div>
-        <div class="navitem" data-tab="ponto-feriados"><span class="idx">11</span> Feriados & dias letivos</div>
+        <div class="navitem" data-tab="ponto-servidores"><span class="idx">06</span> Servidores</div>
+        <div class="navitem" data-tab="ponto-importar"><span class="idx">07</span> Importar dados</div>
+        <div class="navitem" data-tab="ponto-feriados"><span class="idx">08</span> Feriados e períodos</div>
+        <div class="navitem" data-tab="ponto-gerar"><span class="idx">09</span> Gerar folha</div>
+        <div class="navitem" data-tab="ponto-manual"><span class="idx">10</span> Folha manual</div>
+        <div class="navitem" data-tab="ponto-listas"><span class="idx">11</span> Listas</div>
       </div>
     </div>
 
@@ -1072,10 +1072,29 @@
         <div class="field" style="min-width:160px;margin-bottom:0;"><label>Situação</label><select id="filtroSituacaoServidoresPonto"><option value="">Todos</option><option value="lei">Lei Larissa</option><option value="pendencia">Com pendência</option></select></div>
       </div>
       <div class="row" style="margin-bottom:14px;align-items:center;justify-content:space-between;">
-        <label style="display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:pointer;">
-          <input type="checkbox" id="mostrarLeiLarissaServidoresChk"> Lei Larissa
-        </label>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:pointer;">
+            <input type="checkbox" id="mostrarLeiLarissaServidoresChk"> Lei Larissa
+          </label>
+          <button class="btn" id="abrirNovoServidorBtn" type="button">Adicionar servidor</button>
+        </div>
         <span id="sheetsSyncBadge" style="font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:999px;background:#eee8da;color:#6b6355;">Não conectado</span>
+      </div>
+      <div class="card-block" id="novoServidorCard" style="display:none;margin-bottom:14px;">
+        <h3 style="margin-bottom:10px;">Adicionar servidor</h3>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="flex:2;min-width:220px;"><label>Nome do servidor</label><input type="text" id="novoServidorNome" placeholder="Nome completo"></div>
+          <div class="field" style="flex:1;min-width:180px;"><label>Cargo</label><input type="text" id="novoServidorCargo" placeholder="Ex.: Professor"></div>
+          <div class="field" style="flex:1;min-width:180px;"><label>Função</label><input type="text" id="novoServidorFuncao" placeholder="Ex.: Professor"></div>
+          <div class="field" style="max-width:125px;"><label>Carga</label><select id="novoServidorCarga"><option value="40">40H</option><option value="30">30H</option><option value="20">20H</option></select></div>
+          <div class="field" style="min-width:155px;"><label>Turno</label><select id="novoServidorTurno"><option value="MATUTINO">MATUTINO</option><option value="VESPERTINO">VESPERTINO</option></select></div>
+          <div class="field" style="min-width:165px;"><label>Coordenação</label><select id="novoServidorCoordenacao"><option value="">SEM COORDENAÇÃO</option><option value="M">MATUTINO</option><option value="V">VESPERTINO</option></select></div>
+          <div class="field" style="min-width:150px;"><label>Matrícula</label><input type="text" id="novoServidorMatricula" placeholder="Matrícula"></div>
+          <div class="field" style="min-width:130px;"><label>Lei Larissa</label><select id="novoServidorLeiLarissa"><option value="false">Não</option><option value="true">Sim</option></select></div>
+          <button class="btn" id="salvarNovoServidorBtn" type="button">Salvar servidor</button>
+          <button class="btn outline" id="cancelarNovoServidorBtn" type="button">Cancelar</button>
+        </div>
+        <p id="novoServidorStatus" style="font-size:13px;color:#6b6355;margin:4px 0 0;"></p>
       </div>
       <div class="card-block" style="padding:0;overflow:hidden;overflow-x:auto;">
         <table>
@@ -3736,6 +3755,11 @@ function bindPontoTabs(){
   ['filtroFuncaoServidoresPonto','filtroCargaServidoresPonto','filtroTurnoServidoresPonto','filtroSituacaoServidoresPonto'].forEach(id=>document.getElementById(id).addEventListener('change',renderServidoresPontoTable));
   document.getElementById('salvarPeriodoRapidoBtn').addEventListener('click', salvarPeriodoRapidoServidor);
   document.getElementById('fecharPeriodoRapidoBtn').addEventListener('click', ()=>{document.getElementById('periodoRapidoServidorCard').style.display='none';});
+  document.getElementById('abrirNovoServidorBtn').addEventListener('click', abrirNovoServidor);
+  document.getElementById('salvarNovoServidorBtn').addEventListener('click', salvarNovoServidor);
+  document.getElementById('cancelarNovoServidorBtn').addEventListener('click', fecharNovoServidor);
+  document.getElementById('novoServidorCarga').addEventListener('change', atualizarCamposNovoServidor);
+  document.getElementById('novoServidorFuncao').addEventListener('input', atualizarCamposNovoServidor);
   document.getElementById('mostrarLeiLarissaServidoresChk').addEventListener('change', (e)=>{
     try{ localStorage.setItem('mostrarLeiLarissaServidores', e.target.checked ? '1' : '0'); }
     catch(erro){ reportStorageError('salvar','mostrarLeiLarissaServidores',erro); }
@@ -4201,6 +4225,89 @@ async function salvarServidoresNoSheets(){
 }
 
 /* ---- servidores tab ---- */
+function abrirNovoServidor(){
+  const card=document.getElementById('novoServidorCard');
+  if(!card) return;
+  card.style.display='block';
+  document.getElementById('novoServidorStatus').textContent='';
+  atualizarCamposNovoServidor();
+  setTimeout(()=>document.getElementById('novoServidorNome')?.focus(),50);
+  card.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function fecharNovoServidor(){
+  const card=document.getElementById('novoServidorCard');
+  if(card) card.style.display='none';
+  ['novoServidorNome','novoServidorCargo','novoServidorFuncao','novoServidorMatricula'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const carga=document.getElementById('novoServidorCarga'); if(carga)carga.value='40';
+  const turno=document.getElementById('novoServidorTurno'); if(turno)turno.value='MATUTINO';
+  const coord=document.getElementById('novoServidorCoordenacao'); if(coord)coord.value='';
+  const lei=document.getElementById('novoServidorLeiLarissa'); if(lei)lei.value='false';
+  const status=document.getElementById('novoServidorStatus'); if(status)status.textContent='';
+}
+function atualizarCamposNovoServidor(){
+  const carga=parseInt(document.getElementById('novoServidorCarga')?.value||'40',10);
+  const turno=document.getElementById('novoServidorTurno');
+  if(turno){ turno.disabled=carga===40; if(carga===40) turno.value='MATUTINO'; }
+  const funcao=document.getElementById('novoServidorFuncao')?.value||'';
+  const coord=document.getElementById('novoServidorCoordenacao');
+  if(coord){
+    const professor=ehFuncaoProfessor(funcao);
+    coord.disabled=!professor;
+    if(!professor) coord.value='';
+  }
+}
+async function salvarNovoServidor(){
+  const status=document.getElementById('novoServidorStatus');
+  const nome=String(document.getElementById('novoServidorNome')?.value||'').trim();
+  const cargo=String(document.getElementById('novoServidorCargo')?.value||'').trim();
+  const funcao=String(document.getElementById('novoServidorFuncao')?.value||'').trim();
+  const carga=parseInt(document.getElementById('novoServidorCarga')?.value||'',10);
+  const turno=String(document.getElementById('novoServidorTurno')?.value||'').trim();
+  const coordenacao=normalizarCoordenacaoLivre(document.getElementById('novoServidorCoordenacao')?.value||'');
+  const matricula=String(document.getElementById('novoServidorMatricula')?.value||'').trim();
+  const leiLarissa=document.getElementById('novoServidorLeiLarissa')?.value==='true';
+  const problemas=[];
+  if(!nome) problemas.push('informe o nome');
+  if(!cargo) problemas.push('informe o cargo');
+  if(!funcao) problemas.push('informe a função');
+  if(!carga) problemas.push('informe a carga horária');
+  if(!matricula) problemas.push('informe a matrícula');
+  if(matricula && pontoState.servidores.some(s=>normalize(s.matricula)===normalize(matricula))) problemas.push('a matrícula já está cadastrada');
+  if(carga===30 && !turno) problemas.push('informe o turno');
+  if(ehFuncaoProfessor(funcao) && !coordenacao) problemas.push('informe o turno da coordenação');
+  if(leiLarissa && !coordenacao) problemas.push('a Lei Larissa exige turno de coordenação');
+  if(problemas.length){
+    status.textContent='Não foi possível adicionar: '+problemas.join('; ')+'.';
+    status.style.color='#a32626';
+    return;
+  }
+  const id='srv_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const servidor={
+    id,nome,cargo:cargo.toUpperCase(),funcao,
+    turno1:carga===40?'MATUTINO':turno,
+    turno2:carga===40?'VESPERTINO':'',
+    turno3:'',
+    coordenacao:ehFuncaoProfessor(funcao)?coordenacao:'',
+    leiLarissa:!!leiLarissa,
+    matricula,
+    cargaSemanal:String(carga)+'H',
+    cargaMensal:carga===40?'200H':(carga===30?'150H':String(carga*5)+'H')
+  };
+  try{
+    await window.storage.set('servidor:'+id,JSON.stringify(servidor));
+    pontoState.servidores.push(servidor);
+    marcarSheetsAlterado();
+    renderPontoAll();
+    fecharNovoServidor();
+    atualizarStatusSheetsServidores('Servidor adicionado. Use “Salvar alterações” para enviar a mudança ao Google Sheets.');
+  }catch(erro){
+    console.error(erro);
+    reportStorageError('salvar','servidor:'+id,erro);
+    status.textContent='Não foi possível salvar o servidor neste navegador.';
+    status.style.color='#a32626';
+  }
+}
+
 function renderServidoresPontoTable(){
   const q = normalize(document.getElementById('searchServidoresPonto').value);
   const tbody = document.getElementById('servidoresPontoTbody');
