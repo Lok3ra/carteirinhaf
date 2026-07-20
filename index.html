@@ -4479,8 +4479,8 @@ function findPeriodoServidor(servidorId, iso){
 }
 
 function isCargoSemRecessoEscolarMeioAno(servidor){
-  const cargo=normalize(servidor.cargo||'');
-  return cargo.includes('secretario escolar') || cargo.includes('agente de educacao');
+  const cargo=normalize(servidor.cargo||'').replace(/\(a\)/g,'a');
+  return cargo.includes('secretario escolar') || cargo.includes('secretaria escolar') || cargo.includes('agente de educacao');
 }
 
 async function addDiaLetivo(){
@@ -4523,7 +4523,8 @@ function renderDiasLetivosTags(){
 function ehFuncaoProfessor(valor){
   const n=normalize(valor||'');
   if(n.includes('aee')) return false;
-  return n==='professor' || n==='professora' || n.startsWith('professor ') || n.startsWith('professora ');
+  return n==='professor' || n==='professora' || n==='professor(a)'
+    || n.startsWith('professor ') || n.startsWith('professora ') || n.startsWith('professor(a) ');
 }
 function normalizarCoordenacaoLivre(valor){
   const n=normalize(String(valor||'').trim());
