@@ -3890,6 +3890,7 @@ function renderPontoAll(){
   refreshServidorPeriodoSelect();
   refreshServidorSelectPonto();
   renderListaServidores();
+  refreshServidorBaseManual();
 }
 
 /* ---- importar servidores + feriados ---- */
@@ -4847,6 +4848,103 @@ function celulaManual(servidor,date,turno,op){
   for(const fn of regras){const r=fn();if(r)return r;}
   return {text:'',tipo:'normal'};
 }
+function obterServidorManual(){
+  const cargaSemanal=document.getElementById('manualCargaSemanal').value;
+  const turnoValor=document.getElementById('manualTurno').value||'';
+  const turnos=turnoValor.split(',').map(x=>x.trim()).filter(Boolean);
+  const leiLarissa=document.getElementById('manualLeiLarissa').value==='true';
+  const aprimoramentoProfissional=document.getElementById('manualAprimoramento').value==='true';
+  return {
+    id:'manual',
+    nome:document.getElementById('manualNome').value.trim(),
+    matricula:document.getElementById('manualMatricula').value.trim(),
+    cargo:document.getElementById('manualCargo').value.trim(),
+    funcao:document.getElementById('manualFuncao').value.trim(),
+    coordenacao:normalizarCoordenacaoLivre(document.getElementById('manualCoordenacao').value),
+    leiLarissa,
+    aprimoramentoProfissional,
+    observacaoPermissao:(leiLarissa||aprimoramentoProfissional)?document.getElementById('manualObservacaoPermissao').value.trim():'',
+    cargaSemanal:cargaSemanal?String(cargaSemanal).replace(/\D/g,'')+'H':'',
+    cargaMensal:document.getElementById('manualCargaMensal').value.trim(),
+    turno1:turnos[0]||'',
+    turno2:turnos[1]||'',
+    turno3:turnos[2]||''
+  };
+}
+function obterOpcoesManual(){
+  return {
+    manual:true,
+    fimSemana:document.getElementById('manualRegraFimSemana').checked,
+    calendario:document.getElementById('manualRegraCalendario').checked,
+    individual:document.getElementById('manualRegraIndividual').checked,
+    coordenacao:document.getElementById('manualRegraCoordenacao').checked,
+    carga:document.getElementById('manualRegraCarga').checked,
+    prioridade:document.getElementById('manualRegraPrioridade').checked
+  };
+}
+function atualizarObservacaoPermissaoManual(){
+  const ativa=document.getElementById('manualLeiLarissa').value==='true'||document.getElementById('manualAprimoramento').value==='true';
+  document.getElementById('manualObservacaoPermissaoRow').style.display=ativa?'flex':'none';
+}
+function carregarServidorBaseManual(){
+  const id=document.getElementById('manualServidorBase').value;
+  if(!id)return;
+  const s=pontoState.servidores.find(x=>x.id===id);
+  if(!s){alert('Servidor não encontrado.');return;}
+  document.getElementById('manualNome').value=s.nome||'';
+  document.getElementById('manualMatricula').value=s.matricula||'';
+  document.getElementById('manualCargo').value=s.cargo||'';
+  document.getElementById('manualFuncao').value=s.funcao||'';
+  document.getElementById('manualCoordenacao').value=normalizarCoordenacaoLivre(s.coordenacao)||'';
+  document.getElementById('manualLeiLarissa').value=s.leiLarissa?'true':'false';
+  document.getElementById('manualAprimoramento').value=s.aprimoramentoProfissional?'true':'false';
+  document.getElementById('manualObservacaoPermissao').value=s.observacaoPermissao||'';
+  const carga=parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10);
+  document.getElementById('manualCargaSemanal').value=[20,30,40].includes(carga)?String(carga):'';
+  document.getElementById('manualCargaMensal').value=String(s.cargaMensal||'').replace(/H/gi,'');
+  const turnos=[s.turno1,s.turno2,s.turno3].filter(Boolean).join(',');
+  const turnoSel=document.getElementById('manualTurno');
+  const opt=[...turnoSel.options].find(o=>normalize(o.value)===normalize(turnos));
+  turnoSel.value=opt?opt.value:(turnos.includes('MATUTINO')&&turnos.includes('VESPERTINO')?'MATUTINO,VESPERTINO':turnos||'MATUTINO,VESPERTINO');
+  atualizarObservacaoPermissaoManual();
+}
+function refreshServidorBaseManual(){
+  const sel=document.getElementById('manualServidorBase');
+  if(!sel)return;
+  const atual=sel.value;
+  sel.innerHTML='<option value="">— preencher manualmente —</option>'+pontoState.servidores.map(s=>`<option value="${escapeHtml(s.id)}">${escapeHtml(s.nome)}</option>`).join('');
+  if([...sel.options].some(o=>o.value===atual))sel.value=atual;
+}
+function bindPontoManual(){
+  const gerar=document.getElementById('manualGerarBtn');
+  const imprimir=document.getElementById('manualImprimirBtn');
+  const carregar=document.getElementById('manualCarregarServidor');
+  if(!gerar||!imprimir||!carregar)return;
+  gerar.addEventListener('click',()=>{
+    try{gerarPontoManual();}
+    catch(erro){console.error('Erro ao gerar folha manual:',erro);alert('Não foi possível gerar a pré-visualização da folha manual. Verifique os dados preenchidos.');}
+  });
+  imprimir.addEventListener('click',imprimirPontoManual);
+  carregar.addEventListener('click',carregarServidorBaseManual);
+  document.getElementById('manualLeiLarissa').addEventListener('change',()=>{
+    if(document.getElementById('manualLeiLarissa').value==='true')document.getElementById('manualAprimoramento').value='false';
+    atualizarObservacaoPermissaoManual();
+  });
+  document.getElementById('manualAprimoramento').addEventListener('change',()=>{
+    if(document.getElementById('manualAprimoramento').value==='true')document.getElementById('manualLeiLarissa').value='false';
+    atualizarObservacaoPermissaoManual();
+  });
+  document.getElementById('manualCargaSemanal').addEventListener('change',e=>{
+    const c=parseInt(e.target.value,10);
+    if(c===40)document.getElementById('manualCargaMensal').value='200';
+    else if(c===30)document.getElementById('manualCargaMensal').value='150';
+    else if(c===20)document.getElementById('manualCargaMensal').value='100';
+  });
+  document.getElementById('manualAno').value=new Date().getFullYear();
+  document.getElementById('manualMes').value=String(new Date().getMonth());
+  atualizarObservacaoPermissaoManual();
+  refreshServidorBaseManual();
+}
 function gerarPontoManual(){
   const servidor=obterServidorManual();
   if(!servidor.nome){alert('Informe o nome do servidor.');return;}
@@ -5330,6 +5428,24 @@ function calendarioFallbackIntegrado_(ano){
   if(Number(ano)===2026) return JSON.parse(JSON.stringify(CALENDARIO_2026_INTEGRADO));
   return {ano:Number(ano),versao:0,legendas:JSON.parse(JSON.stringify(CAL_LEGENDAS_PADRAO)),eventos:[],bimestres:[],regras:{}};
 }
+function garantirCalendario2026Integrado_(cal){
+  if(Number(cal?.ano)!==2026) return cal;
+  const base=JSON.parse(JSON.stringify(CALENDARIO_2026_INTEGRADO));
+  const atual=cal&&typeof cal==='object'?cal:{};
+  const porId=new Map((Array.isArray(atual.eventos)?atual.eventos:[]).map(e=>[e.id,e]));
+  base.eventos.forEach(e=>{if(!porId.has(e.id))porId.set(e.id,e);});
+  const legendasPorId=new Map((Array.isArray(atual.legendas)?atual.legendas:[]).map(l=>[l.id,l]));
+  base.legendas.forEach(l=>{if(!legendasPorId.has(l.id))legendasPorId.set(l.id,l);});
+  return {
+    ...base,
+    ...atual,
+    ano:2026,
+    legendas:[...legendasPorId.values()],
+    eventos:[...porId.values()],
+    bimestres:Array.isArray(atual.bimestres)&&atual.bimestres.length?atual.bimestres:base.bimestres,
+    regras:{...base.regras,...(atual.regras||{})}
+  };
+}
 async function carregarCalendarioCentral(ano){
   ano=parseInt(ano,10)||new Date().getFullYear();
   let local=null, publicado=null;
@@ -5362,6 +5478,7 @@ async function carregarCalendarioCentral(ano){
   if(!Array.isArray(calendarioCentral.bimestres)) calendarioCentral.bimestres=[];
   if(!calendarioCentral.regras||typeof calendarioCentral.regras!=='object') calendarioCentral.regras={};
   calendarioCentral.ano=ano;
+  calendarioCentral=garantirCalendario2026Integrado_(calendarioCentral);
   if(calendarioTemConteudo_(calendarioCentral)){
     try{await window.storage.set(calKey(ano),JSON.stringify(calendarioCentral));}
     catch(e){reportStorageError('salvar',calKey(ano),e);}
