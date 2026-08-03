@@ -4120,6 +4120,16 @@ function atualizarStatusSheetsServidores(msg, erro=false){
 async function salvarConfigSheetsServidores(){
   await window.storage.set('pontoSheetsServidores', JSON.stringify(pontoState.sheets));
 }
+async function salvarConfigSheetsServidoresSeguro(){
+  try{
+    await salvarConfigSheetsServidores();
+    return true;
+  }catch(err){
+    console.error('Falha ao salvar o estado local da conexão com Google Sheets:',err);
+    mostrarAvisoSistema('A planilha foi atualizada, mas o navegador não conseguiu salvar localmente o estado da conexão. A conexão continuará funcionando nesta sessão.');
+    return false;
+  }
+}
 async function conectarSheetsServidores(){
   const url=(document.getElementById('sheetsServidorUrl').value||'').trim();
   const aba=(document.getElementById('sheetsServidorAba').value||'Servidores').trim();
@@ -4215,9 +4225,10 @@ async function carregarServidoresDoSheets(){
     const lista=rows.map(normalizarServidorSheets).filter(s=>s.nome);
     await substituirServidoresLocais(lista);
     pontoState.sheets.sync=cfg.modo==='api'?'saved':'readonly'; pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR'); atualizarBadgeSheets();
-    await salvarConfigSheetsServidores();
+    const estadoLocalSalvo=await salvarConfigSheetsServidoresSeguro();
     const txtVersao=(cfg.modo==='api' && pontoState.sheets.versao!==null)?' Versão '+pontoState.sheets.versao+'.':'';
-    atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".'+txtVersao);
+    const avisoLocal=estadoLocalSalvo?'':' A configuração não pôde ser gravada no navegador.';
+    atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".'+txtVersao+avisoLocal);
   }catch(err){
     console.error(err);
     pontoState.sheets.sync='error'; atualizarBadgeSheets();
@@ -4259,8 +4270,8 @@ async function salvarServidoresNoSheets(){
     const novaVersao=data.versao ?? data.version ?? data.novaVersao ?? null;
     if(novaVersao!==null) pontoState.sheets.versao=Number(novaVersao);
     pontoState.sheets.sync='saved'; pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR'); atualizarBadgeSheets();
-    await salvarConfigSheetsServidores();
-    atualizarStatusSheetsServidores(pontoState.servidores.length+' servidor(es) salvos no Google Sheets.'+(pontoState.sheets.versao!==null?' Versão '+pontoState.sheets.versao+'.':''));
+    const estadoLocalSalvo=await salvarConfigSheetsServidoresSeguro();
+    atualizarStatusSheetsServidores(pontoState.servidores.length+' servidor(es) salvos no Google Sheets.'+(pontoState.sheets.versao!==null?' Versão '+pontoState.sheets.versao+'.':'')+(estadoLocalSalvo?'':' A configuração não pôde ser gravada no navegador.'));
   }catch(err){
     console.error(err);
     pontoState.sheets.sync='error'; atualizarBadgeSheets();
