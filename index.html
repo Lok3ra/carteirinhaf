@@ -3861,6 +3861,11 @@ async function loadPontoData(){
   try{
     const r = await window.storage.get('pontoSheetsServidores');
     pontoState.sheets = Object.assign({url:'',aba:'Servidores',conectado:false,modo:'',sync:'idle',ultimaSincronizacao:'',versao:null}, JSON.parse(r.value));
+    // Estados transitórios não podem permanecer após recarregar a página.
+    // Isso evita o indicador ficar preso em “Carregando...” ou “Salvando...”.
+    if(['loading','saving'].includes(pontoState.sheets.sync)){
+      pontoState.sheets.sync = pontoState.sheets.url ? 'ready' : 'idle';
+    }
   }catch(e){}
 
   pontoState.servidores.sort((a,b)=>a.nome.localeCompare(b.nome));
@@ -4070,7 +4075,7 @@ function marcarSheetsAlterado(){
 function atualizarBadgeSheets(){
   const el=document.getElementById('sheetsSyncBadge'); if(!el) return;
   const st=pontoState.sheets.sync||'idle';
-  const map={idle:['Não conectado','#eee8da','#6b6355'],loading:['Carregando...','#fff2c7','#725c00'],dirty:['Alterações não salvas','#ffe1d8','#9a351d'],saving:['Salvando...','#dfeaff','#274f8a'],saved:['Sincronizado','#dff3e2','#2f6b38'],error:['Erro de conexão','#f8dada','#9b2323'],readonly:['Somente leitura','#e7e7e7','#555']};
+  const map={idle:['Não conectado','#eee8da','#6b6355'],ready:['Conectado','#e7f0ff','#28558a'],loading:['Carregando...','#fff2c7','#725c00'],dirty:['Alterações não salvas','#ffe1d8','#9a351d'],saving:['Salvando...','#dfeaff','#274f8a'],saved:['Sincronizado','#dff3e2','#2f6b38'],error:['Erro de conexão','#f8dada','#9b2323'],readonly:['Somente leitura','#e7e7e7','#555']};
   const cfg=map[st]||map.idle; el.textContent=cfg[0]; el.style.background=cfg[1]; el.style.color=cfg[2];
   const detalhes=[];
   if(pontoState.sheets.ultimaSincronizacao) detalhes.push('Última sincronização: '+pontoState.sheets.ultimaSincronizacao);
@@ -4118,7 +4123,13 @@ function atualizarStatusSheetsServidores(msg, erro=false){
   el.style.color='#356b39';
 }
 async function salvarConfigSheetsServidores(){
-  await window.storage.set('pontoSheetsServidores', JSON.stringify(pontoState.sheets));
+  // Não grava estados temporários. Se a página for fechada durante uma operação,
+  // o indicador voltará como “Conectado” em vez de ficar preso em “Carregando...”.
+  const configPersistida={...pontoState.sheets};
+  if(['loading','saving'].includes(configPersistida.sync)){
+    configPersistida.sync=configPersistida.url?'ready':'idle';
+  }
+  await window.storage.set('pontoSheetsServidores', JSON.stringify(configPersistida));
 }
 async function salvarConfigSheetsServidoresSeguro(){
   try{
