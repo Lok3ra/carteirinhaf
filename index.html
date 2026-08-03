@@ -48,6 +48,37 @@
   .navsection.open .navsubmenu{display:block;}
   .navsubmenu .navitem{padding-left:30px;}
 
+  /* Destaque do módulo principal: Folha de Ponto */
+  .navsection.featured{
+    margin:10px 10px 12px;
+    border:1px solid rgba(184,144,46,.72);
+    border-radius:10px;
+    overflow:hidden;
+    background:linear-gradient(145deg,rgba(184,144,46,.18),rgba(255,255,255,.035));
+    box-shadow:0 5px 16px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .navsection.featured .navsection-toggle{
+    padding:15px 13px;
+    color:#fff;
+    font-size:12px;
+    letter-spacing:.055em;
+  }
+  .navsection.featured .navsection-toggle:hover{background:rgba(184,144,46,.13);}
+  .navsection.featured .featured-title{display:flex;align-items:center;gap:8px;min-width:0;}
+  .navsection.featured .featured-icon{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:25px;height:25px;flex:0 0 25px;border-radius:7px;
+    background:var(--gold);color:var(--forest-dark);font-size:14px;
+  }
+  .navsection.featured .featured-badge{
+    display:inline-flex;align-items:center;margin-left:auto;margin-right:5px;
+    padding:3px 7px;border-radius:999px;background:var(--gold);
+    color:var(--forest-dark);font-size:8px;font-weight:800;letter-spacing:.06em;
+  }
+  .navsection.featured .navsubmenu{background:rgba(0,0,0,.08);}
+  .navsection.featured .navitem{padding-left:19px;}
+  .navsection.featured .navitem.active{background:rgba(184,144,46,.18);}
+
   .yearbox{margin:22px 22px 0;padding:14px;background:rgba(255,255,255,.06);border-radius:6px;}
   .yearbox label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.7;margin-bottom:6px;}
   .yearbox select, .yearbox input{width:100%;background:var(--forest-dark);border:1px solid rgba(255,255,255,.15);color:var(--white);padding:7px 8px;border-radius:4px;font-family:inherit;font-size:13px;}
@@ -316,6 +347,27 @@
     body.print-kit-professor .kit-dotted-page .kit-name-dotted-card{min-height:0;height:100%;box-sizing:border-box;padding:6mm;}
     body.print-kit-professor .kit-dotted-page .kit-name-dotted-card svg{height:100%;max-height:105mm;}
   @media screen{ #printarea{ display:none; } }
+
+
+  /* Resultados do Diário Escolar */
+  .diario-resumo-grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:12px;margin:14px 0;}
+  .diario-resumo-card{background:#fff;border:1px solid #ded8ca;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+  .diario-resumo-card span{display:block;font-size:12px;color:#6b6355;margin-bottom:5px;}
+  .diario-resumo-card strong{font-size:25px;color:var(--forest-dark);}
+  .diario-resumo-card.erro strong{color:var(--danger);}
+  .diario-resumo-card.alerta strong{color:#a66a00;}
+  .diario-resultado-acoes{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;}
+  .diario-problemas{display:grid;gap:10px;margin-bottom:14px;}
+  .diario-problema{border-left:5px solid var(--danger);background:#fbe9e7;border-radius:8px;padding:12px 14px;}
+  .diario-problema.aviso{border-left-color:#d89b2b;background:#fff6df;}
+  .diario-problema.ok{border-left-color:var(--forest);background:#edf6ef;}
+  .diario-detalhes{padding:0;overflow:hidden;margin-bottom:12px;}
+  .diario-detalhes>summary{cursor:pointer;padding:15px 18px;font-family:'Fraunces',serif;font-weight:700;color:var(--forest-dark);background:var(--sage);}
+  .diario-detalhes-conteudo{padding:14px 16px;}
+  .diario-situacao-ok{font-weight:700;color:var(--forest);}
+  .diario-situacao-alerta{font-weight:700;color:var(--danger);}
+  @media(max-width:1100px){.diario-resumo-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:700px){.diario-resumo-grid{grid-template-columns:repeat(2,1fr);}}
 
   /* ---- Folha de Ponto (modelo oficial da planilha) ---- */
   .folha{width:190mm;min-height:277mm;background:#fff;border:1px solid #222;color:#000;font-family:Arial,sans-serif;font-size:10px;margin:0 auto;}
@@ -700,13 +752,28 @@
       <p>Registro & emissão</p>
     </div>
 
+    <div class="navsection featured open" data-section="ponto">
+      <button class="navsection-toggle" type="button" aria-expanded="true" title="Módulo principal do sistema">
+        <span class="featured-title"><span class="featured-icon">✓</span><span>Folha de Ponto</span></span>
+        <span class="featured-badge">PRINCIPAL</span><span class="arrow">▶</span>
+      </button>
+      <div class="navsubmenu">
+        <div class="navitem" data-tab="ponto-servidores"><span class="idx">01</span> Servidores</div>
+        <div class="navitem" data-tab="ponto-gerar"><span class="idx">02</span> Gerar folha</div>
+        <div class="navitem" data-tab="ponto-manual"><span class="idx">03</span> Folha manual</div>
+        <div class="navitem" data-tab="ponto-feriados"><span class="idx">04</span> Feriados e períodos</div>
+        <div class="navitem" data-tab="ponto-listas"><span class="idx">05</span> Listas</div>
+        <div class="navitem" data-tab="ponto-importar"><span class="idx">06</span> Importar dados</div>
+      </div>
+    </div>
+
     <div class="navsection open" data-section="professor">
       <button class="navsection-toggle" type="button" aria-expanded="true">
         <span>Professor</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem active" data-tab="professor-kit"><span class="idx">01</span> Kit do Professor</div>
-        <div class="navitem" data-tab="professor-atividade"><span class="idx">02</span> Atividade</div>
+        <div class="navitem active" data-tab="professor-kit"><span class="idx">07</span> Kit do Professor</div>
+        <div class="navitem" data-tab="professor-atividade"><span class="idx">08</span> Atividade</div>
       </div>
     </div>
 
@@ -715,9 +782,9 @@
         <span>Bilhetes</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="bilhetes-manual"><span class="idx">02</span> Manual</div>
-        <div class="navitem" data-tab="bilhetes-modelos"><span class="idx">03</span> Modelos</div>
-        <div class="navitem" data-tab="bilhetes-arquivos"><span class="idx">04</span> Arquivos</div>
+        <div class="navitem" data-tab="bilhetes-manual"><span class="idx">09</span> Manual</div>
+        <div class="navitem" data-tab="bilhetes-modelos"><span class="idx">10</span> Modelos</div>
+        <div class="navitem" data-tab="bilhetes-arquivos"><span class="idx">11</span> Arquivos</div>
       </div>
     </div>
 
@@ -726,7 +793,7 @@
         <span>Declarações</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="declaracao-comparecimento"><span class="idx">03</span> Declaração de Comparecimento</div>
+        <div class="navitem" data-tab="declaracao-comparecimento"><span class="idx">12</span> Declaração de Comparecimento</div>
       </div>
     </div>
 
@@ -735,22 +802,8 @@
         <span>Diário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="diario-verificador"><span class="idx">04</span> Verificador</div>
-        <div class="navitem" data-tab="diario-config"><span class="idx">05</span> Configurações</div>
-      </div>
-    </div>
-
-    <div class="navsection" data-section="ponto">
-      <button class="navsection-toggle" type="button" aria-expanded="false">
-        <span>Folha de Ponto</span><span class="arrow">▶</span>
-      </button>
-      <div class="navsubmenu">
-        <div class="navitem" data-tab="ponto-servidores"><span class="idx">06</span> Servidores</div>
-        <div class="navitem" data-tab="ponto-gerar"><span class="idx">07</span> Gerar folha</div>
-        <div class="navitem" data-tab="ponto-manual"><span class="idx">08</span> Folha manual</div>
-        <div class="navitem" data-tab="ponto-feriados"><span class="idx">09</span> Feriados e períodos</div>
-        <div class="navitem" data-tab="ponto-listas"><span class="idx">10</span> Listas</div>
-        <div class="navitem" data-tab="ponto-importar"><span class="idx">11</span> Importar dados</div>
+        <div class="navitem" data-tab="diario-verificador"><span class="idx">13</span> Verificador</div>
+        <div class="navitem" data-tab="diario-config"><span class="idx">14</span> Configurações</div>
       </div>
     </div>
 
@@ -759,10 +812,10 @@
         <span>Carteirinhas</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="carteirinhas"><span class="idx">12</span> Gerar carteirinhas</div>
-        <div class="navitem" data-tab="alunos"><span class="idx">13</span> Alunos</div>
-        <div class="navitem" data-tab="importar"><span class="idx">14</span> Importar dados</div>
-        <div class="navitem" data-tab="config"><span class="idx">15</span> Configurações</div>
+        <div class="navitem" data-tab="carteirinhas"><span class="idx">15</span> Gerar carteirinhas</div>
+        <div class="navitem" data-tab="alunos"><span class="idx">16</span> Alunos</div>
+        <div class="navitem" data-tab="importar"><span class="idx">17</span> Importar dados</div>
+        <div class="navitem" data-tab="config"><span class="idx">18</span> Configurações</div>
       </div>
     </div>
 
@@ -771,8 +824,8 @@
         <span>Calendário Escolar</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="calendario-central"><span class="idx">16</span> Calendário</div>
-        <div class="navitem" data-tab="calendario-legendas"><span class="idx">17</span> Legendas</div>
+        <div class="navitem" data-tab="calendario-central"><span class="idx">19</span> Calendário</div>
+        <div class="navitem" data-tab="calendario-legendas"><span class="idx">20</span> Legendas</div>
       </div>
     </div>
 
@@ -781,8 +834,8 @@
         <span>Festa Junina</span><span class="arrow">▶</span>
       </button>
       <div class="navsubmenu">
-        <div class="navitem" data-tab="festa-junina"><span class="idx">18</span> Calculadora</div>
-        <div class="navitem" data-tab="festa-config"><span class="idx">19</span> Configuração</div>
+        <div class="navitem" data-tab="festa-junina"><span class="idx">21</span> Calculadora</div>
+        <div class="navitem" data-tab="festa-config"><span class="idx">22</span> Configuração</div>
       </div>
     </div>
 
@@ -2105,7 +2158,7 @@ async function loadDiarioExcecoes(){
       const legendaId=item.tipo==='adicionar'?'dia-letivo':'dia-sem-aula';
       const id='migrado-diario-'+item.data+'-'+legendaId;
       if(!(calendarioCentral.eventos||[]).some(e=>e.id===id)){
-        calendarioCentral.eventos.push({id,inicio:item.data,fim:item.data,legendaId,observacao:item.motivo||'Exceção do Diário Escolar',origem:'diario-excecao',prioridade:legendaId==='dia-letivo'?96:76,aplicaA:{diarioEscolar:true,folhaPonto:true}});
+        calendarioCentral.eventos.push({id,inicio:item.data,fim:item.data,legendaId,observacao:item.motivo||'Exceção do Diário Escolar',origem:'diario-excecao',prioridade:legendaId==='dia-letivo'?96:76,aplicaA:{diarioEscolar:true,folhaPonto:false}});
         alterou=true;
       }
     });
@@ -2121,8 +2174,10 @@ function bindDiarioEscolar(){
   loadDiarioExcecoes().then(()=>renderDiarioVerificador());
   const add = document.getElementById('diarioAddExcecaoBtn');
   const verificar = document.getElementById('diarioVerificarArquivoBtn');
+  const arquivo = document.getElementById('diarioArquivoInput');
   if(add) add.addEventListener('click', adicionarExcecaoDiario);
   if(verificar) verificar.addEventListener('click', verificarArquivoDiario);
+  if(arquivo) arquivo.addEventListener('change', limparResultadoDiarioArquivo);
 }
 
 function diarioDataLocal(iso){
@@ -2237,7 +2292,7 @@ async function adicionarExcecaoDiario(){
     id:'diario-excecao-'+Date.now().toString(36), inicio:data, fim:data, legendaId,
     observacao:motivo||'Exceção do Diário Escolar', origem:'diario-excecao',
     prioridade:legendaId==='dia-letivo'?96:76,
-    aplicaA:{diarioEscolar:true,folhaPonto:true}
+    aplicaA:{diarioEscolar:true,folhaPonto:false}
   });
   await salvarCalendarioCentral();
   document.getElementById('diarioExcecaoData').value='';
@@ -2247,6 +2302,8 @@ async function adicionarExcecaoDiario(){
 
 
 function limparResultadoDiarioArquivo(){
+  diarioUltimoResultado=null;
+  diarioBimestreAtivo='';
   const status = document.getElementById('diarioArquivoStatus');
   const resultado = document.getElementById('diarioArquivoResultado');
   if(status) status.textContent='';
@@ -2702,7 +2759,8 @@ function diarioExtrairCSVPadrao(texto){
 function diarioInferirBimestre(encontradas, meta={}){
   const peloCabecalho = diarioNormalizarBimestre(meta.bimestreTexto||'');
   if(peloCabecalho) return peloCabecalho;
-  let melhor='', maior=-1;
+  if(!Array.isArray(encontradas) || !encontradas.length) return '';
+  let melhor='', maior=0;
   Object.keys(DIARIO_BIMESTRES).forEach(b=>{
     const i=DIARIO_BIMESTRES[b];
     const qtd=encontradas.filter(d=>d>=i.inicioISO && d<=i.fimISO).length;
@@ -2726,6 +2784,52 @@ function diarioItensNaoIdentificados(meta={}, encontradas=[], bim=''){
   return itens;
 }
 
+let diarioUltimoResultado=null;
+
+function diarioImprimirResultado(){
+  const area=document.getElementById('diarioArquivoResultado');
+  if(!area||area.style.display==='none') return;
+  const w=window.open('','_blank');
+  if(!w){ alert('Permita janelas pop-up para imprimir o relatório.'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório do Diário Escolar</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#222}button{display:none}details{display:block!important}details>*{display:block!important}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px;font-size:12px}.diario-resumo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.diario-resumo-card{border:1px solid #aaa;padding:10px;text-align:center}.card-block,.helpbox,.diario-problema{border:1px solid #bbb;padding:10px;margin:8px 0}</style></head><body><h1>Relatório do Diário Escolar</h1>${area.innerHTML}</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(),250);
+}
+
+function diarioExportarResultadoExcel(){
+  const r=diarioUltimoResultado;
+  if(!r){ alert('Faça uma verificação antes de exportar.'); return; }
+  const wb=XLSX.utils.book_new();
+  const resumo=[
+    ['Indicador','Valor'],
+    ['Dias letivos esperados',r.esperadas.length],
+    ['Dias lançados',r.unicas.length],
+    ['Dias sem lançamento',r.faltantes.length],
+    ['Datas extras',r.extras.length],
+    ['Datas fora do bimestre',(r.foraDoPeriodo||[]).length],
+    ['Datas repetidas',r.duplicadas.length],
+    ['Alunos com alerta',r.alertasFaltas.length],
+    ['Total de presenças',r.totalPresencas],
+    ['Total de faltas',r.totalFaltas]
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumo),'Resumo');
+  const nomesEmAlerta=new Set((r.alertasFaltas||[]).map(a=>diarioNormalizarNomeAluno(a.nome)));
+  const freq=[['Nº','Aluno','Presenças','Faltas','Sem lançamento','Total lido','Situação'],...r.frequencias.map(a=>[a.numero,a.nome,a.presencas,a.faltas,a.semLancamento,a.total,nomesEmAlerta.has(diarioNormalizarNomeAluno(a.nome))?'ALERTA':(a.situacao||'REGULAR')])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(freq),'Frequências');
+  const prob=[['Tipo','Data/Aluno','Detalhe']];
+  r.faltantes.forEach(d=>prob.push(['Dia sem lançamento',d.split('-').reverse().join('/'),'Data esperada não encontrada']));
+  r.extras.forEach(d=>prob.push(['Data extra',d.split('-').reverse().join('/'),'Data fora do calendário esperado']));
+  (r.foraDoPeriodo||[]).forEach(d=>prob.push(['Data fora do bimestre',d.split('-').reverse().join('/'),'Data encontrada fora do período do bimestre verificado']));
+  r.duplicadas.forEach(d=>prob.push(['Data repetida',d.split('-').reverse().join('/'),`${r.contagens[d]} ocorrências`]));
+  if(r.bimestreDivergente) prob.push(['Bimestre divergente',r.meta?.bimestreTexto||'','O bimestre informado no arquivo não corresponde às datas identificadas']);
+  if(r.anoDivergente) prob.push(['Ano letivo divergente',r.meta?.ano||'','O ano informado no arquivo não corresponde ao calendário ativo']);
+  if(r.totalSemLancamento) prob.push(['Registros sem lançamento','',`${r.totalSemLancamento} célula(s) de frequência sem marcação`]);
+  r.alertasFaltas.forEach(a=>prob.push(['Faltas consecutivas',a.nome,`${a.quantidade} faltas seguidas de ${a.inicio.split('-').reverse().join('/')} a ${a.fim.split('-').reverse().join('/')}`]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(prob),'Pendências');
+  XLSX.writeFile(wb,`resultado_diario_${String(r.bimestre||'').replace(/\D/g,'')||'escolar'}.xlsx`);
+}
+
 function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[], situacaoTurma=null, alunos=[]){
   const bim=diarioInferirBimestre(encontradas, meta);
   diarioBimestreAtivo=bim;
@@ -2735,6 +2839,7 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
   const resultado=document.getElementById('diarioArquivoResultado');
 
   if(!info){
+    diarioUltimoResultado=null;
     if(!naoIdentificados.includes('Bimestre')) naoIdentificados.push('Bimestre');
     status.textContent=`Arquivo lido: ${file.name}, mas a verificação não pôde ser concluída.`;
     resultado.style.display='block';
@@ -2749,6 +2854,7 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
 
   const inicio=info.inicioISO, fim=info.fimISO;
   const noPeriodo=encontradas.filter(d=>d>=inicio&&d<=fim);
+  const foraDoPeriodo=Array.from(new Set(encontradas.filter(d=>d<inicio||d>fim))).sort();
   const contagens={}; noPeriodo.forEach(d=>contagens[d]=(contagens[d]||0)+1);
   const unicas=Object.keys(contagens).sort();
   const duplicadas=Object.keys(contagens).filter(d=>contagens[d]>1).sort();
@@ -2758,7 +2864,8 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
   const extras=unicas.filter(d=>!esperadoSet.has(d));
   const bimArquivo=diarioNormalizarBimestre(meta.bimestreTexto);
   const bimestreDivergente=bimArquivo&&bimArquivo!==bim;
-  const confere=!faltantes.length&&!extras.length&&!bimestreDivergente&&!naoIdentificados.length;
+  const anoCalendario=String(calendarioCentral.ano||'');
+  const anoDivergente=Boolean(meta.ano&&anoCalendario&&String(meta.ano)!==anoCalendario);
   const alunosUnicosMap=new Map();
   (alunos||[]).forEach(aluno=>{
     const chave=diarioNormalizarNomeAluno(aluno.nome)||('numero:'+String(aluno.numero||''));
@@ -2797,39 +2904,81 @@ function diarioMontarResultado(file, encontradas, meta, paginas, alertasFaltas=[
       total:unicas.length
     };
   }).filter(a=>a.nome).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  const totalPresencas=frequencias.reduce((s,a)=>s+a.presencas,0);
+  const totalFaltas=frequencias.reduce((s,a)=>s+a.faltas,0);
+  const totalSemLancamento=frequencias.reduce((s,a)=>s+a.semLancamento,0);
+  const confere=!faltantes.length&&!extras.length&&!foraDoPeriodo.length&&!duplicadas.length&&!alertasFaltas.length&&!totalSemLancamento&&!bimestreDivergente&&!anoDivergente&&!naoIdentificados.length;
+  diarioUltimoResultado={fileName:file.name,bimestre:bim,meta,esperadas,unicas,faltantes,extras,foraDoPeriodo,duplicadas,contagens,frequencias,alertasFaltas,totalPresencas,totalFaltas,totalSemLancamento,anoDivergente,bimestreDivergente};
+
   status.textContent=`Arquivo lido: ${file.name}. ${unicas.length} data(s) de aula única(s) identificada(s)${paginas?` em ${paginas} página(s)`:''}.`;
   resultado.style.display='block';
   resultado.innerHTML=`
-    ${naoIdentificados.length?`<div class="helpbox" style="background:#fbe9e7;border-left-color:var(--danger);"><b>Erro: algumas informações não puderam ser identificadas.</b><br>Itens não identificados: ${naoIdentificados.map(escapeHtml).join(', ')}.<br><span style="display:block;margin-top:6px;">A verificação foi feita apenas com os dados reconhecidos.</span></div>`:''}
-    <div class="helpbox" style="border-left-color:${confere?'var(--forest)':'var(--danger)'};"><b>${confere?'O diário confere com o calendário configurado.':'Foram encontradas diferenças ou informações incompletas no diário.'}</b></div>
-    <div class="card-block" style="margin-bottom:14px;padding:16px;">
-      <h3 style="margin-bottom:10px;">Dados identificados</h3>
-      <div class="row"><div style="flex:1;"><b>Escola:</b> ${escapeHtml(meta.escola||'Não identificada')}</div><div style="flex:1;"><b>Professor:</b> ${escapeHtml(meta.professor||'Não identificado')}</div></div>
-      <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Turma:</b> ${escapeHtml(meta.turma||'Não identificada')}</div><div style="flex:1;"><b>Turno:</b> ${escapeHtml(meta.turno||'Não identificado')}</div></div>
-      <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Série:</b> ${escapeHtml(meta.serie||'Não identificada')}</div><div style="flex:1;"><b>Bimestre:</b> ${escapeHtml(meta.bimestreTexto||info.nome||'Não identificado')}</div></div>
-      <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Disciplina:</b> ${escapeHtml(meta.disciplina||'Não identificada')}</div><div style="flex:1;"><b>Coordenador:</b> ${escapeHtml(meta.coordenador||'Não identificado')}</div></div>
-      <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Ano letivo:</b> ${escapeHtml(meta.ano||'Não identificado')}</div><div style="flex:1;"></div></div>
+    <div class="helpbox" style="border-left-color:${confere?'var(--forest)':'var(--danger)'};"><b>${confere?'Tudo certo: o diário confere com o calendário configurado.':'A verificação encontrou itens que precisam de atenção.'}</b></div>
+
+    <div class="diario-resumo-grid">
+      <div class="diario-resumo-card"><span>Dias esperados</span><strong>${esperadas.length}</strong></div>
+      <div class="diario-resumo-card"><span>Dias lançados</span><strong>${unicas.length}</strong></div>
+      <div class="diario-resumo-card ${faltantes.length?'erro':''}"><span>Dias sem lançamento</span><strong>${faltantes.length}</strong></div>
+      <div class="diario-resumo-card"><span>Presenças</span><strong>${totalPresencas}</strong></div>
+      <div class="diario-resumo-card ${totalFaltas?'alerta':''}"><span>Faltas</span><strong>${totalFaltas}</strong></div>
+      <div class="diario-resumo-card ${alertasFaltas.length?'erro':''}"><span>Alunos com alerta</span><strong>${alertasFaltas.length}</strong></div>
     </div>
-    ${bimestreDivergente?`<div class="helpbox"><b>Atenção:</b> o arquivo parece ser do ${escapeHtml(meta.bimestreTexto)}, mas as datas correspondem ao ${info.nome}.</div>`:''}
-    <div class="row" style="margin-bottom:14px;">
-      <div class="card-block" style="flex:1;margin:0;padding:16px;text-align:center;"><div style="font-size:12px;color:#6b6355;">Dias esperados</div><strong style="font-size:24px;">${esperadas.length}</strong></div>
-      <div class="card-block" style="flex:1;margin:0;padding:16px;text-align:center;"><div style="font-size:12px;color:#6b6355;">Dias encontrados</div><strong style="font-size:24px;">${unicas.length}</strong></div>
-      <div class="card-block" style="flex:1;margin:0;padding:16px;text-align:center;"><div style="font-size:12px;color:#6b6355;">Diferença</div><strong style="font-size:24px;">${unicas.length-esperadas.length}</strong></div>
+
+    <div class="diario-resultado-acoes">
+      <button class="btn" type="button" onclick="diarioImprimirResultado()">Imprimir relatório</button>
+      <button class="btn outline" type="button" onclick="diarioExportarResultadoExcel()">Exportar resultado em Excel</button>
     </div>
-    ${faltantes.length?`<div class="helpbox"><b>Dias letivos não encontrados (${faltantes.length}):</b><br>${diarioFormatarListaDatas(faltantes)}</div>`:''}
-    ${extras.length?`<div class="helpbox"><b>Datas extras (${extras.length}):</b><br>${diarioFormatarListaDatas(extras)}</div>`:''}
-    ${duplicadas.length?`<div class="helpbox"><b>Datas repetidas (${duplicadas.length}):</b><br>${duplicadas.map(d=>d.split('-').reverse().join('/')+' ('+contagens[d]+' vezes)').join(', ')}</div>`:''}
-    ${situacaoTurma&&situacaoTurma.vagas>0?`<div class="helpbox" style="border-left-color:var(--forest);"><b>Vagas disponíveis na turma: ${situacaoTurma.vagas}</b><br>${situacaoTurma.ativos} aluno(s) ativo(s) de um máximo de ${situacaoTurma.capacidade}.</div>`:''}
-    ${frequencias.length?`<details class="card-block" style="padding:0;overflow:hidden;margin-bottom:14px;"><summary style="cursor:pointer;padding:16px 18px;font-family:'Fraunces',serif;font-weight:700;color:var(--forest-dark);background:var(--sage);">Frequências dos alunos (${frequencias.length})</summary><div style="overflow-x:auto;padding:0 14px 14px;"><table><thead><tr><th>Nº</th><th>Aluno</th><th>Presenças</th><th>Faltas</th><th>Sem lançamento</th><th>Total lido</th><th>Situação</th></tr></thead><tbody>${frequencias.map(a=>`<tr><td>${escapeHtml(a.numero)}</td><td>${escapeHtml(a.nome)}</td><td>${a.presencas}</td><td>${a.faltas}</td><td>${a.semLancamento}</td><td>${a.total}</td><td>${escapeHtml(a.situacao||'—')}</td></tr>`).join('')}</tbody></table></div></details>`:''}
-    ${alertasFaltas.length?`<div class="helpbox" style="background:#fbe9e7;border-left-color:var(--danger);"><b>Atenção: crianças com mais de 5 faltas consecutivas (${alertasFaltas.length})</b><br>${alertasFaltas.map(a=>`<div style="margin-top:7px;"><b>${escapeHtml(a.numero)} — ${escapeHtml(a.nome)}</b>: ${a.quantidade} faltas seguidas, de ${a.inicio.split('-').reverse().join('/')} a ${a.fim.split('-').reverse().join('/')}.</div>`).join('')}</div>`:''}
-    ${!faltantes.length&&!extras.length&&!duplicadas.length?'<div class="helpbox">Nenhuma data faltante, extra ou repetida foi encontrada.</div>':''}`;
+
+    <div class="diario-problemas">
+      ${naoIdentificados.length?`<div class="diario-problema"><b>Informações não identificadas</b><br>${naoIdentificados.map(escapeHtml).join(', ')}.</div>`:''}
+      ${bimestreDivergente?`<div class="diario-problema aviso"><b>Bimestre divergente</b><br>O arquivo indica ${escapeHtml(meta.bimestreTexto)}, mas as datas correspondem ao ${info.nome}.</div>`:''}
+      ${anoDivergente?`<div class="diario-problema aviso"><b>Ano letivo divergente</b><br>O arquivo indica ${escapeHtml(meta.ano)}, mas o calendário ativo é ${escapeHtml(anoCalendario)}.</div>`:''}
+      ${foraDoPeriodo.length?`<div class="diario-problema aviso"><b>Datas fora do bimestre (${foraDoPeriodo.length})</b><br>${diarioFormatarListaDatas(foraDoPeriodo)}</div>`:''}
+      ${faltantes.length?`<div class="diario-problema"><b>Dias sem lançamento (${faltantes.length})</b><br>${diarioFormatarListaDatas(faltantes)}</div>`:''}
+      ${extras.length?`<div class="diario-problema aviso"><b>Datas extras (${extras.length})</b><br>${diarioFormatarListaDatas(extras)}</div>`:''}
+      ${duplicadas.length?`<div class="diario-problema aviso"><b>Datas repetidas (${duplicadas.length})</b><br>${duplicadas.map(d=>d.split('-').reverse().join('/')+' ('+contagens[d]+' vezes)').join(', ')}</div>`:''}
+      ${alertasFaltas.length?`<div class="diario-problema"><b>Mais de 5 faltas consecutivas (${alertasFaltas.length})</b><br>${alertasFaltas.map(a=>`<div style="margin-top:7px;"><b>${escapeHtml(a.numero)} — ${escapeHtml(a.nome)}</b>: ${a.quantidade} faltas, de ${a.inicio.split('-').reverse().join('/')} a ${a.fim.split('-').reverse().join('/')}.</div>`).join('')}</div>`:''}
+      ${totalSemLancamento?`<div class="diario-problema"><b>Registros individuais sem lançamento (${totalSemLancamento})</b><br>Existem células de frequência sem marcação na tabela dos alunos.</div>`:''}
+      ${!naoIdentificados.length&&!bimestreDivergente&&!anoDivergente&&!foraDoPeriodo.length&&!faltantes.length&&!extras.length&&!duplicadas.length&&!alertasFaltas.length&&!totalSemLancamento?'<div class="diario-problema ok"><b>Nenhum problema encontrado.</b><br>As datas e os registros conferem com o calendário configurado.</div>':''}
+    </div>
+
+    <details class="card-block diario-detalhes" open>
+      <summary>Dados identificados do arquivo</summary>
+      <div class="diario-detalhes-conteudo">
+        <div class="row"><div style="flex:1;"><b>Escola:</b> ${escapeHtml(meta.escola||'Não identificada')}</div><div style="flex:1;"><b>Professor:</b> ${escapeHtml(meta.professor||'Não identificado')}</div></div>
+        <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Turma:</b> ${escapeHtml(meta.turma||'Não identificada')}</div><div style="flex:1;"><b>Turno:</b> ${escapeHtml(meta.turno||'Não identificado')}</div></div>
+        <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Série:</b> ${escapeHtml(meta.serie||'Não identificada')}</div><div style="flex:1;"><b>Bimestre:</b> ${escapeHtml(meta.bimestreTexto||info.nome||'Não identificado')}</div></div>
+        <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Disciplina:</b> ${escapeHtml(meta.disciplina||'Não identificada')}</div><div style="flex:1;"><b>Coordenador:</b> ${escapeHtml(meta.coordenador||'Não identificado')}</div></div>
+        <div class="row" style="margin-top:8px;"><div style="flex:1;"><b>Ano letivo:</b> ${escapeHtml(meta.ano||'Não identificado')}</div><div style="flex:1;"><b>Sem lançamento nos registros:</b> ${totalSemLancamento}</div></div>
+      </div>
+    </details>
+
+    <details class="card-block diario-detalhes">
+      <summary>Resultado por datas</summary>
+      <div class="diario-detalhes-conteudo">
+        <p><b>Dias esperados:</b> ${esperadas.length}</p>
+        <p><b>Dias encontrados:</b> ${unicas.length}</p>
+        <p><b>Diferença:</b> ${unicas.length-esperadas.length}</p>
+        ${situacaoTurma&&situacaoTurma.vagas>0?`<div class="helpbox" style="border-left-color:var(--forest);"><b>Vagas disponíveis: ${situacaoTurma.vagas}</b><br>${situacaoTurma.ativos} aluno(s) ativo(s) de um máximo de ${situacaoTurma.capacidade}.</div>`:''}
+      </div>
+    </details>
+
+    ${frequencias.length?`<details class="card-block diario-detalhes"><summary>Frequência por aluno (${frequencias.length})</summary><div class="diario-detalhes-conteudo" style="overflow-x:auto;"><table><thead><tr><th>Nº</th><th>Aluno</th><th>Presenças</th><th>Faltas</th><th>Sem lançamento</th><th>Total lido</th><th>Situação</th></tr></thead><tbody>${frequencias.map(a=>{const alerta=alertasFaltas.some(x=>diarioNormalizarNomeAluno(x.nome)===diarioNormalizarNomeAluno(a.nome));return `<tr><td>${escapeHtml(a.numero)}</td><td>${escapeHtml(a.nome)}</td><td>${a.presencas}</td><td>${a.faltas}</td><td>${a.semLancamento}</td><td>${a.total}</td><td class="${alerta?'diario-situacao-alerta':'diario-situacao-ok'}">${alerta?'ALERTA':escapeHtml(a.situacao||'REGULAR')}</td></tr>`;}).join('')}</tbody></table></div></details>`:''}
+  `;
 }
 
+let diarioVerificacaoEmAndamento=false;
 async function verificarArquivoDiario(){
+  if(diarioVerificacaoEmAndamento) return;
   const input=document.getElementById('diarioArquivoInput');
   const status=document.getElementById('diarioArquivoStatus');
   const resultado=document.getElementById('diarioArquivoResultado');
+  const botao=document.getElementById('diarioVerificarArquivoBtn');
   const file=input?.files?.[0]; if(!file){ alert('Selecione o arquivo do diário escolar.'); return; }
+  diarioUltimoResultado=null;
+  diarioBimestreAtivo='';
+  diarioVerificacaoEmAndamento=true;
+  if(botao){ botao.disabled=true; botao.textContent='Verificando...'; }
   status.textContent='Lendo e verificando o arquivo...'; resultado.style.display='none';
   try{
     if(file.name.toLowerCase().endsWith('.pdf')){
@@ -2856,12 +3005,21 @@ async function verificarArquivoDiario(){
     const encontradas=[];
     const textos=[];
     wb.SheetNames.forEach(nome=>XLSX.utils.sheet_to_json(wb.Sheets[nome],{header:1,defval:'',raw:true}).forEach(linha=>linha.forEach(valor=>{
-      const iso=diarioValorParaISO(valor); if(iso) encontradas.push(iso);
-      if(typeof valor==='string'){ textos.push(valor); diarioExtrairDatasTexto(valor).forEach(d=>encontradas.push(d)); }
+      const iso=diarioValorParaISO(valor);
+      if(iso) encontradas.push(iso);
+      else if(typeof valor==='string') diarioExtrairDatasTexto(valor).forEach(d=>encontradas.push(d));
+      if(typeof valor==='string') textos.push(valor);
     })));
     const meta=diarioExtrairMetadadosPDF(textos.join('\n'));
     diarioMontarResultado(file,encontradas,meta,0);
-  }catch(err){ console.error(err); status.textContent='Não foi possível ler o arquivo. Verifique se ele segue o padrão do Diário de Classe.'; resultado.style.display='none'; }
+  }catch(err){
+    console.error(err);
+    status.textContent='Não foi possível ler o arquivo. Verifique se ele segue o padrão do Diário de Classe. [Código: DE-ARQ-001]';
+    resultado.style.display='none';
+  }finally{
+    diarioVerificacaoEmAndamento=false;
+    if(botao){ botao.disabled=false; botao.textContent='Verificar arquivo'; }
+  }
 }
 
 /* =========================================================================
