@@ -1871,6 +1871,70 @@ if (typeof window.storage === 'undefined') {
   })();
 }
 
+/* Acrescenta avisos às operações que alteram dados, inclusive quando o
+   armazenamento é fornecido pelo ambiente hospedeiro. Leituras ausentes são
+   esperadas durante a inicialização e, por isso, não geram notificações. */
+(function instrumentarStorage(){
+  if(!window.storage || window.storage.__instrumentado) return;
+  ['set','delete'].forEach(acao=>{
+    const original=window.storage[acao]?.bind(window.storage);
+    if(!original) return;
+    window.storage[acao]=async function(chave,...args){
+      try{return await original(chave,...args);}
+      catch(erro){reportStorageError(acao==='set'?'salvar':'excluir',chave,erro);throw erro;}
+    };
+  });
+  Object.defineProperty(window.storage,'__instrumentado',{value:true});
+})();
+
+function bibliotecaDisponivel(nome){
+  const ok=nome==='XLSX' ? typeof window.XLSX!=='undefined' : nome==='pdfjsLib' ? typeof window.pdfjsLib!=='undefined' : true;
+  if(!ok) mostrarAvisoSistema('O componente necessário para ler '+(nome==='XLSX'?'planilhas':'arquivos PDF')+' não foi carregado. Verifique a internet e recarregue a página.');
+  return ok;
+}
+
+async function criarBackupSistema(){
+  try{
+    const list=await window.storage.list('');
+    const dados={formato:'gestao-escolar-backup',versao:1,criadoEm:new Date().toISOString(),registros:{}};
+    for(const chave of (list?.keys||[])){
+      try{dados.registros[chave]=(await window.storage.get(chave)).value;}catch(erro){console.warn('Registro ignorado no backup:',chave,erro);}
+    }
+    const blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-gestao-escolar-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    mostrarAvisoSistema((Object.keys(dados.registros).length)+' registro(s) incluído(s) no backup.','sucesso');
+  }catch(erro){reportStorageError('exportar o backup','',erro);}
+}
+async function restaurarBackupSistema(arquivo){
+  if(!arquivo)return;
+  try{
+    const dados=JSON.parse(await arquivo.text());
+    if(dados?.formato!=='gestao-escolar-backup'||!dados.registros||typeof dados.registros!=='object')throw new Error('Formato inválido');
+    const chaves=Object.keys(dados.registros);
+    if(!confirm('Restaurar '+chaves.length+' registro(s)? Registros com a mesma chave serão substituídos.'))return;
+    for(const chave of chaves)await window.storage.set(chave,String(dados.registros[chave]));
+    mostrarAvisoSistema('Backup restaurado. A página será recarregada.','sucesso');setTimeout(()=>location.reload(),700);
+  }catch(erro){console.error(erro);alert('Backup inválido ou não foi possível restaurá-lo.');}
+}
+async function diagnosticarSistema(){
+  let total=0,tamanho=0,invalidos=0;
+  try{
+    const list=await window.storage.list('');
+    for(const chave of (list?.keys||[])){try{const valor=(await window.storage.get(chave)).value;total++;tamanho+=String(valor).length;if(/^(aluno:|servidor:|config:|calendario:|periodoServidor:)/.test(chave))JSON.parse(valor);}catch(e){invalidos++;}}
+    const libs='Excel: '+(typeof XLSX==='undefined'?'indisponível':'OK')+'; PDF: '+(typeof pdfjsLib==='undefined'?'indisponível':'OK');
+    alert('Diagnóstico concluído.\n\nRegistros: '+total+'\nTamanho aproximado: '+Math.round(tamanho*2/1024)+' KB\nRegistros inválidos: '+invalidos+'\n'+libs+'\nServidores carregados: '+(window.pontoState?.servidores?.length??pontoState?.servidores?.length??0));
+  }catch(erro){reportStorageError('diagnosticar','',erro);}
+}
+function instalarFerramentasDeSeguranca(){
+  const painel=document.getElementById('panel-config');if(!painel||document.getElementById('ferramentasSeguranca'))return;
+  const card=document.createElement('div');card.className='card-block';card.id='ferramentasSeguranca';
+  card.innerHTML='<h3>Segurança e manutenção</h3><p class="helpbox">Faça um backup antes de grandes importações ou alterações.</p><div class="row"><button class="btn outline" type="button" id="diagnosticoSistemaBtn">Executar diagnóstico</button><button class="btn outline" type="button" id="backupSistemaBtn">Exportar backup</button><label class="btn outline" style="cursor:pointer;">Restaurar backup<input type="file" id="restaurarBackupInput" accept="application/json,.json" hidden></label></div>';
+  painel.appendChild(card);
+  card.querySelector('#diagnosticoSistemaBtn').addEventListener('click',diagnosticarSistema);
+  card.querySelector('#backupSistemaBtn').addEventListener('click',criarBackupSistema);
+  card.querySelector('#restaurarBackupInput').addEventListener('change',e=>restaurarBackupSistema(e.target.files?.[0]));
+}
+
 /* =========================================================================
    STATE
 ========================================================================= */
@@ -1955,7 +2019,13 @@ function maskDateInput(e){
 /* =========================================================================
    INIT
 ========================================================================= */
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('DOMContentLoaded', async()=>{
+  try{await init();}
+  catch(erro){
+    console.error('Falha na inicialização:',erro);
+    mostrarAvisoSistema('O sistema não conseguiu concluir a inicialização. Recarregue a página; se continuar, execute o diagnóstico em Configurações.');
+  }
+});
 
 async function init(){
   const nowYear = new Date().getFullYear();
@@ -1970,6 +2040,7 @@ async function init(){
   document.getElementById('yearSelect').value = String(yr);
 
   bindNav();
+  instalarFerramentasDeSeguranca();
   bindMobileNavigation();
   tornarTabelasResponsivas();
   window.addEventListener('resize',ajustarPreviewMobile);
@@ -1981,7 +2052,7 @@ async function init(){
   bindPontoTabs();
   bindFestaJunina();
   bindCalendarioCentral();
-  await carregarCalendarioCentral(nowYear);
+  await carregarCalendarioCentral(yr);
   bindDiarioEscolar();
   bindProfessorKit();
   bindProfessorAtividade();
@@ -2022,6 +2093,12 @@ function bindYearSelect(){
     state.activeYear = parseInt(e.target.value,10);
     try{ await window.storage.set('meta:activeYear', String(state.activeYear)); }catch(err){}
     await loadEverythingForActiveYear();
+    await carregarCalendarioCentral(state.activeYear);
+    pontoState.calendarioAno=state.activeYear;
+    await loadPontoData();
+    renderPontoAll();
+    document.getElementById('anoInputPonto').value=state.activeYear;
+    document.getElementById('calendarioAnoSelect').value=String(state.activeYear);
   });
 }
 
@@ -2982,6 +3059,7 @@ async function verificarArquivoDiario(){
   status.textContent='Lendo e verificando o arquivo...'; resultado.style.display='none';
   try{
     if(file.name.toLowerCase().endsWith('.pdf')){
+      if(!bibliotecaDisponivel('pdfjsLib')) return;
       const {texto,paginas,paginasDados}=await diarioExtrairTextoPDF(file);
       const encontradas=diarioExtrairDatasTexto(texto);
       const meta=diarioExtrairMetadadosPDF(texto);
@@ -3000,6 +3078,7 @@ async function verificarArquivoDiario(){
       diarioMontarResultado(file,dados.encontradas,dados.meta,0,dados.alertasFaltas,dados.situacaoTurma,dados.alunos||[]);
       return;
     }
+    if(!bibliotecaDisponivel('XLSX')) return;
     const buffer=await file.arrayBuffer();
     const wb=XLSX.read(new Uint8Array(buffer),{type:'array',cellDates:true});
     const encontradas=[];
@@ -3032,7 +3111,7 @@ async function nextNumero(ano, turma){
     const res = await window.storage.get(key);
     seq = parseInt(res.value,10) + 1;
   }catch(e){ seq = 1; }
-  try{ await window.storage.set(key, String(seq)); }catch(e){}
+  try{ await window.storage.set(key, String(seq)); }catch(e){ reportStorageError('salvar',key,e); }
 
   const anoDigits = String(ano).slice(-2);
   let turmaCode = (turma||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -3069,6 +3148,7 @@ function baixarModeloAlunos(){
 function handleExcelFile(e){
   const file = e.target.files[0];
   if(!file) return;
+  if(!bibliotecaDisponivel('XLSX')){e.target.value='';return;}
   const reader = new FileReader();
   reader.onload = (ev)=>{
     try{
@@ -3139,7 +3219,7 @@ function processImportedRows(rows){
   document.getElementById('previewCount').textContent = parsed.length;
   const table = document.getElementById('previewTable');
   table.innerHTML = `<thead><tr><th>Nome</th><th>Nascimento</th><th>Turma</th><th>Pai</th><th>Mãe</th><th>Endereço</th><th>Telefones</th><th>Nº</th><th>Foto</th></tr></thead>
-  <tbody>${parsed.map(r=>`<tr><td>${r.nome}</td><td>${r.dataNascimento}</td><td>${r.turma}</td><td>${r.nomePai}</td><td>${r.nomeMae}</td><td>${r.endereco}</td><td>${r.telefones.join(', ')}</td><td>${r.numero||'—'}</td><td>${r.foto?'✓':'—'}</td></tr>`).join('')}</tbody>`;
+  <tbody>${parsed.map(r=>`<tr><td>${escapeHtml(r.nome)}</td><td>${escapeHtml(r.dataNascimento)}</td><td>${escapeHtml(r.turma)}</td><td>${escapeHtml(r.nomePai)}</td><td>${escapeHtml(r.nomeMae)}</td><td>${escapeHtml(r.endereco)}</td><td>${escapeHtml(r.telefones.join(', '))}</td><td>${escapeHtml(r.numero||'—')}</td><td>${r.foto?'✓':'—'}</td></tr>`).join('')}</tbody>`;
   document.getElementById('previewBlock').style.display = parsed.length ? 'block' : 'none';
 
   const capBox = document.getElementById('previewCapacityWarning');
@@ -3166,7 +3246,7 @@ async function confirmImport(){
   const capacity = getCapacity();
   let currentCount = state.students.length;
 
-  let added = 0, skippedCapacity = 0;
+  let added = 0, skippedCapacity = 0, skippedErrors = 0;
   for(const r of state.importedRows){
     const k = existingKey(r.nome, r.turma);
     if(existingSet.has(k)) continue; // skip duplicates already in this year
@@ -3179,7 +3259,8 @@ async function confirmImport(){
       nome:r.nome, dataNascimento:r.dataNascimento, nomePai:r.nomePai, nomeMae:r.nomeMae,
       turma:r.turma, endereco:r.endereco, telefones:r.telefones, foto:r.foto||null
     };
-    try{ await window.storage.set('aluno:'+id, JSON.stringify(student)); }catch(e){ console.error(e); }
+    try{ await window.storage.set('aluno:'+id, JSON.stringify(student)); }
+    catch(e){ console.error(e); skippedErrors++; continue; }
     existingSet.add(k);
     currentCount++;
     added++;
@@ -3196,6 +3277,7 @@ async function confirmImport(){
   if(skippedCapacity > 0){
     msg += '\n\n' + skippedCapacity + ' aluno(s) NÃO foram importados por falta de vaga (capacidade máxima de ' + capacity + ' atingida). Aumente o limite em Configurações, se necessário, e importe novamente.';
   }
+  if(skippedErrors > 0) msg += '\n\n' + skippedErrors + ' aluno(s) não foram importados por falha de armazenamento. Exporte um backup e execute o diagnóstico.';
   alert(msg);
 }
 
@@ -3204,6 +3286,7 @@ async function confirmImport(){
 ========================================================================= */
 async function loadStudents(){
   state.students = [];
+  let invalidos=0;
   try{
     const list = await window.storage.list('aluno:');
     if(!list || !list.keys) return;
@@ -3212,10 +3295,11 @@ async function loadStudents(){
         const res = await window.storage.get(key);
         const s = JSON.parse(res.value);
         if(s.ano === state.activeYear) state.students.push(s);
-      }catch(e){}
+      }catch(e){invalidos++;console.warn('Registro de aluno inválido:',key,e);}
     }
     state.students.sort((a,b)=> a.nome.localeCompare(b.nome));
-  }catch(e){ console.error(e); }
+    if(invalidos) mostrarAvisoSistema(invalidos+' registro(s) de aluno não puderam ser lidos. Exporte um backup e execute o diagnóstico.');
+  }catch(e){ console.error(e); reportStorageError('carregar','alunos',e); }
 }
 
 function bindStudentsTab(){
