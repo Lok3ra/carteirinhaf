@@ -4080,6 +4080,7 @@ function atualizarBadgeSheets(){
   const detalhes=[];
   if(pontoState.sheets.ultimaSincronizacao) detalhes.push('Última sincronização: '+pontoState.sheets.ultimaSincronizacao);
   if(pontoState.sheets.versao!==null && pontoState.sheets.versao!==undefined) detalhes.push('Versão: '+pontoState.sheets.versao);
+  if(pontoState.sheets.ultimoCodigo) detalhes.push('Código: '+pontoState.sheets.ultimoCodigo);
   el.title=detalhes.join(' | ');
 }
 function preencherFiltroFuncoes(){
@@ -4113,14 +4114,43 @@ function mostrarValidacaoPonto(erros){
   box.innerHTML='<b>'+erros.length+' servidor(es) precisam de correção:</b><ul style="margin:8px 0 0 18px;">'+erros.map(e=>'<li><b>'+escapeHtml(e.nome)+'</b>: '+e.problemas.map(escapeHtml).join(', ')+'</li>').join('')+'</ul>';
 }
 
-function atualizarStatusSheetsServidores(msg, erro=false){
+const CODIGOS_FOLHA_PONTO={
+  CONEXAO_LINK_AUSENTE:'FP-CON-001',
+  CONEXAO_LINK_INVALIDO:'FP-CON-002',
+  CONEXAO_HTTP:'FP-CON-003',
+  APPS_SCRIPT_RESPOSTA_INVALIDA:'FP-API-001',
+  APPS_SCRIPT_FALHA:'FP-API-002',
+  DADOS_LISTA_AUSENTE:'FP-DAD-001',
+  DADOS_LISTA_VAZIA:'FP-DAD-002',
+  ARMAZENAMENTO_LOCAL:'FP-LOC-001',
+  CONFLITO_VERSAO:'FP-SIN-001',
+  SALVAMENTO_REMOTO:'FP-SIN-002',
+  ERRO_DESCONHECIDO:'FP-GER-001'
+};
+function classificarErroSheets(err,etapa='carregar'){
+  const msg=String(err?.message||err||'').toLowerCase();
+  if(err?.tipo==='conflito') return CODIGOS_FOLHA_PONTO.CONFLITO_VERSAO;
+  if(/resposta inválida|json/.test(msg)) return CODIGOS_FOLHA_PONTO.APPS_SCRIPT_RESPOSTA_INVALIDA;
+  if(/lista de servidores não encontrada/.test(msg)) return CODIGOS_FOLHA_PONTO.DADOS_LISTA_AUSENTE;
+  if(/falha informada|apps script/.test(msg)) return CODIGOS_FOLHA_PONTO.APPS_SCRIPT_FALHA;
+  if(/http|failed to fetch|networkerror|network request|fetch/.test(msg)) return CODIGOS_FOLHA_PONTO.CONEXAO_HTTP;
+  return etapa==='salvar'?CODIGOS_FOLHA_PONTO.SALVAMENTO_REMOTO:CODIGOS_FOLHA_PONTO.ERRO_DESCONHECIDO;
+}
+function atualizarStatusSheetsServidores(msg, erro=false, codigo=''){
   const el=document.getElementById('sheetsServidorStatus');
   if(!el) return;
-  if(msg){ el.textContent=msg; el.style.color=erro?'#a32626':'#356b39'; return; }
-  if(!pontoState.sheets.url){ el.textContent='Nenhum banco conectado. Os dados permanecem somente neste navegador.'; el.style.color='#6b6355'; return; }
+  pontoState.sheets.ultimoCodigo=codigo||'';
+  if(msg){
+    el.textContent=msg+(codigo?' [Código: '+codigo+']':'');
+    el.style.color=erro?'#a32626':'#356b39';
+    el.title=codigo?'Informe este código ao suporte: '+codigo:'';
+    return;
+  }
+  if(!pontoState.sheets.url){ el.textContent='Nenhum banco conectado. Os dados permanecem somente neste navegador.'; el.style.color='#6b6355'; el.title=''; return; }
   const tipo=pontoState.sheets.modo==='api'?'Apps Script (leitura e gravação)':'Google Sheets (somente leitura)';
   el.textContent='Conectado a: '+tipo+' — aba '+(pontoState.sheets.aba||'Servidores')+'.';
   el.style.color='#356b39';
+  el.title='';
 }
 async function salvarConfigSheetsServidores(){
   // Não grava estados temporários. Se a página for fechada durante uma operação,
@@ -4137,16 +4167,16 @@ async function salvarConfigSheetsServidoresSeguro(){
     return true;
   }catch(err){
     console.error('Falha ao salvar o estado local da conexão com Google Sheets:',err);
-    mostrarAvisoSistema('A planilha foi atualizada, mas o navegador não conseguiu salvar localmente o estado da conexão. A conexão continuará funcionando nesta sessão.');
+    mostrarAvisoSistema('A planilha foi atualizada, mas o navegador não conseguiu salvar localmente o estado da conexão. Código: '+CODIGOS_FOLHA_PONTO.ARMAZENAMENTO_LOCAL+'. A conexão continuará funcionando nesta sessão.');
     return false;
   }
 }
 async function conectarSheetsServidores(){
   const url=(document.getElementById('sheetsServidorUrl').value||'').trim();
   const aba=(document.getElementById('sheetsServidorAba').value||'Servidores').trim();
-  if(!url){ alert('Cole o link da planilha ou do Apps Script desta escola.'); return; }
+  if(!url){ alert('Cole o link da planilha ou do Apps Script desta escola. Código: '+CODIGOS_FOLHA_PONTO.CONEXAO_LINK_AUSENTE); return; }
   const modo=ehAppsScriptUrl(url)?'api':(extrairSpreadsheetId(url)?'sheet':'');
-  if(!modo){ alert('O link informado não parece ser do Google Sheets nem do Google Apps Script.'); return; }
+  if(!modo){ alert('O link informado não parece ser do Google Sheets nem do Google Apps Script. Código: '+CODIGOS_FOLHA_PONTO.CONEXAO_LINK_INVALIDO); return; }
   pontoState.sheets={url,aba,conectado:true,modo,sync:'loading',ultimaSincronizacao:'',versao:null};
   atualizarBadgeSheets();
   await salvarConfigSheetsServidores();
@@ -4214,14 +4244,20 @@ async function carregarServidoresDoSheets(){
   if(!cfg.url){ alert('Conecte primeiro o banco desta escola.'); return; }
   pontoState.sheets.sync='loading'; atualizarBadgeSheets();
   atualizarStatusSheetsServidores('Carregando servidores...');
+
+  let rows=[];
   try{
-    let rows=[];
     if(cfg.modo==='api'){
       const u=new URL(cfg.url); u.searchParams.set('action','list'); u.searchParams.set('aba',cfg.aba||'Servidores');
       const res=await fetch(u.toString(),{method:'GET',cache:'no-store'});
       if(!res.ok) throw new Error('HTTP '+res.status);
-      const data=await res.json();
+      const texto=await res.text();
+      let data;
+      try{ data=JSON.parse(texto.replace(/^\uFEFF/,'')); }
+      catch(e){ throw new Error('Resposta inválida do Apps Script'); }
+      if(data&&data.ok===false) throw new Error(data.error||'Falha informada pelo Apps Script');
       rows=Array.isArray(data)?data:(data.servidores||data.data||[]);
+      if(!Array.isArray(rows)) throw new Error('Lista de servidores não encontrada na resposta');
       if(!Array.isArray(data)){
         const versao=data.versao ?? data.version ?? (data.meta&&data.meta.versao) ?? null;
         pontoState.sheets.versao=versao===null?null:Number(versao);
@@ -4233,18 +4269,35 @@ async function carregarServidoresDoSheets(){
       if(!res.ok) throw new Error('HTTP '+res.status);
       rows=csvParaObjetos(await res.text());
     }
-    const lista=rows.map(normalizarServidorSheets).filter(s=>s.nome);
-    await substituirServidoresLocais(lista);
-    pontoState.sheets.sync=cfg.modo==='api'?'saved':'readonly'; pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR'); atualizarBadgeSheets();
-    const estadoLocalSalvo=await salvarConfigSheetsServidoresSeguro();
-    const txtVersao=(cfg.modo==='api' && pontoState.sheets.versao!==null)?' Versão '+pontoState.sheets.versao+'.':'';
-    const avisoLocal=estadoLocalSalvo?'':' A configuração não pôde ser gravada no navegador.';
-    atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".'+txtVersao+avisoLocal);
   }catch(err){
-    console.error(err);
+    const codigo=classificarErroSheets(err,'carregar');
+    console.error('Falha real na conexão com a planilha. Código:',codigo,err);
     pontoState.sheets.sync='error'; atualizarBadgeSheets();
-    atualizarStatusSheetsServidores('Não foi possível carregar. Confira o link, a permissão da planilha e o nome da aba.',true);
+    atualizarStatusSheetsServidores('Não foi possível acessar a planilha. Confira o link, a permissão e o nome da aba.',true,codigo);
+    return;
   }
+
+  const lista=rows.map(normalizarServidorSheets).filter(s=>s.nome);
+  try{
+    await substituirServidoresLocais(lista);
+  }catch(err){
+    console.error('A lista foi recebida, mas houve falha ao atualizar a interface ou o armazenamento local:',err);
+    pontoState.servidores=lista.sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+    try{ renderPontoAll(); }catch(e){ console.error(e); }
+    pontoState.sheets.sync=cfg.modo==='api'?'saved':'readonly';
+    pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR');
+    atualizarBadgeSheets();
+    atualizarStatusSheetsServidores(lista.length+' servidor(es) recebidos da planilha. Houve apenas uma falha local ao guardar os dados neste navegador.',true,CODIGOS_FOLHA_PONTO.ARMAZENAMENTO_LOCAL);
+    return;
+  }
+
+  pontoState.sheets.sync=cfg.modo==='api'?'saved':'readonly';
+  pontoState.sheets.ultimaSincronizacao=new Date().toLocaleString('pt-BR');
+  atualizarBadgeSheets();
+  const estadoLocalSalvo=await salvarConfigSheetsServidoresSeguro();
+  const txtVersao=(cfg.modo==='api' && pontoState.sheets.versao!==null)?' Versão '+pontoState.sheets.versao+'.':'';
+  const avisoLocal=estadoLocalSalvo?'':' A configuração não pôde ser gravada no navegador.';
+  atualizarStatusSheetsServidores(lista.length+' servidor(es) carregado(s) da aba "'+(cfg.aba||'Servidores')+'".'+txtVersao+avisoLocal);
 }
 function servidorParaLinhaSheets(s){
   return {
@@ -4288,10 +4341,10 @@ async function salvarServidoresNoSheets(){
     pontoState.sheets.sync='error'; atualizarBadgeSheets();
     if(err.tipo==='conflito'){
       if(err.versaoAtual!==null) pontoState.sheets.versao=Number(err.versaoAtual);
-      atualizarStatusSheetsServidores('Conflito detectado: outra pessoa alterou a lista depois do seu carregamento. Clique em “Atualizar lista”, confira os dados e refaça sua alteração antes de salvar.',true);
+      atualizarStatusSheetsServidores('Conflito detectado: outra pessoa alterou a lista depois do seu carregamento. Clique em “Atualizar lista”, confira os dados e refaça sua alteração antes de salvar.',true,CODIGOS_FOLHA_PONTO.CONFLITO_VERSAO);
       mostrarAvisoSistema('O salvamento foi bloqueado para não sobrescrever alterações de outra pessoa. Atualize a lista do Google Sheets.');
     }else{
-      atualizarStatusSheetsServidores('Não foi possível salvar no Google Sheets. Verifique a implantação do Apps Script.',true);
+      atualizarStatusSheetsServidores('Não foi possível salvar no Google Sheets. Verifique a implantação do Apps Script.',true,classificarErroSheets(err,'salvar'));
     }
   }
 }
