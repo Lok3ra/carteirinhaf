@@ -4879,6 +4879,22 @@ function renderFeriadosTags(){
   }).join('');
 }
 
+function refreshServidorSelectPonto(){
+  const sel = document.getElementById('servidorSelectPonto');
+  if(!sel) return;
+  const atual = String(sel.value || '');
+  const servidores = [...pontoState.servidores].sort((a,b)=>(a.nome||'').localeCompare(b.nome||'', 'pt-BR', {sensitivity:'base'}));
+  sel.innerHTML = '<option value="">— selecione —</option>' + servidores.map(s=>{
+    const id = String(s.id ?? '');
+    const nome = escapeHtml(String(s.nome || 'Sem nome'));
+    const funcao = escapeHtml(String(s.funcao || s.cargo || ''));
+    return `<option value="${escapeHtml(id)}">${nome}${funcao ? ' — ' + funcao : ''}</option>`;
+  }).join('');
+  if(servidores.some(s=>String(s.id ?? '')===atual)) sel.value = atual;
+  const todos = document.getElementById('todosServidoresChk');
+  sel.disabled = !!(todos && todos.checked);
+}
+
 function refreshServidorPeriodoSelect(){
   const sel = document.getElementById('novoPeriodoServidor');
   if(!sel) return;
@@ -5392,7 +5408,7 @@ function gerarPontoPreview(){
   let alvos = [];
   if(todos){ alvos = pontoState.servidores; }
   else{
-    const s = pontoState.servidores.find(x=>x.id===servidorId);
+    const s = pontoState.servidores.find(x=>String(x.id ?? '')===String(servidorId));
     if(!s){ alert('Selecione um servidor, ou marque "Gerar para todos".'); return; }
     alvos = [s];
   }
