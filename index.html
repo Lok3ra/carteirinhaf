@@ -1069,6 +1069,7 @@
         <div class="helpbox">Use as colunas: <b>Servidor</b>, <b>Cargo</b>, <b>Função</b>, <b>Carga Horária Semanal</b>, <b>Turno</b>, <b>Coordenação (M/V)</b> e <b>Matrícula</b>. Para 40h, o sistema define automaticamente 200h mensais e os turnos Matutino e Vespertino. Para 30h, define 150h mensais e utiliza o turno informado. O campo <b>Coordenação</b> é aplicado somente quando a função for <b>Professor</b>.</div>
         <div class="row" style="align-items:center;margin-bottom:12px;">
           <button class="btn outline" id="baixarModeloServidoresBtn" type="button">Baixar modelo Excel</button>
+          <button class="btn danger" id="limparDadosPontoBtn" type="button">Limpar dados carregados</button>
           <span style="font-size:12.5px;color:#6b6355;">Preencha o modelo e importe o arquivo abaixo.</span>
         </div>
         <input type="file" id="fileInputServidores" accept=".xlsx,.xls,.xlsm">
@@ -4006,6 +4007,7 @@ function weekdayISO(date){ const d=date.getDay(); return d===0?7:d; } // 1=Mon..
 function bindPontoTabs(){
   document.getElementById('fileInputServidores').addEventListener('change', handleFileServidores);
   document.getElementById('baixarModeloServidoresBtn').addEventListener('click', baixarModeloServidores);
+  document.getElementById('limparDadosPontoBtn').addEventListener('click', limparDadosCarregadosPonto);
   document.getElementById('calendarioAnoSelect').addEventListener('change', handleCalendarioAnoChange);
   document.getElementById('searchServidoresPonto').addEventListener('input', renderServidoresPontoTable);
   ['filtroFuncaoServidoresPonto','filtroCargaServidoresPonto','filtroTurnoServidoresPonto','filtroSituacaoServidoresPonto'].forEach(id=>document.getElementById(id).addEventListener('change',renderServidoresPontoTable));
@@ -4172,6 +4174,56 @@ function baixarModeloServidores(){
   document.body.appendChild(link);
   link.click();
   link.remove();
+}
+
+async function limparDadosCarregadosPonto(){
+  const totalServidores=pontoState.servidores.length;
+  const totalPeriodos=pontoState.periodosServidor.length;
+  const primeira=confirm(
+    'Deseja limpar os dados carregados da Folha de Ponto?\n\n'+
+    'Serão removidos '+totalServidores+' servidor(es), os períodos individuais relacionados e as pré-visualizações geradas.\n\n'+
+    'O calendário, os feriados gerais e as configurações da escola serão preservados.'
+  );
+  if(!primeira)return;
+  const segunda=confirm(
+    'CONFIRMAÇÃO FINAL\n\nEsta ação removerá os servidores e '+totalPeriodos+' registro(s) de períodos individuais deste navegador. Deseja continuar?'
+  );
+  if(!segunda)return;
+
+  const botao=document.getElementById('limparDadosPontoBtn');
+  const status=document.getElementById('importStatusServidores');
+  botao.disabled=true;
+  botao.textContent='Limpando...';
+  try{
+    const chavesServidores=await window.storage.list('servidor:');
+    const chavesPeriodos=await window.storage.list('periodoServidor:');
+    for(const chave of [...(chavesServidores?.keys||[]),...(chavesPeriodos?.keys||[])]){
+      await window.storage.delete(chave);
+    }
+    pontoState.servidores=[];
+    pontoState.periodosServidor=[];
+    pontoState.folhasGeradas=null;
+    document.getElementById('fileInputServidores').value='';
+    document.getElementById('importSummaryServidores').style.display='none';
+    document.getElementById('importSummaryTextServidores').textContent='';
+    document.getElementById('pontoPreviewArea').innerHTML='';
+    document.getElementById('pontoGerarEmpty').style.display='block';
+    document.getElementById('imprimirPontoBtn').disabled=true;
+    document.getElementById('servidorSelectPonto').value='';
+    document.getElementById('todosServidoresChk').checked=false;
+    document.getElementById('servidorSelectPonto').disabled=false;
+    renderPontoAll();
+    status.textContent='Dados carregados da Folha de Ponto removidos com sucesso.';
+    mostrarAvisoSistema('Dados da Folha de Ponto removidos com sucesso.','sucesso');
+  }catch(erro){
+    console.error(erro);
+    status.textContent='Não foi possível concluir a limpeza. Os dados foram recarregados para evitar inconsistências.';
+    await loadPontoData();
+    renderPontoAll();
+  }finally{
+    botao.disabled=false;
+    botao.textContent='Limpar dados carregados';
+  }
 }
 
 function handleFileServidores(e){
