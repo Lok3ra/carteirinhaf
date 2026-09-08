@@ -1034,6 +1034,7 @@
           <div class="field" style="max-width:190px"><label>Data inicial</label><input type="date" id="calEventoInicio"></div>
           <div class="field" style="max-width:190px"><label>Data final</label><input type="date" id="calEventoFim"></div>
           <div class="field" style="max-width:240px"><label>Legenda</label><select id="calEventoLegenda"></select></div>
+          <div class="field" style="max-width:190px" id="calEventoTurnoField"><label>Turno (dia letivo)</label><select id="calEventoTurno"><option value="ambos">Manhã e tarde</option><option value="manha">Somente manhã</option><option value="tarde">Somente tarde</option></select></div>
           <div class="field" style="min-width:250px"><label>Observação</label><input type="text" id="calEventoObs" placeholder="Opcional"></div>
           <button class="btn" id="calEventoAdicionar" type="button">Adicionar</button>
           <button class="btn outline" id="calEventoCancelarEdicao" type="button" style="display:none">Cancelar edição</button>
@@ -5142,9 +5143,20 @@ function findFeriado(iso, servidor=null){
   const leg=calendarioLegendaPorId(evento.legendaId);
   return {data:iso,descricao:leg.nome,origem:'calendario-central',evento};
 }
+// Retorna o evento "letivo" (dia letivo, reposição ou anteposição) que se aplica à data,
+// se houver. Consultado direto em calendarioCentral.eventos — sem o filtro de contexto
+// 'folhaPonto' de calendarioEventoAplica — porque um evento tipo "letivo" sempre deve
+// liberar a assinatura, mesmo que aplicaA.folhaPonto tenha sido gravado como false em
+// calendários salvos antes desta correção (evita depender de o usuário reimportar o ano).
+function letivoOverrideEventoNaData(iso){
+  const candidatos = (calendarioCentral.eventos||[])
+    .filter(e=>iso>=e.inicio && iso<=e.fim)
+    .filter(e=>{ const leg=calendarioLegendaPorId(e.legendaId); return leg && leg.tipo==='letivo'; })
+    .sort((a,b)=>calendarioPrioridadeEvento(b)-calendarioPrioridadeEvento(a));
+  return candidatos[0] || null;
+}
 function isDiaLetivoOverride(iso){
-  const eventos = calendarioEventosNaData(iso, {contexto:'folhaPonto'});
-  return eventos.some(e=>{ const leg=calendarioLegendaPorId(e.legendaId); return leg && leg.tipo==='letivo'; });
+  return !!letivoOverrideEventoNaData(iso);
 }
 
 function classificarEventoNaoLetivo_(feriado){
@@ -5194,14 +5206,23 @@ function resultadoFeriasRecessoCalendario_(feriado, servidor, date){
 function celula(servidor, date, turno){
   const iso = isoLocal(date);
   const wd = weekdayISO(date);
-  const overridden = isDiaLetivoOverride(iso);
+  const overrideEvento = letivoOverrideEventoNaData(iso);
+  const overridden = !!overrideEvento;
 
-  const cargaHoras = parseInt(String(servidor.cargaSemanal||'').replace(/\D/g,''),10);
   const turnosServidor = [servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' ').toUpperCase();
+  const trabalhaManha = turnosServidor.includes('MATUTINO');
+  const trabalhaTarde = turnosServidor.includes('VESPERTINO');
 
-  if(cargaHoras === 30){
-    if(turno==='manha' && turnosServidor.includes('VESPERTINO')) return {text:'****', tipo:'bloqueado'};
-    if(turno==='tarde' && turnosServidor.includes('MATUTINO')) return {text:'****', tipo:'bloqueado'};
+  // Bloqueia o turno que o cargo do servidor não cobre (vale para qualquer carga horária,
+  // não só 30h — antes só travava quem tinha exatamente 30h cadastradas).
+  if(turno==='manha' && trabalhaTarde && !trabalhaManha) return {text:'****', tipo:'bloqueado'};
+  if(turno==='tarde' && trabalhaManha && !trabalhaTarde) return {text:'****', tipo:'bloqueado'};
+
+  // Se o dia letivo de exceção (ex.: sábado) foi cadastrado só para um turno específico,
+  // bloqueia o turno que não teve aula nesse dia — mesmo para quem trabalha nos dois turnos.
+  if(overridden && overrideEvento.turno && overrideEvento.turno !== 'ambos'){
+    if(turno==='manha' && overrideEvento.turno==='tarde') return {text:'****', tipo:'bloqueado'};
+    if(turno==='tarde' && overrideEvento.turno==='manha') return {text:'****', tipo:'bloqueado'};
   }
 
   if(!overridden){
@@ -5239,10 +5260,11 @@ function celula(servidor, date, turno){
   return {text:'', tipo:'normal'};
 }
 function celulaManual(servidor,date,turno,op){
-  const iso=isoLocal(date),wd=weekdayISO(date),overridden=isDiaLetivoOverride(iso);
-  const carga=parseInt(String(servidor.cargaSemanal||'').replace(/\D/g,''),10);
+  const iso=isoLocal(date),wd=weekdayISO(date),overrideEvento=letivoOverrideEventoNaData(iso),overridden=!!overrideEvento;
   const turnos=[servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' ').toUpperCase();
-  const regraCarga=()=>{if(!op.carga||carga!==30)return null;if(turno==='manha'&&turnos.includes('VESPERTINO'))return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&turnos.includes('MATUTINO'))return {text:'****',tipo:'bloqueado'};return null;};
+  const trabalhaManha=turnos.includes('MATUTINO'),trabalhaTarde=turnos.includes('VESPERTINO');
+  const regraCarga=()=>{if(!op.carga)return null;if(turno==='manha'&&trabalhaTarde&&!trabalhaManha)return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&trabalhaManha&&!trabalhaTarde)return {text:'****',tipo:'bloqueado'};return null;};
+  const regraTurnoLetivo=()=>{if(!overridden||!overrideEvento.turno||overrideEvento.turno==='ambos')return null;if(turno==='manha'&&overrideEvento.turno==='tarde')return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&overrideEvento.turno==='manha')return {text:'****',tipo:'bloqueado'};return null;};
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
   const naoLetivos=()=>op.calendario?findNaoLetivosNaData_(iso,servidor).filter(f=>!eventoExcluiServidor_(f,servidor)):[];
   const regraFeriado=()=>{const f=naoLetivos().find(x=>classificarEventoNaoLetivo_(x)==='feriado');return f?{text:'FERIADO',tipo:'feriado'}:null;};
@@ -5254,8 +5276,8 @@ function celulaManual(servidor,date,turno,op){
   };
   const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.aprimoramentoProfissional?'APRIMORAMENTO PROFISSIONAL':(servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE');const tipo=(servidor.leiLarissa||servidor.aprimoramentoProfissional)?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text:texto,tipo};if(c==='V'&&turno==='tarde')return {text:texto,tipo};return null;};
   const regras=op.prioridade
-    ?[regraCarga,regraFimSemana,regraFeriado,regraAfastamento,regraFeriasRecesso,regraCoord]
-    :[regraCarga,regraFeriado,regraAfastamento,regraFeriasRecesso,regraFimSemana,regraCoord];
+    ?[regraCarga,regraTurnoLetivo,regraFimSemana,regraFeriado,regraAfastamento,regraFeriasRecesso,regraCoord]
+    :[regraCarga,regraTurnoLetivo,regraFeriado,regraAfastamento,regraFeriasRecesso,regraFimSemana,regraCoord];
   for(const fn of regras){const r=fn();if(r)return r;}
   return {text:'',tipo:'normal'};
 }
@@ -5949,7 +5971,7 @@ function bindCalendarioCentral(){
   document.getElementById('calEventoAdicionar').addEventListener('click',adicionarEventoCalendario);
   document.getElementById('calEventoCancelarEdicao')?.addEventListener('click',cancelarEdicaoEventoCalendario);
   ['calEventoInicio','calEventoFim'].forEach(id=>document.getElementById(id)?.addEventListener('change',atualizarAvisoConflitoFormulario));
-  document.getElementById('calEventoLegenda')?.addEventListener('change',atualizarAvisoConflitoFormulario);
+  document.getElementById('calEventoLegenda')?.addEventListener('change',()=>{atualizarAvisoConflitoFormulario();atualizarVisibilidadeTurnoEvento();});
   document.getElementById('calLegendaAdicionar').addEventListener('click',adicionarLegendaCalendario);
   document.getElementById('calCentralExportar').addEventListener('click',exportarCalendarioCentral);
   document.getElementById('calCentralImportar').addEventListener('change',importarCalendarioCentral);
@@ -5973,11 +5995,18 @@ function atualizarAvisoConflitoFormulario(){
 function limparFormularioEventoCalendario(){
   calendarioEventoEditandoId=null;
   ['calEventoInicio','calEventoFim','calEventoObs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const turnoSel=document.getElementById('calEventoTurno');if(turnoSel)turnoSel.value='ambos';
   const add=document.getElementById('calEventoAdicionar');if(add)add.textContent='Adicionar';
   const cancel=document.getElementById('calEventoCancelarEdicao');if(cancel)cancel.style.display='none';
   atualizarAvisoConflitoFormulario();
+  atualizarVisibilidadeTurnoEvento();
 }
 function cancelarEdicaoEventoCalendario(){limparFormularioEventoCalendario();}
+function atualizarVisibilidadeTurnoEvento(){
+  const campo=document.getElementById('calEventoTurnoField');if(!campo)return;
+  const legTipo=(calendarioLegendaPorId(document.getElementById('calEventoLegenda')?.value)||{}).tipo;
+  campo.style.display=legTipo==='letivo'?'':'none';
+}
 function editarEventoCalendario(id){
   const e=(calendarioCentral.eventos||[]).find(x=>x.id===id);if(!e)return;
   calendarioEventoEditandoId=id;
@@ -5985,9 +6014,11 @@ function editarEventoCalendario(id){
   document.getElementById('calEventoFim').value=e.fim;
   document.getElementById('calEventoLegenda').value=e.legendaId;
   document.getElementById('calEventoObs').value=e.observacao||'';
+  const turnoSel=document.getElementById('calEventoTurno');if(turnoSel)turnoSel.value=e.turno||'ambos';
   document.getElementById('calEventoAdicionar').textContent='Salvar alteração';
   document.getElementById('calEventoCancelarEdicao').style.display='inline-flex';
   atualizarAvisoConflitoFormulario();
+  atualizarVisibilidadeTurnoEvento();
   document.getElementById('calEventoInicio').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function renderCalendarioCentral(){
@@ -6006,8 +6037,10 @@ function renderCalendarioCentral(){
   }).join('');
   grade.querySelectorAll('.cal-day:not(.empty)').forEach(el=>el.addEventListener('click',()=>{document.getElementById('calEventoInicio').value=el.dataset.date;document.getElementById('calEventoFim').value=el.dataset.date;atualizarAvisoConflitoFormulario();document.getElementById('calEventoLegenda').focus();}));
   const sel=document.getElementById('calEventoLegenda');if(sel){const atual=sel.value;sel.innerHTML=calendarioCentral.legendas.map(l=>`<option value="${l.id}">${escapeHtml(l.nome)}</option>`).join('');if(atual&&calendarioLegendaPorId(atual))sel.value=atual;}
+  atualizarVisibilidadeTurnoEvento();
   renderEventosCalendario();
 }
+function turnoEventoTexto(t){return t==='manha'?'Somente manhã':t==='tarde'?'Somente tarde':'';}
 function renderEventosCalendario(){
   const tb=document.getElementById('calEventosTbody'),empty=document.getElementById('calEventosEmpty');if(!tb)return;
   const evs=[...calendarioCentral.eventos].sort((a,b)=>a.inicio.localeCompare(b.inicio));empty.style.display=evs.length?'none':'block';
@@ -6015,11 +6048,14 @@ function renderEventosCalendario(){
     const l=calendarioLegendaPorId(e.legendaId)||{nome:'Legenda removida',cor:'#999'},fmt=x=>x.split('-').reverse().join('/');
     const conflitos=conflitosEventoCalendario(e.inicio,e.fim,e.id);
     const aviso=conflitos.length?`<div style="margin-top:4px;color:#a65b00;font-size:11px;font-weight:700">⚠ Conflito com ${conflitos.length} evento(s)</div>`:'';
-    return `<tr><td>${fmt(e.inicio)}${e.fim!==e.inicio?' a '+fmt(e.fim):''}${aviso}</td><td><span class="cal-dot" style="background:${l.cor}"></span> ${escapeHtml(l.nome)}</td><td>${escapeHtml(e.observacao||'')}</td><td><button class="btn outline small" onclick="editarEventoCalendario('${e.id}')">Editar</button> <button class="btn danger small" onclick="removerEventoCalendario('${e.id}')">Remover</button></td></tr>`;
+    const turnoTxt=l.tipo==='letivo'?turnoEventoTexto(e.turno):'';
+    return `<tr><td>${fmt(e.inicio)}${e.fim!==e.inicio?' a '+fmt(e.fim):''}${aviso}</td><td><span class="cal-dot" style="background:${l.cor}"></span> ${escapeHtml(l.nome)}${turnoTxt?` <small style="color:#6b6355">(${turnoTxt})</small>`:''}</td><td>${escapeHtml(e.observacao||'')}</td><td><button class="btn outline small" onclick="editarEventoCalendario('${e.id}')">Editar</button> <button class="btn danger small" onclick="removerEventoCalendario('${e.id}')">Remover</button></td></tr>`;
   }).join('');
 }
 async function adicionarEventoCalendario(){
   const inicio=document.getElementById('calEventoInicio').value,fim=document.getElementById('calEventoFim').value||inicio,legendaId=document.getElementById('calEventoLegenda').value,observacao=document.getElementById('calEventoObs').value.trim();
+  const legTipo=(calendarioLegendaPorId(legendaId)||{}).tipo;
+  const turno=legTipo==='letivo'?(document.getElementById('calEventoTurno').value||'ambos'):'ambos';
   if(!inicio||!legendaId){alert('Informe a data e a legenda.');return;}
   if(fim<inicio){alert('A data final não pode ser anterior à inicial.');return;}
   const ano=Number(calendarioCentral.ano),anoInicio=Number(inicio.slice(0,4)),anoFim=Number(fim.slice(0,4));
@@ -6027,8 +6063,8 @@ async function adicionarEventoCalendario(){
   const conflitos=conflitosEventoCalendario(inicio,fim,calendarioEventoEditandoId);
   if(conflitos.length&&!confirm(`Este período coincide com ${conflitos.length} evento(s):\n\n${conflitos.map(e=>'• '+nomeEventoCalendario(e)).join('\n')}\n\nDeseja salvar mesmo assim?`))return;
   if(calendarioEventoEditandoId){
-    const e=calendarioCentral.eventos.find(x=>x.id===calendarioEventoEditandoId);if(e)Object.assign(e,{inicio,fim,legendaId,observacao});
-  }else calendarioCentral.eventos.push({id:'evt-'+Date.now().toString(36),inicio,fim,legendaId,observacao});
+    const e=calendarioCentral.eventos.find(x=>x.id===calendarioEventoEditandoId);if(e)Object.assign(e,{inicio,fim,legendaId,observacao,turno});
+  }else calendarioCentral.eventos.push({id:'evt-'+Date.now().toString(36),inicio,fim,legendaId,observacao,turno});
   await salvarCalendarioCentral();renderCalendarioCentral();limparFormularioEventoCalendario();
 }
 async function removerEventoCalendario(id){
