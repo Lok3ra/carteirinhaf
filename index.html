@@ -605,6 +605,13 @@
   .bilhete-sheet.qtd-6 .bilhete-card{--bilhete-escala:.92;--bilhete-fonte-msg:10.5pt;}
   .bilhete-sheet.qtd-8 .bilhete-card{--bilhete-escala:.84;--bilhete-fonte-msg:10pt;}
   .bilhete-contagem{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:6px;font-size:12.5px;color:#6b6355;}
+  .bilhete-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px;}
+  .bilhete-toolbar select{padding:6px 8px;border:1.5px solid var(--line);border-radius:5px;font-size:13px;background:#fff;color:var(--ink);}
+  .bilhete-toolbar-btn{min-width:34px;padding:6px 10px!important;font-size:14px!important;line-height:1;}
+  .bilhete-toolbar-btn b,.bilhete-toolbar-btn i{pointer-events:none;}
+  .bilhete-editor{min-height:130px;padding:9px 11px;border:1.5px solid var(--line);border-radius:5px;font-size:14px;background:#fff;color:var(--ink);line-height:1.4;overflow-y:auto;}
+  .bilhete-editor:focus{outline:none;border-color:var(--forest);}
+  .bilhete-editor:empty:before{content:attr(data-placeholder);color:#9a9484;}
   .bilhete-recomendacao{margin-top:8px;padding:10px 12px;border-radius:6px;background:var(--sage);border-left:3px solid var(--gold);font-size:13px;line-height:1.35;}
   .bilhete-recomendacao.alerta{background:#f7e6c4;border-left-color:var(--danger);}
   .bilhete-recomendacao strong{color:var(--forest-dark);}
@@ -1393,7 +1400,34 @@
           <div class="field"><label>Título</label><input type="text" id="bilheteTitulo" value="Comunicado"></div>
           <div class="field"><label>Destinatário</label><select id="bilheteDestinatario"><option value="Senhores pais e/ou responsáveis">Senhores pais e/ou responsáveis</option><option value="Prezada família">Prezada família</option><option value="Responsável pelo(a) aluno(a)">Responsável pelo(a) aluno(a)</option><option value="">Sem saudação</option></select></div>
         </div>
-        <div class="field"><label>Mensagem</label><textarea id="bilheteMensagem" rows="6" placeholder="Digite o texto do bilhete..."></textarea><div class="bilhete-contagem"><span><strong id="bilheteCaracteres">0</strong> caracteres</span><span>Leitura ideal: fonte entre 10 e 12 pt</span></div><div id="bilheteRecomendacao" class="bilhete-recomendacao"><strong>Recomendação:</strong> digite a mensagem para calcular a melhor quantidade por folha.</div><div id="bilhetePendencias" class="bilhete-recomendacao alerta" style="display:none;"></div></div>
+        <div class="field">
+          <label>Mensagem</label>
+          <div class="bilhete-toolbar" id="bilheteToolbar">
+            <select id="bilheteFonte" title="Tipo de fonte">
+              <option value="Arial, Helvetica, sans-serif">Arial</option>
+              <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+              <option value="'Times New Roman', Times, serif">Times New Roman</option>
+              <option value="Verdana, Geneva, sans-serif">Verdana</option>
+              <option value="'Comic Sans MS', 'Comic Sans', cursive">Comic Sans MS</option>
+              <option value="'Courier New', Courier, monospace">Courier New</option>
+            </select>
+            <select id="bilheteTamanhoFonte" title="Tamanho da fonte">
+              <option value="9">9 pt</option>
+              <option value="10">10 pt</option>
+              <option value="11">11 pt</option>
+              <option value="12" selected>12 pt</option>
+              <option value="14">14 pt</option>
+              <option value="16">16 pt</option>
+              <option value="18">18 pt</option>
+              <option value="20">20 pt</option>
+              <option value="24">24 pt</option>
+            </select>
+            <button type="button" class="btn outline small bilhete-toolbar-btn" id="bilheteNegritoBtn" title="Negrito"><b>N</b></button>
+            <button type="button" class="btn outline small bilhete-toolbar-btn" id="bilheteItalicoBtn" title="Itálico"><i>I</i></button>
+          </div>
+          <div id="bilheteMensagem" class="bilhete-editor" contenteditable="true" data-placeholder="Digite o texto do bilhete..."></div>
+          <p style="font-size:12px;color:#6b6355;margin:4px 0 0;">Selecione um trecho do texto para formatar só ele; sem seleção, a formatação vale para o bilhete inteiro.</p>
+          <div class="bilhete-contagem"><span><strong id="bilheteCaracteres">0</strong> caracteres</span><span>Leitura ideal: fonte entre 10 e 12 pt</span></div><div id="bilheteRecomendacao" class="bilhete-recomendacao"><strong>Recomendação:</strong> digite a mensagem para calcular a melhor quantidade por folha.</div><div id="bilhetePendencias" class="bilhete-recomendacao alerta" style="display:none;"></div></div>
         <label style="font-size:13px;display:inline-flex;align-items:center;gap:7px;margin-top:4px;"><input type="checkbox" id="bilheteUsarTabela"> Adicionar tabela ao bilhete</label>
         <div id="bilheteTabelaBox" class="bilhete-tabela-box">
           <div class="field" style="margin-bottom:0;"><label>Conteúdo da tabela</label><textarea id="bilheteTabelaDados" rows="4" placeholder="Item / Quantidade
@@ -6095,14 +6129,18 @@ function bindBilhetes(){
   document.getElementById('bilheteExportarWordBtn')?.addEventListener('click',exportarBilheteWord);
   document.getElementById('bilheteImportarWordBtn')?.addEventListener('click',importarBilheteWord);
   document.getElementById('bilheteMensagem').addEventListener('input',atualizarAnaliseBilhete);
+  document.getElementById('bilheteNegritoBtn').addEventListener('click',()=>bilheteExecComando('bold'));
+  document.getElementById('bilheteItalicoBtn').addEventListener('click',()=>bilheteExecComando('italic'));
+  document.getElementById('bilheteFonte').addEventListener('change',e=>{bilheteExecComando('fontName',e.target.value);});
+  document.getElementById('bilheteTamanhoFonte').addEventListener('change',e=>{bilheteAplicarTamanhoFonte(e.target.value);});
   document.getElementById('bilhetePorFolha').addEventListener('change',atualizarAnaliseBilhete);
   document.getElementById('bilheteAssinatura').addEventListener('change',atualizarAnaliseBilhete);
-  document.getElementById('bilheteEstilo').addEventListener('change',()=>{atualizarVisibilidadeCorBilhete();if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);});
-  document.getElementById('bilheteUsarTabela').addEventListener('change',e=>{document.getElementById('bilheteTabelaBox').classList.toggle('ativo',e.target.checked);atualizarAnaliseBilhete();if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);});
-  document.getElementById('bilheteTabelaDados').addEventListener('input',()=>{atualizarAnaliseBilhete();if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);});
+  document.getElementById('bilheteEstilo').addEventListener('change',()=>{atualizarVisibilidadeCorBilhete();if(document.getElementById('bilheteMensagem').textContent.trim())atualizarPreviewBilhete(false);});
+  document.getElementById('bilheteUsarTabela').addEventListener('change',e=>{document.getElementById('bilheteTabelaBox').classList.toggle('ativo',e.target.checked);atualizarAnaliseBilhete();if(document.getElementById('bilheteMensagem').textContent.trim())atualizarPreviewBilhete(false);});
+  document.getElementById('bilheteTabelaDados').addEventListener('input',()=>{atualizarAnaliseBilhete();if(document.getElementById('bilheteMensagem').textContent.trim())atualizarPreviewBilhete(false);});
   document.getElementById('bilheteTransparencia').addEventListener('input',e=>{
     document.getElementById('bilheteTransparenciaValor').textContent=e.target.value+'%';
-    if(document.getElementById('bilheteMensagem').value.trim())atualizarPreviewBilhete(false);
+    if(document.getElementById('bilheteMensagem').textContent.trim())atualizarPreviewBilhete(false);
   });
   document.querySelectorAll('#panel-bilhetes-manual input,#panel-bilhetes-manual textarea,#panel-bilhetes-manual select').forEach(el=>{
     el.addEventListener('input',()=>{bilheteExportadoAtual=false;});
@@ -6119,8 +6157,13 @@ function atualizarVisibilidadeCorBilhete(){
   const colorido=document.getElementById('bilheteEstilo')?.value==='colorido';
   document.getElementById('bilheteCorField')?.classList.toggle('oculto',!colorido);
 }
+function bilheteTextoPlano(html){
+  const tmp=document.createElement('div');
+  tmp.innerHTML=html||'';
+  return tmp.textContent||'';
+}
 function camposPendentesBilhete(d){
-  const texto=[d.titulo,d.mensagem,d.data,d.fecho,d.tabelaDados].filter(Boolean).join(' ');
+  const texto=[d.titulo,bilheteTextoPlano(d.mensagem),d.data,d.fecho,d.tabelaDados].filter(Boolean).join(' ');
   return [...new Set(texto.match(/\[(?:PREENCHER|INFORMAR)[^\]]*\]/gi)||[])];
 }
 function validarPendenciasBilhete(d,acao='continuar'){
@@ -6203,7 +6246,7 @@ function atualizarAnaliseBilhete(){
   if(!campo||!contador||!box)return;
   const tabelaAtiva=document.getElementById('bilheteUsarTabela')?.checked;
   const tabelaChars=tabelaAtiva?(document.getElementById('bilheteTabelaDados')?.value.length||0):0;
-  const caracteres=campo.value.length+tabelaChars;
+  const caracteres=campo.textContent.length+tabelaChars;
   const selecionada=parseInt(document.getElementById('bilhetePorFolha').value,10)||4;
   const recomendada=recomendarQuantidadeBilhetes(caracteres,document.getElementById('bilheteAssinatura').checked);
   contador.textContent=String(caracteres);
@@ -6216,11 +6259,50 @@ function atualizarAnaliseBilhete(){
   box.className='bilhete-recomendacao'+(adequada?'':' alerta');
   box.innerHTML=`<strong>Melhor opção: ${recomendada} bilhete${recomendada>1?'s':''} por folha.</strong> Com ${caracteres} caracteres, a mensagem tende a ficar em ${fontePrevista}. ${adequada?'A quantidade selecionada mantém boa leitura.':`A opção de ${selecionada} por folha pode deixar a fonte menor que 10 pt; escolha ${recomendada} ou menos.`}`;
 }
-function dadosBilheteManual(){return {titulo:document.getElementById('bilheteTitulo').value.trim(),destinatario:document.getElementById('bilheteDestinatario').value.trim(),mensagem:document.getElementById('bilheteMensagem').value.trim(),data:document.getElementById('bilheteData').value.trim(),fecho:document.getElementById('bilheteFecho').value.trim(),quantidade:parseInt(document.getElementById('bilhetePorFolha').value,10)||4,estilo:document.getElementById('bilheteEstilo').value,cor:document.getElementById('bilheteCor').value||'#4FB6E8',transparencia:parseInt(document.getElementById('bilheteTransparencia').value,10)||0,assinatura:document.getElementById('bilheteAssinatura').checked,usarTabela:document.getElementById('bilheteUsarTabela').checked,tabelaDados:document.getElementById('bilheteTabelaDados').value.trim()};}
+function bilheteGarantirSelecao(){
+  const editor=document.getElementById('bilheteMensagem');
+  editor.focus();
+  const sel=window.getSelection();
+  if(!sel)return null;
+  const temSelecaoValida=sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer) && !sel.getRangeAt(0).collapsed;
+  if(!temSelecaoValida){
+    const range=document.createRange();
+    range.selectNodeContents(editor);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  return sel;
+}
+function bilheteExecComando(cmd,valor){
+  if(!bilheteTextoPlano(document.getElementById('bilheteMensagem').innerHTML).trim())return;
+  bilheteGarantirSelecao();
+  document.execCommand(cmd,false,valor||null);
+  atualizarAnaliseBilhete();
+  if(document.getElementById('bilheteMensagem').textContent.trim())atualizarPreviewBilhete(false);
+}
+function bilheteAplicarTamanhoFonte(tamanhoPt){
+  const editor=document.getElementById('bilheteMensagem');
+  if(!bilheteTextoPlano(editor.innerHTML).trim())return;
+  const sel=bilheteGarantirSelecao();
+  if(!sel||!sel.rangeCount)return;
+  const range=sel.getRangeAt(0);
+  const span=document.createElement('span');
+  span.style.fontSize=tamanhoPt+'pt';
+  const frag=range.extractContents();
+  span.appendChild(frag);
+  range.insertNode(span);
+  sel.removeAllRanges();
+  const novoRange=document.createRange();
+  novoRange.selectNodeContents(span);
+  sel.addRange(novoRange);
+  atualizarAnaliseBilhete();
+  if(editor.textContent.trim())atualizarPreviewBilhete(false);
+}
+function dadosBilheteManual(){return {titulo:document.getElementById('bilheteTitulo').value.trim(),destinatario:document.getElementById('bilheteDestinatario').value.trim(),mensagem:document.getElementById('bilheteMensagem').innerHTML.trim(),data:document.getElementById('bilheteData').value.trim(),fecho:document.getElementById('bilheteFecho').value.trim(),quantidade:parseInt(document.getElementById('bilhetePorFolha').value,10)||4,estilo:document.getElementById('bilheteEstilo').value,cor:document.getElementById('bilheteCor').value||'#4FB6E8',transparencia:parseInt(document.getElementById('bilheteTransparencia').value,10)||0,assinatura:document.getElementById('bilheteAssinatura').checked,usarTabela:document.getElementById('bilheteUsarTabela').checked,tabelaDados:document.getElementById('bilheteTabelaDados').value.trim()};}
 function aplicarDadosBilhete(d){
   document.getElementById('bilheteTitulo').value=d.titulo||'Comunicado';
   document.getElementById('bilheteDestinatario').value=d.destinatario||'';
-  document.getElementById('bilheteMensagem').value=d.mensagem||'';
+  document.getElementById('bilheteMensagem').innerHTML=d.mensagem||'';
   document.getElementById('bilheteData').value=d.data||'';
   document.getElementById('bilheteFecho').value=d.fecho||'';
   document.getElementById('bilhetePorFolha').value=String(d.quantidade||4);
@@ -6259,10 +6341,10 @@ function tabelaWordBilhete(d){
 }
 async function exportarBilheteWord(){
   const d=dadosBilheteManual();
-  if(!d.mensagem){alert('Digite a mensagem do bilhete antes de exportar.');return;}
+  if(!bilheteTextoPlano(d.mensagem).trim()){alert('Digite a mensagem do bilhete antes de exportar.');return;}
   if(!validarPendenciasBilhete(d,'exportar'))return;
   const meta=codificarDadosBilhete(d);
-  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(d.titulo||'Bilhete')}</title><style>@page{size:A4;margin:2cm}body{font-family:Arial,sans-serif;font-size:12pt;color:#000}.bilhete{border:1.5pt solid #000;padding:12pt;position:relative}.titulo{text-align:center;font-weight:bold;font-size:16pt;text-transform:uppercase;margin-bottom:10pt}.data{text-align:right;margin-bottom:8pt}.dest{font-weight:bold;margin-bottom:8pt}.texto{text-align:justify;line-height:1.35;white-space:pre-wrap}.fecho{text-align:right;white-space:pre-wrap;margin-top:16pt}table{border-collapse:collapse;width:100%;margin-top:12pt}th,td{border:1px solid #000;padding:5pt;text-align:left}th{font-weight:bold}.assinatura{text-align:center;margin-top:28pt;border-top:1px solid #000;padding-top:4pt;width:55%;margin-left:auto;margin-right:auto}</style></head><body><!--GESTAO_ESCOLAR_BILHETE:${meta}--><div class="bilhete">${d.titulo?`<div class="titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="data">${escapeHtml(d.data)}</div>`:''}${d.destinatario?`<div class="dest">${escapeHtml(d.destinatario)},</div>`:''}<div class="texto">${escapeHtml(d.mensagem).replace(/\n/g,'<br>')}</div>${tabelaWordBilhete(d)}${d.fecho?`<div class="fecho">${escapeHtml(d.fecho).replace(/\n/g,'<br>')}</div>`:''}${d.assinatura?'<div class="assinatura">Assinatura do responsável</div>':''}</div></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(d.titulo||'Bilhete')}</title><style>@page{size:A4;margin:2cm}body{font-family:Arial,sans-serif;font-size:12pt;color:#000}.bilhete{border:1.5pt solid #000;padding:12pt;position:relative}.titulo{text-align:center;font-weight:bold;font-size:16pt;text-transform:uppercase;margin-bottom:10pt}.data{text-align:right;margin-bottom:8pt}.dest{font-weight:bold;margin-bottom:8pt}.texto{text-align:justify;line-height:1.35;white-space:pre-wrap}.fecho{text-align:right;white-space:pre-wrap;margin-top:16pt}table{border-collapse:collapse;width:100%;margin-top:12pt}th,td{border:1px solid #000;padding:5pt;text-align:left}th{font-weight:bold}.assinatura{text-align:center;margin-top:28pt;border-top:1px solid #000;padding-top:4pt;width:55%;margin-left:auto;margin-right:auto}</style></head><body><!--GESTAO_ESCOLAR_BILHETE:${meta}--><div class="bilhete">${d.titulo?`<div class="titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="data">${escapeHtml(d.data)}</div>`:''}${d.destinatario?`<div class="dest">${escapeHtml(d.destinatario)},</div>`:''}<div class="texto">${d.mensagem}</div>${tabelaWordBilhete(d)}${d.fecho?`<div class="fecho">${escapeHtml(d.fecho).replace(/\n/g,'<br>')}</div>`:''}${d.assinatura?'<div class="assinatura">Assinatura do responsável</div>':''}</div></body></html>`;
   const nome=nomeArquivoBilheteWord(d);
   try{
     const blob=new Blob(['\ufeff',html],{type:'application/msword'});
@@ -6307,7 +6389,7 @@ function montarTabelaBilhete(d){
   const corpo=linhas.slice(1).map(normalizar);
   return `<div class="bilhete-tabela-wrap"><table class="bilhete-tabela"><thead><tr>${cab.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>${corpo.length?`<tbody>${corpo.map(l=>`<tr>${l.map(c=>`<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody>`:''}</table></div>`;
 }
-function montarBilheteCard(d){const classeEstilo=d.estilo==='economico'?'economico':(d.estilo==='preto-branco'?'preto-branco':'');const opacidade=Math.max(0,Math.min(20,Number(d.transparencia??7)))/100;return `<article class="bilhete-card ${classeEstilo}" style="--bilhete-cor:${d.cor};--bilhete-marca-opacity:${opacidade}"><div class="bilhete-marca-dagua"><img src="${LOGO_FOLHA_PADRAO}" alt=""></div><div class="bilhete-cabecalho"><div class="bilhete-cabecalho-texto">${d.titulo?`<div class="bilhete-titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="bilhete-data">${escapeHtml(d.data)}</div>`:''}</div></div>${d.destinatario?`<div class="bilhete-destinatario">${escapeHtml(d.destinatario)},</div>`:''}<div class="bilhete-texto">${escapeHtml(d.mensagem)}</div>${montarTabelaBilhete(d)}${d.fecho?`<div class="bilhete-fecho">${escapeHtml(d.fecho)}</div>`:''}${d.assinatura?`<div class="bilhete-assinatura"><span>Assinatura do responsável</span></div>`:''}</article>`;}
+function montarBilheteCard(d){const classeEstilo=d.estilo==='economico'?'economico':(d.estilo==='preto-branco'?'preto-branco':'');const opacidade=Math.max(0,Math.min(20,Number(d.transparencia??7)))/100;return `<article class="bilhete-card ${classeEstilo}" style="--bilhete-cor:${d.cor};--bilhete-marca-opacity:${opacidade}"><div class="bilhete-marca-dagua"><img src="${LOGO_FOLHA_PADRAO}" alt=""></div><div class="bilhete-cabecalho"><div class="bilhete-cabecalho-texto">${d.titulo?`<div class="bilhete-titulo">${escapeHtml(d.titulo)}</div>`:''}${d.data?`<div class="bilhete-data">${escapeHtml(d.data)}</div>`:''}</div></div>${d.destinatario?`<div class="bilhete-destinatario">${escapeHtml(d.destinatario)},</div>`:''}<div class="bilhete-texto">${d.mensagem}</div>${montarTabelaBilhete(d)}${d.fecho?`<div class="bilhete-fecho">${escapeHtml(d.fecho)}</div>`:''}${d.assinatura?`<div class="bilhete-assinatura"><span>Assinatura do responsável</span></div>`:''}</article>`;}
 function montarFolhaBilhetes(d){const cols=d.quantidade===2?1:2;return `<div class="bilhete-sheet qtd-${d.quantidade}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-auto-rows:max-content;">${Array.from({length:d.quantidade},()=>montarBilheteCard(d)).join('')}</div>`;}
 function ajustarBilhetesAoEspaco(root){
   if(!root)return true;
@@ -6335,9 +6417,9 @@ function ajustarBilhetesAoEspaco(root){
   });
   return todosCabem;
 }
-function atualizarPreviewBilhete(validar=true){const a=document.getElementById('bilhetePreviewArea');if(!a)return;const v=document.getElementById('bilhetePreviewEmpty'),d=dadosBilheteManual();if(!d.mensagem){if(validar)alert('Digite a mensagem do bilhete.');a.innerHTML='';v.style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;bilheteHtmlAtual='';return;}bilheteHtmlAtual=montarFolhaBilhetes(d);a.innerHTML=`<div class="bilhete-preview-wrap">${bilheteHtmlAtual}</div>`;requestAnimationFrame(()=>ajustarBilhetesAoEspaco(a));v.style.display='none';document.getElementById('bilheteImprimirBtn').disabled=false;}
+function atualizarPreviewBilhete(validar=true){const a=document.getElementById('bilhetePreviewArea');if(!a)return;const v=document.getElementById('bilhetePreviewEmpty'),d=dadosBilheteManual();if(!bilheteTextoPlano(d.mensagem).trim()){if(validar)alert('Digite a mensagem do bilhete.');a.innerHTML='';v.style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;bilheteHtmlAtual='';return;}bilheteHtmlAtual=montarFolhaBilhetes(d);a.innerHTML=`<div class="bilhete-preview-wrap">${bilheteHtmlAtual}</div>`;requestAnimationFrame(()=>ajustarBilhetesAoEspaco(a));v.style.display='none';document.getElementById('bilheteImprimirBtn').disabled=false;}
 function imprimirBilhetes(){const d=dadosBilheteManual();if(!validarPendenciasBilhete(d,'imprimir'))return;atualizarPreviewBilhete(true);if(!bilheteHtmlAtual)return;const area=document.getElementById('printarea');area.innerHTML=`<div class="print-page">${bilheteHtmlAtual}</div>`;document.body.classList.add('print-bilhetes');requestAnimationFrame(()=>requestAnimationFrame(()=>{const cabe=ajustarBilhetesAoEspaco(area);if(!cabe){document.body.classList.remove('print-bilhetes');alert('O texto é muito grande para a quantidade escolhida. Reduza o texto ou selecione menos bilhetes por folha.');return;}window.print();setTimeout(()=>{document.body.classList.remove('print-bilhetes');if(!bilheteExportadoAtual)alert('Lembrete: acesse a aba Arquivos e exporte este bilhete em Word para uma pasta segura do computador.');},600);}));}
-function limparBilheteManual(){document.getElementById('bilheteTitulo').value='Comunicado';document.getElementById('bilheteDestinatario').value='Senhores pais e/ou responsáveis';['bilheteMensagem','bilheteData'].forEach(id=>document.getElementById(id).value='');document.getElementById('bilheteFecho').value='Atenciosamente,\nCMEI Pró Saber';document.getElementById('bilhetePorFolha').value='4';document.getElementById('bilheteEstilo').value='colorido';document.getElementById('bilheteCor').value='#4FB6E8';document.getElementById('bilheteTransparencia').value='7';document.getElementById('bilheteTransparenciaValor').textContent='7%';document.getElementById('bilheteAssinatura').checked=false;document.getElementById('bilheteUsarTabela').checked=false;document.getElementById('bilheteTabelaDados').value='';document.getElementById('bilheteTabelaBox').classList.remove('ativo');bilheteHtmlAtual='';document.getElementById('bilhetePreviewArea').innerHTML='';document.getElementById('bilhetePreviewEmpty').style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;atualizarAnaliseBilhete();bilheteExportadoAtual=false;}
+function limparBilheteManual(){document.getElementById('bilheteTitulo').value='Comunicado';document.getElementById('bilheteDestinatario').value='Senhores pais e/ou responsáveis';document.getElementById('bilheteMensagem').innerHTML='';document.getElementById('bilheteData').value='';document.getElementById('bilheteFonte').selectedIndex=0;document.getElementById('bilheteTamanhoFonte').value='12';document.getElementById('bilheteFecho').value='Atenciosamente,\nCMEI Pró Saber';document.getElementById('bilhetePorFolha').value='4';document.getElementById('bilheteEstilo').value='colorido';document.getElementById('bilheteCor').value='#4FB6E8';document.getElementById('bilheteTransparencia').value='7';document.getElementById('bilheteTransparenciaValor').textContent='7%';document.getElementById('bilheteAssinatura').checked=false;document.getElementById('bilheteUsarTabela').checked=false;document.getElementById('bilheteTabelaDados').value='';document.getElementById('bilheteTabelaBox').classList.remove('ativo');bilheteHtmlAtual='';document.getElementById('bilhetePreviewArea').innerHTML='';document.getElementById('bilhetePreviewEmpty').style.display='block';document.getElementById('bilheteImprimirBtn').disabled=true;atualizarAnaliseBilhete();bilheteExportadoAtual=false;}
 
 /* =========================================================================
    PROFESSOR / KIT DO PROFESSOR
