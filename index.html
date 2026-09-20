@@ -306,14 +306,42 @@
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
     html,body{margin:0!important;padding:0!important;background:#fff!important;}
     body.print-ponto > *:not(#printarea),body.print-lista > *:not(#printarea){display:none!important;}
-    body.print-ponto #printarea,body.print-lista #printarea{display:block!important;position:static!important;width:185mm!important;margin:0!important;padding:0!important;}
-    body.print-ponto #printarea .print-page{page:folha-ponto;width:185mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
+    body.print-ponto #printarea{display:block!important;position:static!important;width:178mm!important;margin:0!important;padding:0!important;}
+    body.print-lista #printarea{display:block!important;position:static!important;width:185mm!important;margin:0!important;padding:0!important;}
+    body.print-ponto #printarea .print-page{page:folha-ponto;width:178mm!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page;}
     body.print-ponto #printarea .print-page:last-child{page-break-after:auto;break-after:auto;}
-    body.print-ponto #printarea .folha{width:185mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
-    body.print-ponto #printarea .folha-assinaturas>div{height:19mm!important;padding-top:1mm!important;}
+    body.print-ponto #printarea .folha{width:178mm!important;min-height:0!important;margin:0!important;border:none!important;box-shadow:none!important;}
+    /* Causa do "impressão muito pequena": a regra mobile  @media(max-width:900px){table{min-width:680px}}
+       também vale na impressão (a página tem só ~672 px de largura). As tabelas da folha ficavam mais largas
+       que a página e o Chrome encolhia tudo para caber. Aqui a regra é anulada para a folha. */
+    body.print-ponto #printarea table{min-width:0!important;}
+
+    /* ---- Folha de ponto: preenche a área útil da página ----
+       @page folha-ponto = A4 (210x297) menos margens 10/12/10/20 mm  ->  área útil 178 x 277 mm.
+       Altura total da folha = --folha-h (277 mm úteis - 1 mm de folga, evita página em branco).
+       Linha de cada dia = (--folha-h - --fixo) / nº de dias do mês.
+       --fixo = soma das alturas dos blocos fixos (cabeçalho, títulos, OBS, assinaturas, fechamento).
+       Mês com menos dias => linha mais alta para assinar. --dias vem do HTML da folha. */
+    body.print-ponto #printarea .folha{--folha-h:276mm;--fixo:85mm;--dias:31;}
+    body.print-ponto #printarea .folha-modelo-table .linha-dia{height:calc((var(--folha-h) - var(--fixo)) / var(--dias))!important;}
+    body.print-ponto #printarea .folha-modelo-table .cabecalho-escola-titulo{height:7mm;}
+    body.print-ponto #printarea .folha-modelo-table .cabecalho-escola-titulo .linha-titulo{min-height:7mm;}
+    body.print-ponto #printarea .folha-modelo-table .servidor-row-wrap,
+    body.print-ponto #printarea .folha-servidor-table{height:10mm;}
+    body.print-ponto #printarea .folha-modelo-table .cabecalho-logo-celula,
+    body.print-ponto #printarea .folha-modelo-table .cabecalho-logo-wrap{height:17mm;}
+    body.print-ponto #printarea .folha-modelo-table .cabecalho-logo-wrap img{max-height:15mm;}
+    body.print-ponto #printarea .folha-modelo-table .titulo{height:6mm;}
+    body.print-ponto #printarea .folha-modelo-table .turno{height:5.5mm;}
+    body.print-ponto #printarea .folha-carga-table td{height:5.5mm;}
+    body.print-ponto #printarea .folha-modelo-table .cab-dia{height:8mm;}
+    body.print-ponto #printarea .folha-assinaturas>div{height:17mm!important;padding-top:1mm!important;}
     body.print-ponto #printarea .folha-fechamento{padding-top:2mm!important;}
     body.print-ponto #printarea,body.print-ponto #printarea *,body.print-lista #printarea,body.print-lista #printarea *{visibility:visible!important;}
     body.print-lista #printarea .print-page{page:lista-servidores;width:185mm!important;margin:0!important;padding:0!important;}
+    /* capa do ponto: continua com a página antiga (margens 5/5/5/20 mm) */
+    body.print-ponto #printarea .print-page.capa-page{page:capa-ponto;width:185mm!important;}
+    body.print-ponto #printarea .print-page.capa-page .capa-ponto{width:185mm!important;}
 
     body:not(.print-ponto) *{visibility:hidden;}
     body:not(.print-ponto) #printarea,body:not(.print-ponto) #printarea *{visibility:visible;}
@@ -322,7 +350,8 @@
     .printrow{display:flex;gap:0;justify-content:center;page-break-inside:avoid;}
     .printrow .idcard{box-shadow:none;}
     @page{size:A4;margin:10mm;}
-    @page folha-ponto{size:A4 portrait;margin:5mm 5mm 5mm 20mm;}
+    @page folha-ponto{size:A4 portrait;margin:10mm 12mm 10mm 20mm;}
+    @page capa-ponto{size:A4 portrait;margin:5mm 5mm 5mm 20mm;}
     @page lista-servidores{size:A4 portrait;margin:10mm;}
   }
 
@@ -5518,7 +5547,7 @@ function buildFolhaHtml(servidor, mes, ano, opcoesManual=null){
     </tr>`;
   }
 
-  return `<div class="folha">
+  return `<div class="folha" style="--dias:${total}">
     <table class="folha-modelo-table">
       <colgroup>
         <col style="width:8%"><col style="width:7%"><col style="width:31%"><col style="width:7%">
@@ -5679,7 +5708,7 @@ function imprimirCapaPonto(){
   const {mes, ano} = periodo;
   const html = buildCapaPontoHtml(mes, ano, pontoState.servidores.length || 0);
   const printarea = document.getElementById('printarea');
-  printarea.innerHTML = `<div class="print-page ponto-page">${html}</div>`;
+  printarea.innerHTML = `<div class="print-page ponto-page capa-page">${html}</div>`;
   document.body.classList.add('print-ponto');
   const limparModoImpressao = ()=>{
     document.body.classList.remove('print-ponto');
@@ -5692,7 +5721,7 @@ function imprimirCapaPonto(){
 function imprimirPonto(){
   if(!pontoState.folhasGeradas || !pontoState.folhasGeradas.length) return;
   const printarea = document.getElementById('printarea');
-  printarea.innerHTML = pontoState.folhasGeradas.map(f=>`<div class="print-page ponto-page">${f.html}</div>`).join('');
+  printarea.innerHTML = pontoState.folhasGeradas.map(f=>`<div class="print-page ponto-page${f.tipo==='capa'?' capa-page':''}">${f.html}</div>`).join('');
   document.body.classList.add('print-ponto');
   const limparModoImpressao = ()=>{
     document.body.classList.remove('print-ponto');
