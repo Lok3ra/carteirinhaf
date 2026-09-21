@@ -1378,7 +1378,7 @@
           <label class="kit-option"><input type="checkbox" id="manualRegraFimSemana" checked><span><b>Sábados e domingos</b><br><small>Exibir SÁBADO ou DOMINGO, salvo dia letivo cadastrado.</small></span></label>
           <label class="kit-option"><input type="checkbox" id="manualRegraCalendario" checked><span><b>Calendário central</b><br><small>Aplicar FERIADO, FÉRIAS e RECESSO.</small></span></label>
           <label class="kit-option"><input type="checkbox" id="manualRegraIndividual" checked><span><b>Períodos individuais</b><br><small>Aplicar férias, recesso, atestado e licença-prêmio do servidor-base.</small></span></label>
-          <label class="kit-option"><input type="checkbox" id="manualRegraCoordenacao" checked><span><b>Coordenação livre</b><br><small>Segundas e sextas no turno indicado para função Professor.</small></span></label>
+          <label class="kit-option"><input type="checkbox" id="manualRegraCoordenacao" checked><span><b>Coordenação livre</b><br><small>Segundas e sextas no turno indicado para função Professor ou Coordenador.</small></span></label>
           <label class="kit-option"><input type="checkbox" id="manualRegraCarga" checked><span><b>Regra de carga horária</b><br><small>Bloquear com **** o turno não trabalhado em carga de 30h.</small></span></label>
           <label class="kit-option"><input type="checkbox" id="manualRegraPrioridade" checked><span><b>Prioridade das ocorrências</b><br><small>Fim de semana, período individual, calendário e coordenação.</small></span></label>
         </div>
@@ -4315,7 +4315,7 @@ function handleFileServidores(e){
         const is40 = cargaNumero === 40;
         const is30 = cargaNumero === 30;
         const funcao = cellRaw(row,['funcao','função']).toString().trim();
-        const ehProfessor = ehFuncaoProfessor(funcao);
+        const ehProfessor = permiteCoordenacaoLivre(funcao);
         return {
           id: 'srv_' + normalize(nome).replace(/[^a-z0-9]/g,'_'),
           nome,
@@ -4596,7 +4596,7 @@ function normalizarServidorSheets(row){
     funcao,
     turno1:is40?'MATUTINO':turnoInformado,
     turno2:is40?'VESPERTINO':'', turno3:'',
-    coordenacao:ehFuncaoProfessor(funcao)?normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])):'',
+    coordenacao:permiteCoordenacaoLivre(funcao)?normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])):'',
     leiLarissa:normalize(cellRaw(row,['lei larissa','lei larissa (sim/nao)','lei larissa (sim/não)']))==='sim',
     aprimoramentoProfissional:normalize(cellRaw(row,['aprimoramento profissional','licenca para aprimoramento profissional','licença para aprimoramento profissional','aprimoramento profissional (sim/nao)','aprimoramento profissional (sim/não)']))==='sim',
     observacaoPermissao:String(cellRaw(row,['observacao da permissao','observação da permissão','observacao','observação'])||'').trim(),
@@ -4763,7 +4763,7 @@ function atualizarCamposNovoServidor(){
   const funcao=document.getElementById('novoServidorFuncao')?.value||'';
   const coord=document.getElementById('novoServidorCoordenacao');
   if(coord){
-    const professor=ehFuncaoProfessor(funcao);
+    const professor=permiteCoordenacaoLivre(funcao);
     coord.disabled=!professor;
     if(!professor) coord.value='';
   }
@@ -4809,7 +4809,7 @@ async function salvarNovoServidor(){
     turno1:carga===40?'MATUTINO':turno,
     turno2:carga===40?'VESPERTINO':'',
     turno3:'',
-    coordenacao:ehFuncaoProfessor(funcao)?coordenacao:'',
+    coordenacao:permiteCoordenacaoLivre(funcao)?coordenacao:'',
     leiLarissa:!!leiLarissa,
     aprimoramentoProfissional:!!aprimoramentoProfissional,
     observacaoPermissao,
@@ -4862,7 +4862,7 @@ function renderServidoresPontoTable(){
   tbody.innerHTML = filtered.map(s=>{
     const carga = parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10) || '';
     const turnoAtual = [s.turno1,s.turno2].filter(Boolean).join(' / ');
-    const ehProfessor = ehFuncaoProfessor(s.funcao);
+    const ehProfessor = permiteCoordenacaoLivre(s.funcao);
     return `
     <tr>
       <td><b>${escapeHtml(s.nome)}</b></td>
@@ -4932,7 +4932,7 @@ async function updateServidorPontoField(id, field, value){
     s.turno1 = value;
     s.turno2 = '';
   }else if(field==='coordenacao'){
-    s.coordenacao = ehFuncaoProfessor(s.funcao) ? normalizarCoordenacaoLivre(value) : '';
+    s.coordenacao = permiteCoordenacaoLivre(s.funcao) ? normalizarCoordenacaoLivre(value) : '';
   }else if(field==='leiLarissa'){
     s.leiLarissa = value === true || value === 'true' || normalize(value) === 'sim';
     if(s.leiLarissa) s.aprimoramentoProfissional=false;
@@ -5189,6 +5189,14 @@ function ehFuncaoProfessor(valor){
   return n==='professor' || n==='professora' || n==='professor(a)'
     || n.startsWith('professor ') || n.startsWith('professora ') || n.startsWith('professor(a) ');
 }
+function ehFuncaoCoordenador(valor){
+  const n=normalize(valor||'');
+  return n.startsWith('coordenador'); // Coordenador, Coordenadora, Coordenador(a), Coordenador Pedagógico...
+}
+// Coordenação livre (segundas e sextas no turno indicado): Professor e Coordenador
+function permiteCoordenacaoLivre(valor){
+  return ehFuncaoProfessor(valor) || ehFuncaoCoordenador(valor);
+}
 function normalizarCoordenacaoLivre(valor){
   const n=normalize(String(valor||'').trim());
   if(!n)return '';
@@ -5310,7 +5318,7 @@ function celula(servidor, date, turno){
     if(resultado) return resultado;
   }
 
-  const ehProfessor = ehFuncaoProfessor(servidor.funcao);
+  const ehProfessor = permiteCoordenacaoLivre(servidor.funcao);
   const ehSegundaOuSexta = wd === 1 || wd === 5;
   const coordenacao = normalizarCoordenacaoLivre(servidor.coordenacao);
   if(ehProfessor && ehSegundaOuSexta){
@@ -5337,7 +5345,7 @@ function celulaManual(servidor,date,turno,op){
     for(const f of naoLetivos()){const r=resultadoFeriasRecessoCalendario_(f,servidor,date);if(r)return r;}
     return null;
   };
-  const regraCoord=()=>{if(!op.coordenacao||!ehFuncaoProfessor(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.aprimoramentoProfissional?'APRIMORAMENTO PROFISSIONAL':(servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE');const tipo=(servidor.leiLarissa||servidor.aprimoramentoProfissional)?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text:texto,tipo};if(c==='V'&&turno==='tarde')return {text:texto,tipo};return null;};
+  const regraCoord=()=>{if(!op.coordenacao||!permiteCoordenacaoLivre(servidor.funcao)||!(wd===1||wd===5))return null;const c=normalizarCoordenacaoLivre(servidor.coordenacao);const texto=servidor.aprimoramentoProfissional?'APRIMORAMENTO PROFISSIONAL':(servidor.leiLarissa?'LEI LARISSA':'COORDENAÇÃO LIVRE');const tipo=(servidor.leiLarissa||servidor.aprimoramentoProfissional)?'lei-larissa':'coordenacao';if(c==='M'&&turno==='manha')return {text:texto,tipo};if(c==='V'&&turno==='tarde')return {text:texto,tipo};return null;};
   const regras=op.prioridade
     ?[regraCarga,regraTurnoLetivo,regraFimSemana,regraFeriado,regraAfastamento,regraFeriasRecesso,regraCoord]
     :[regraCarga,regraTurnoLetivo,regraFeriado,regraAfastamento,regraFeriasRecesso,regraFimSemana,regraCoord];
