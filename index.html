@@ -645,10 +645,16 @@
   .bilhete-recomendacao.alerta{background:#f7e6c4;border-left-color:var(--danger);}
   .bilhete-recomendacao strong{color:var(--forest-dark);}
   .bilhete-card.conteudo-excedido{outline:3px solid #c62828;outline-offset:-3px;}
+  /* #printarea fica display:none fora da impressão (regra @media screen mais abaixo), então a verificação de
+     "cabe na folha?" feita em JS antes de imprimir (ajustarBilhetesAoEspaco) sempre lia altura 0 e nunca
+     detectava estouro — o bilhete grande demais passava direto para a impressão e saía cortado/estourando
+     a página. Aqui a área é renderizada fora da tela (não aparece para o usuário) só para permitir essa
+     medição correta antes de imprimir. */
+  body.print-bilhetes #printarea{display:block!important;position:fixed!important;left:-9999px!important;top:0!important;margin:0!important;padding:0!important;}
   @media print{
     body.print-bilhetes > *:not(#printarea){display:none!important;}
     body.print-bilhetes{margin:0!important;background:#fff!important;}
-    body.print-bilhetes #printarea{display:block!important;position:static!important;width:auto!important;margin:0!important;padding:0!important;}
+    body.print-bilhetes #printarea{display:block!important;position:static!important;left:0!important;width:auto!important;margin:0!important;padding:0!important;}
     body.print-bilhetes #printarea,body.print-bilhetes #printarea *{visibility:visible!important;}
     body.print-bilhetes .bilhete-sheet{width:190mm!important;height:277mm!important;min-height:0!important;padding:5mm!important;margin:0!important;overflow:hidden!important;align-content:start!important;align-items:start!important;}
     body.print-bilhetes .bilhete-card{box-shadow:none!important;}
