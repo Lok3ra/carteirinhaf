@@ -1193,6 +1193,7 @@
           <div class="field" style="max-width:125px;"><label>Carga</label><select id="novoServidorCarga"><option value="40">40H</option><option value="30">30H</option><option value="20">20H</option></select></div>
           <div class="field" style="min-width:155px;"><label>Turno</label><select id="novoServidorTurno"><option value="MATUTINO">MATUTINO</option><option value="VESPERTINO">VESPERTINO</option></select></div>
           <div class="field" style="min-width:165px;"><label>Coordenação</label><select id="novoServidorCoordenacao"><option value="">SEM COORDENAÇÃO</option><option value="M">MATUTINO</option><option value="V">VESPERTINO</option></select></div>
+          <div class="field" style="min-width:170px;"><label>Hora extra (assina os 2 turnos)</label><select id="novoServidorHoraExtra"><option value="false">Não</option><option value="true">Sim</option></select></div>
           <div class="field" style="min-width:150px;"><label>Matrícula</label><input type="text" id="novoServidorMatricula" placeholder="Matrícula"></div>
           <div class="field" style="min-width:130px;"><label>Lei Larissa</label><select id="novoServidorLeiLarissa"><option value="false">Não</option><option value="true">Sim</option></select></div>
           <div class="field" style="min-width:220px;"><label>Aprimoramento profissional</label><select id="novoServidorAprimoramento"><option value="false">Não</option><option value="true">Sim</option></select></div>
@@ -1204,7 +1205,7 @@
       </div>
       <div class="card-block" style="padding:0;overflow:hidden;overflow-x:auto;">
         <table>
-          <thead><tr><th>Servidor</th><th>Cargo</th><th>Função</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Matrícula</th><th class="col-lei-larissa-servidores" style="display:none;">Lei Larissa</th><th class="col-aprimoramento-servidores" style="display:none;">Aprimoramento profissional</th><th class="col-observacao-permissao-servidores" style="display:none;">Observação</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Servidor</th><th>Cargo</th><th>Função</th><th>Carga semanal</th><th>Carga mensal</th><th>Turno</th><th>Coordenação</th><th>Hora Extra</th><th>Matrícula</th><th class="col-lei-larissa-servidores" style="display:none;">Lei Larissa</th><th class="col-aprimoramento-servidores" style="display:none;">Aprimoramento profissional</th><th class="col-observacao-permissao-servidores" style="display:none;">Observação</th><th>Ações</th></tr></thead>
           <tbody id="servidoresPontoTbody"></tbody>
         </table>
         <div class="empty" id="servidoresPontoEmpty" style="display:none;">Nenhum servidor importado ainda. Vá em "Importar servidores".</div>
@@ -1359,6 +1360,7 @@
         <div class="row">
           <div class="field"><label>Cargo</label><input type="text" id="manualCargo"></div>
           <div class="field"><label>Função</label><input type="text" id="manualFuncao"></div>
+          <div class="field" style="max-width:170px;"><label>Hora extra (assina 2 turnos)</label><select id="manualHoraExtra"><option value="false">Não</option><option value="true">Sim</option></select></div>
           <div class="field" style="max-width:220px;"><label>Coordenação</label><select id="manualCoordenacao"><option value="">Não se aplica</option><option value="M">Matutina</option><option value="V">Vespertina</option></select></div>
           <div class="field" style="max-width:170px;"><label>Lei Larissa</label><select id="manualLeiLarissa"><option value="false">Não</option><option value="true">Sim</option></select></div>
           <div class="field" style="max-width:230px;"><label>Aprimoramento profissional</label><select id="manualAprimoramento"><option value="false">Não</option><option value="true">Sim</option></select></div>
@@ -4603,6 +4605,7 @@ function normalizarServidorSheets(row){
     turno1:is40?'MATUTINO':turnoInformado,
     turno2:is40?'VESPERTINO':'', turno3:'',
     coordenacao:permiteCoordenacaoLivre(funcao)?normalizarCoordenacaoLivre(cellRaw(row,['coordenacao','coordenação'])):'',
+    horaExtra: ehFuncaoAssistenteEducacao(funcao) ? (normalize(cellRaw(row,['hora extra','hora extra (sim/nao)','hora extra (sim/não)'])) === 'sim') : false,
     leiLarissa:normalize(cellRaw(row,['lei larissa','lei larissa (sim/nao)','lei larissa (sim/não)']))==='sim',
     aprimoramentoProfissional:normalize(cellRaw(row,['aprimoramento profissional','licenca para aprimoramento profissional','licença para aprimoramento profissional','aprimoramento profissional (sim/nao)','aprimoramento profissional (sim/não)']))==='sim',
     observacaoPermissao:String(cellRaw(row,['observacao da permissao','observação da permissão','observacao','observação'])||'').trim(),
@@ -4758,6 +4761,7 @@ function fecharNovoServidor(){
   const coord=document.getElementById('novoServidorCoordenacao'); if(coord)coord.value='';
   const lei=document.getElementById('novoServidorLeiLarissa'); if(lei)lei.value='false';
   const apr=document.getElementById('novoServidorAprimoramento'); if(apr)apr.value='false';
+  const horaExtra=document.getElementById('novoServidorHoraExtra'); if(horaExtra)horaExtra.value='false';
   const obs=document.getElementById('novoServidorObservacaoPermissao'); if(obs)obs.value='';
   atualizarCamposPermissaoNovoServidor();
   const status=document.getElementById('novoServidorStatus'); if(status)status.textContent='';
@@ -4772,6 +4776,12 @@ function atualizarCamposNovoServidor(){
     const professor=permiteCoordenacaoLivre(funcao);
     coord.disabled=!professor;
     if(!professor) coord.value='';
+  }
+  const horaExtra=document.getElementById('novoServidorHoraExtra');
+  if(horaExtra){
+    const assistente=ehFuncaoAssistenteEducacao(funcao);
+    horaExtra.disabled=!assistente;
+    if(!assistente) horaExtra.value='false';
   }
 }
 function atualizarCamposPermissaoNovoServidor(){
@@ -4791,6 +4801,7 @@ async function salvarNovoServidor(){
   const matricula=String(document.getElementById('novoServidorMatricula')?.value||'').trim();
   const leiLarissa=document.getElementById('novoServidorLeiLarissa')?.value==='true';
   const aprimoramentoProfissional=document.getElementById('novoServidorAprimoramento')?.value==='true';
+  const horaExtra=document.getElementById('novoServidorHoraExtra')?.value==='true';
   const observacaoPermissao=String(document.getElementById('novoServidorObservacaoPermissao')?.value||'').trim();
   const problemas=[];
   if(!nome) problemas.push('informe o nome');
@@ -4816,6 +4827,7 @@ async function salvarNovoServidor(){
     turno2:carga===40?'VESPERTINO':'',
     turno3:'',
     coordenacao:permiteCoordenacaoLivre(funcao)?coordenacao:'',
+    horaExtra:ehFuncaoAssistenteEducacao(funcao)?!!horaExtra:false,
     leiLarissa:!!leiLarissa,
     aprimoramentoProfissional:!!aprimoramentoProfissional,
     observacaoPermissao,
@@ -4897,6 +4909,13 @@ function renderServidoresPontoTable(){
           <option value="V" ${s.coordenacao==='V'?'selected':''}>VESPERTINO</option>
         </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
       </td>
+      <td>
+        ${ehFuncaoAssistenteEducacao(s.funcao) ? `
+        <select onchange="updateServidorPontoField('${s.id}','horaExtra',this.value)" style="padding:4px 6px;font-size:12.5px;min-width:82px;">
+          <option value="false" ${!s.horaExtra?'selected':''}>Não</option>
+          <option value="true" ${s.horaExtra?'selected':''}>Sim</option>
+        </select>` : '<span style="color:#8b8471;">Não se aplica</span>'}
+      </td>
       <td>${escapeHtml(s.matricula||'—')}</td>
       <td class="col-lei-larissa-servidores" style="display:${mostrarLeiLarissa?'':'none'};">
         <select onchange="updateServidorPontoField('${s.id}','leiLarissa',this.value)" style="padding:4px 6px;font-size:12.5px;min-width:82px;">
@@ -4939,6 +4958,8 @@ async function updateServidorPontoField(id, field, value){
     s.turno2 = '';
   }else if(field==='coordenacao'){
     s.coordenacao = permiteCoordenacaoLivre(s.funcao) ? normalizarCoordenacaoLivre(value) : '';
+  }else if(field==='horaExtra'){
+    s.horaExtra = ehFuncaoAssistenteEducacao(s.funcao) ? (value === true || value === 'true' || normalize(value) === 'sim') : false;
   }else if(field==='leiLarissa'){
     s.leiLarissa = value === true || value === 'true' || normalize(value) === 'sim';
     if(s.leiLarissa) s.aprimoramentoProfissional=false;
@@ -5199,6 +5220,10 @@ function ehFuncaoCoordenador(valor){
   const n=normalize(valor||'');
   return n.startsWith('coordenador'); // Coordenador, Coordenadora, Coordenador(a), Coordenador Pedagógico...
 }
+function ehFuncaoAssistenteEducacao(valor){
+  const n=normalize(valor||'');
+  return n.startsWith('assistente') && n.includes('educa'); // Assistente de Educação, Assistente de Educação Infantil...
+}
 // Coordenação livre (segundas e sextas no turno indicado): Professor e Coordenador
 function permiteCoordenacaoLivre(valor){
   return ehFuncaoProfessor(valor) || ehFuncaoCoordenador(valor);
@@ -5287,8 +5312,11 @@ function celula(servidor, date, turno){
   const overridden = !!overrideEvento;
 
   const turnosServidor = [servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' ').toUpperCase();
-  const trabalhaManha = turnosServidor.includes('MATUTINO');
-  const trabalhaTarde = turnosServidor.includes('VESPERTINO');
+  // Assistente de Educação que faz hora extra pode assinar (preencher a mão) nos dois turnos,
+  // mesmo estando cadastrado em apenas um.
+  const horaExtraAmbosTurnos = ehFuncaoAssistenteEducacao(servidor.funcao) && !!servidor.horaExtra;
+  const trabalhaManha = turnosServidor.includes('MATUTINO') || horaExtraAmbosTurnos;
+  const trabalhaTarde = turnosServidor.includes('VESPERTINO') || horaExtraAmbosTurnos;
 
   // Bloqueia o turno que o cargo do servidor não cobre (vale para qualquer carga horária,
   // não só 30h — antes só travava quem tinha exatamente 30h cadastradas).
@@ -5339,7 +5367,8 @@ function celula(servidor, date, turno){
 function celulaManual(servidor,date,turno,op){
   const iso=isoLocal(date),wd=weekdayISO(date),overrideEvento=letivoOverrideEventoNaData(iso),overridden=!!overrideEvento;
   const turnos=[servidor.turno1,servidor.turno2,servidor.turno3].filter(Boolean).join(' ').toUpperCase();
-  const trabalhaManha=turnos.includes('MATUTINO'),trabalhaTarde=turnos.includes('VESPERTINO');
+  const horaExtraAmbosTurnosManual=ehFuncaoAssistenteEducacao(servidor.funcao) && !!servidor.horaExtra;
+  const trabalhaManha=turnos.includes('MATUTINO')||horaExtraAmbosTurnosManual,trabalhaTarde=turnos.includes('VESPERTINO')||horaExtraAmbosTurnosManual;
   const regraCarga=()=>{if(!op.carga)return null;if(turno==='manha'&&trabalhaTarde&&!trabalhaManha)return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&trabalhaManha&&!trabalhaTarde)return {text:'****',tipo:'bloqueado'};return null;};
   const regraTurnoLetivo=()=>{if(!overridden||!overrideEvento.turno||overrideEvento.turno==='ambos')return null;if(turno==='manha'&&overrideEvento.turno==='tarde')return {text:'****',tipo:'bloqueado'};if(turno==='tarde'&&overrideEvento.turno==='manha')return {text:'****',tipo:'bloqueado'};return null;};
   const regraFimSemana=()=>{if(!op.fimSemana||overridden)return null;if(wd===6)return {text:'SÁBADO',tipo:'fimdesemana'};if(wd===7)return {text:'DOMINGO',tipo:'fimdesemana'};return null;};
@@ -5364,6 +5393,8 @@ function obterServidorManual(){
   const turnos=turnoValor.split(',').map(x=>x.trim()).filter(Boolean);
   const leiLarissa=document.getElementById('manualLeiLarissa').value==='true';
   const aprimoramentoProfissional=document.getElementById('manualAprimoramento').value==='true';
+  const funcaoManual=document.getElementById('manualFuncao').value.trim();
+  const horaExtra=ehFuncaoAssistenteEducacao(funcaoManual)&&document.getElementById('manualHoraExtra').value==='true';
   return {
     id:'manual',
     nome:document.getElementById('manualNome').value.trim(),
@@ -5371,6 +5402,7 @@ function obterServidorManual(){
     cargo:document.getElementById('manualCargo').value.trim(),
     funcao:document.getElementById('manualFuncao').value.trim(),
     coordenacao:normalizarCoordenacaoLivre(document.getElementById('manualCoordenacao').value),
+    horaExtra,
     leiLarissa,
     aprimoramentoProfissional,
     observacaoPermissao:(leiLarissa||aprimoramentoProfissional)?document.getElementById('manualObservacaoPermissao').value.trim():'',
@@ -5408,6 +5440,7 @@ function carregarServidorBaseManual(){
   document.getElementById('manualCoordenacao').value=normalizarCoordenacaoLivre(s.coordenacao)||'';
   document.getElementById('manualLeiLarissa').value=s.leiLarissa?'true':'false';
   document.getElementById('manualAprimoramento').value=s.aprimoramentoProfissional?'true':'false';
+  document.getElementById('manualHoraExtra').value=s.horaExtra?'true':'false';
   document.getElementById('manualObservacaoPermissao').value=s.observacaoPermissao||'';
   const carga=parseInt(String(s.cargaSemanal||'').replace(/\D/g,''),10);
   document.getElementById('manualCargaSemanal').value=[20,30,40].includes(carga)?String(carga):'';
