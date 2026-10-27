@@ -6004,6 +6004,15 @@ function garantirCalendario2026Integrado_(cal){
   if(feriadoMovido) porId.set('feriado-1030',JSON.parse(JSON.stringify(feriadoMovido)));
   const reposicaoNovembro=base.eventos.find(e=>e.id==='reposicao-0711');
   if(reposicaoNovembro) porId.set('reposicao-0711',JSON.parse(JSON.stringify(reposicaoNovembro)));
+  // 24/10/2026 deve permanecer sábado comum: remove reposições/anteposições
+  // letivas antigas que possam estar gravadas no calendário local do navegador.
+  for(const [id,e] of porId.entries()){
+    const cobre2410 = e && e.inicio <= '2026-10-24' && e.fim >= '2026-10-24';
+    const legenda = (base.legendas||[]).find(l=>l.id===e?.legendaId)
+      || (Array.isArray(atual.legendas)?atual.legendas.find(l=>l.id===e?.legendaId):null);
+    const tipo = legenda && legenda.tipo;
+    if(cobre2410 && (tipo==='letivo' || /reposi|anteposi|dia-letivo/i.test(String(e.id||'')))) porId.delete(id);
+  }
   const legendasPorId=new Map((Array.isArray(atual.legendas)?atual.legendas:[]).map(l=>[l.id,l]));
   base.legendas.forEach(l=>{if(!legendasPorId.has(l.id))legendasPorId.set(l.id,l);});
   return {
